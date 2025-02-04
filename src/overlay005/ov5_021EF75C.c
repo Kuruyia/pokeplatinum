@@ -30,7 +30,7 @@ typedef struct UnkStruct_ov5_021EF76C_t {
     NNSG3dResFileHeader *unk_04[768];
     void *unk_C04;
     void *unk_C08;
-    NNSG3dResTex *unk_C0C;
+    NNSG3dResTex *mapTexture;
     NNSG3dResTex *unk_C10;
     MapPropMaterialShape *unk_C14;
     UnkStruct_ov5_021EF76C_sub1 unk_C18;
@@ -97,10 +97,10 @@ void ov5_021EF7A0(UnkStruct_ov5_021EF76C *param0)
 
     GF_ASSERT(v1->unk_08 < 768);
 
-    param0->unk_C0C = NULL;
+    param0->mapTexture = NULL;
     param0->unk_C04 = NARC_AllocAndReadWholeMemberByIndexPair(NARC_INDEX_FIELDDATA__AREADATA__AREA_MAP_TEX__MAP_TEX_SET, param0->unk_C18.unk_02, 4);
     param0->unk_C08 = NARC_AllocAndReadWholeMemberByIndexPair(NARC_INDEX_FIELDDATA__AREADATA__AREA_BUILD_MODEL__AREABM_TEXSET, param0->unk_C18.unk_00, 4);
-    param0->unk_C0C = NNS_G3dGetTex((NNSG3dResFileHeader *)param0->unk_C04);
+    param0->mapTexture = NNS_G3dGetTex((NNSG3dResFileHeader *)param0->unk_C04);
 
     if (v1->unk_08 != 0) {
         param0->unk_C10 = NNS_G3dGetTex((NNSG3dResFileHeader *)param0->unk_C08);
@@ -111,11 +111,11 @@ void ov5_021EF7A0(UnkStruct_ov5_021EF76C *param0)
     {
         BOOL v2;
 
-        v2 = Easy3D_UploadTextureToVRAM(param0->unk_C0C);
+        v2 = Easy3D_UploadTextureToVRAM(param0->mapTexture);
         GF_ASSERT(v2);
     }
 
-    ov5_021EF75C(param0->unk_C04, param0->unk_C0C);
+    ov5_021EF75C(param0->unk_C04, param0->mapTexture);
 
     if (param0->unk_C10 != NULL) {
         BOOL v3;
@@ -247,10 +247,10 @@ void ov5_021EFA10(UnkStruct_ov5_021EF76C **param0)
     (*param0) = NULL;
 }
 
-NNSG3dResTex *ov5_021EFA8C(const UnkStruct_ov5_021EF76C *param0)
+NNSG3dResTex *ov5_021EFA8C_GetMapTexture(const UnkStruct_ov5_021EF76C *param0)
 {
     GF_ASSERT(param0 != NULL);
-    return param0->unk_C0C;
+    return param0->mapTexture;
 }
 
 NNSG3dResTex *ov5_021EFAA0(const UnkStruct_ov5_021EF76C *param0)

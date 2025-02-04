@@ -4374,7 +4374,7 @@ static void ov9_0224C8E8(UnkStruct_ov9_02249B04 *param0)
     }
 
     {
-        NARC *v6 = ov5_021E9828(fieldSystem->unk_28);
+        NARC *v6 = ov5_021E9828_GetLandDataNARC(fieldSystem->unk_28);
 
         v2->unk_18 = ov5_021E9830(v2->unk_10, v2->unk_14, v6);
         ov5_021E931C(PlayerAvatar_PosVector(fieldSystem->playerAvatar), v2->unk_18);
@@ -4699,7 +4699,7 @@ static int ov9_0224CD84(UnkStruct_ov9_02249B04 *param0, UnkStruct_ov9_0224CBD8 *
         NARC *v3;
         UnkStruct_ov9_0224C8E8 *v4 = &param0->unk_1E88;
 
-        v3 = ov5_021E9828(param0->fieldSystem->unk_28);
+        v3 = ov5_021E9828_GetLandDataNARC(param0->fieldSystem->unk_28);
         ov5_021E98C8(v4->unk_18, v4->unk_10, v4->unk_14, v3);
 
         ov9_0224C070(param0, v4->unk_00, &v0, &v1, &v2);
@@ -4801,7 +4801,7 @@ static int ov9_0224CEBC(UnkStruct_ov9_02249B04 *param0, UnkStruct_ov9_0224CBD8 *
     }
 
     if (v1->unk_04 == 0) {
-        NARC *v3 = ov5_021E9828(fieldSystem->unk_28);
+        NARC *v3 = ov5_021E9828_GetLandDataNARC(fieldSystem->unk_28);
 
         v1->unk_18 = ov5_021E9830(NULL, v1->unk_14, v3);
         ov5_021E7A54(v1->unk_18);
@@ -4812,8 +4812,8 @@ static int ov9_0224CEBC(UnkStruct_ov9_02249B04 *param0, UnkStruct_ov9_0224CBD8 *
     }
 
     ov5_021E9998(fieldSystem->unk_28);
-    ov5_021EA6D8(v1->unk_18, v1->unk_10);
-    ov5_021E9F98(v1->unk_18, fieldSystem->unk_28);
+    ov5_021EA6D8_SetMapMatrix(v1->unk_18, v1->unk_10);
+    ov5_021E9F98_Copy(v1->unk_18, fieldSystem->unk_28);
 
     v1->unk_04 = 1;
     v1->unk_08 = 1;

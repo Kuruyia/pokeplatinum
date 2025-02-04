@@ -32,18 +32,18 @@ typedef struct {
 } UnkStruct_ov5_021E80BC;
 
 typedef struct {
-    u16 unk_00[1024];
-    NNSG3dRenderObj unk_800;
-    NNSG3dResFileHeader *unk_854;
+    u16 movementPermissions[1024];
+    NNSG3dRenderObj mapRenderObj;
+    NNSG3dResFileHeader *nsbmdFile;
     u8 *bdhcBuffer;
     BDHC *bdhc;
-    int unk_860;
-    BOOL unk_864;
-    MapPropManager *unk_868;
-} UnkStruct_ov5_021E79A8;
+    int mapMatrixIndex;
+    BOOL present;
+    MapPropManager *mapPropManager;
+} LoadedMap;
 
 typedef struct {
-    UnkStruct_ov5_021E79A8 *unk_00[2];
+    LoadedMap *unk_00[2];
     SysTask *unk_08;
     SysTask *unk_0C;
     UnkStruct_ov5_021E80BC unk_10;
@@ -68,7 +68,7 @@ typedef struct {
 } UnkStruct_ov5_021E8F60_sub1;
 
 typedef struct {
-    UnkStruct_ov5_021E79A8 *unk_00[2];
+    LoadedMap *unk_00[2];
     BOOL unk_08;
     u8 unk_0C;
     int unk_10[2];
@@ -90,7 +90,7 @@ typedef struct UnkStruct_ov5_021E8F60_t {
     UnkStruct_ov5_021E8F60_sub1 unk_04[2];
     UnkStruct_ov5_021E8C8C unk_5C;
     BOOL unk_74[4];
-    UnkStruct_ov5_021E79A8 *unk_84[4];
+    LoadedMap *loadedMaps[4];
     u8 unk_94;
     u8 unk_95;
     u8 unk_96;
@@ -101,14 +101,14 @@ typedef struct UnkStruct_ov5_021E8F60_t {
     BOOL unk_A4;
     int unk_A8;
     UnkStruct_ov5_021EF76C *unk_AC;
-    MapMatrix *unk_B0;
-    int unk_B4;
-    int unk_B8;
-    int unk_BC;
+    MapMatrix *mapMatrix;
+    int mapMatrixWidth;
+    int mapMatrixHeight;
+    int mapTilesWidth;
     UnkStruct_ov5_021EA174 unk_C0;
     UnkStruct_ov5_021D3CAC *unk_E4;
     UnkStruct_ov5_021FAE98 const *unk_E8;
-    NARC *unk_EC;
+    NARC *landDataNARC;
     UnkFuncPtr_ov5_021E9630 unk_F0;
     void *unk_F4;
     int unk_F8;
@@ -120,14 +120,14 @@ typedef struct UnkStruct_ov5_021E8F60_t {
 } UnkStruct_ov5_021E8F60;
 
 typedef struct {
-    int unk_00;
-    int unk_04;
-    int unk_08;
-    int unk_0C;
-} UnkStruct_ov5_021E7BAC;
+    int sectionSizeMovementPermission;
+    int sectionSizeNSBMD;
+    int sectionSizeBDHC;
+    int sectionSize3DObject;
+} LandDataHeader;
 
 typedef struct {
-    NARC *unk_00;
+    NARC *landDataNARC;
     int unk_04;
     NNSG3dRenderObj *unk_08;
     NNSG3dResFileHeader **unk_0C;
@@ -140,19 +140,19 @@ typedef struct {
 } UnkStruct_ov5_021E9640;
 
 static SysTask *ov5_021E976C(NARC *param0, const int param1, NNSG3dRenderObj *param2, NNSG3dResFileHeader **param3, NNSG3dResTex *param4, BOOL *param5, int *param6);
-static NNSG3dResMdl *ov5_021E97AC(NARC *param0, const int param1, NNSG3dRenderObj *param2, NNSG3dResFileHeader **param3, NNSG3dResTex *param4);
+static NNSG3dResMdl *ov5_021E97AC_LoadNSBMD(NARC *param0, const int param1, NNSG3dRenderObj *param2, NNSG3dResFileHeader **param3, NNSG3dResTex *param4);
 static void ov5_021E9640(SysTask *param0);
 static void ov5_021E8F60(UnkStruct_ov5_021E8F60 *param0);
 static void ov5_021E8E28(UnkStruct_ov5_021E8F60 *param0, const int param1, const int param2, const int param3, const int param4, const int param5);
 static void ov5_021E8ECC(UnkStruct_ov5_021E8F60 *param0, const int param1, const int param2, const int param3, const int param4, const int param5);
-static void ov5_021E79A8(UnkStruct_ov5_021E8F60 *param0);
+static void UnkStruct_ov5_021E8F60_Init(UnkStruct_ov5_021E8F60 *param0);
 static void ov5_021E7AC4(UnkStruct_ov5_021E8F60 *param0);
 static void ov5_021E77E4(UnkStruct_ov5_021E8F60 *param0, const u8 param1);
 static BOOL ov5_021E80D0(UnkStruct_ov5_021E8F60 *param0, const int param1, const int param2, const u8 param3, const u8 param4, const u8 param5, const u8 param6);
-static void ov5_021E7BAC(NARC *param0, const int param1, UnkStruct_ov5_021E7BAC *param2);
+static void LandDataHeader_Load(NARC *param0, const int param1, LandDataHeader *param2);
 static void ov5_021E7C00(const u8 param0, UnkStruct_ov5_021EF76C *const param1, const MapMatrix *param2, const int param3, const int param4, UnkStruct_ov5_021E8F60 *param5, UnkStruct_ov5_021E7814 *param6);
 static void ov5_021E7CD4(const u8 param0, UnkStruct_ov5_021EF76C *const param1, const MapMatrix *param2, const int param3, const int param4, UnkStruct_ov5_021E8F60 *param5, UnkStruct_ov5_021E7814 *param6);
-static void ov5_021E7E28(const int param0, const u8 param1, UnkStruct_ov5_021EF76C *const param2, const MapMatrix *param3, const int param4, const int param5, const BOOL param6, const UnkStruct_ov5_021E8F60 *param7);
+static void ov5_021E7E28_LoadLandData(const int param0, const u8 param1, UnkStruct_ov5_021EF76C *const param2, const MapMatrix *param3, const int param4, const int param5, const BOOL param6, const UnkStruct_ov5_021E8F60 *param7);
 static void ov5_021E7F1C(const int param0, const u8 param1, UnkStruct_ov5_021EF76C *const param2, const MapMatrix *param3, const int param4, const int param5, const BOOL param6, UnkStruct_ov5_021E8F60 *param7);
 static void ov5_021E7FF0(const int param0, const u8 param1, UnkStruct_ov5_021EF76C *const param2, const MapMatrix *param3, const int param4, const int param5, const BOOL param6, UnkStruct_ov5_021E8F60 *param7);
 static void ov5_021E86A0(const int param0, const u8 param1, UnkStruct_ov5_021E8F60 *param2);
@@ -169,7 +169,7 @@ static u32 ov5_021E8B1C(const u8 param0, const int param1, const int param2, con
 static u8 ov5_021E8B84(const u8 param0, const int param1);
 static void ov5_021E8BC0(const u8 param0, const int param1, u8 *param2);
 static void ov5_021E8558(const int param0, const int param1, const u8 param2, const u8 param3, const u8 param4, UnkStruct_ov5_021E8F60 *param5);
-static int ov5_021E8ABC(const int param0, const int param1, const int param2, const int param3, const int param4);
+static int ov5_021E8ABC_CalculatePlayerTile(const int param0, const int param1, const int param2, const int param3, const int param4);
 static void ov5_021E8D50(UnkStruct_ov5_021E8F60 *param0);
 static void ov5_021E8F90(const int param0, const int param1, const int param2, const int param3, UnkStruct_ov5_021E8F60 *param4);
 static void ov5_021E901C(const int param0, const int param1, const MapMatrix *param2, VecFx32 *param3);
@@ -235,108 +235,122 @@ static void ov5_021E7814(UnkStruct_ov5_021E7814 *param0)
     param0->unk_10.unk_04 = 0;
 }
 
-static void ov5_021E7838(const int param0, const int param1, const int param2, const int param3, const int param4, const int param5, const int param6, const int param7, int *param8)
+static void ov5_021E7838_CalculateLoadedMapMatrixIndexes(const int param0, const int playerTileX, const int playerTileY, const int offsetTileX, const int offsetTileY, const int mapMatrixWidth, const int mapMatrixHeight, const int mapTilesWidth, int *loadedMapMatrixIndexes)
 {
-    int v0;
-    u8 v1;
-    int v2;
-    int v3, v4;
+    int playerTile;
+    u8 playerLoadedMapIndex;
+    int mapMatrixIndex;
+    int mapMatrixX, mapMatrixY;
 
     if (param0 == 1) {
-        int v5;
+        int i;
 
-        for (v5 = 0; v5 < 4; param8[v5] = -1, v5++) {
-            (void)0;
+        for (i = 0; i < 4; i++) {
+            loadedMapMatrixIndexes[i] = -1;
         }
 
-        if (param5 == 1) {
-            if (param6 == 1) {
-                param8[0] = 0;
+        if (mapMatrixWidth == 1) {
+            if (mapMatrixHeight == 1) {
+                // 1x1 map
+                // loadedMapMatrixIndexes = [ 0 -1]
+                //                          [-1 -1]
+                loadedMapMatrixIndexes[0] = 0;
             } else {
-                param8[0] = 0;
-                param8[2] = 1;
+                // 1xH map
+                // loadedMapMatrixIndexes = [ 0 -1]
+                //                          [ 1 -1]
+                loadedMapMatrixIndexes[0] = 0;
+                loadedMapMatrixIndexes[2] = 1;
             }
         } else {
-            param8[0] = 0;
-            param8[1] = 1;
+            // loadedMapMatrixIndexes = [ 0  1]
+            //                          [-1 -1]
+            loadedMapMatrixIndexes[0] = 0;
+            loadedMapMatrixIndexes[1] = 1;
 
-            if (param5 >= 2) {
-                param8[2] = 2;
-                param8[3] = 3;
+            if (mapMatrixWidth >= 2) {
+                // loadedMapMatrixIndexes = [ 0  1]
+                //                          [ 2  3]
+                loadedMapMatrixIndexes[2] = 2;
+                loadedMapMatrixIndexes[3] = 3;
             }
         }
 
         return;
     }
 
-    GF_ASSERT(param1 >= param3);
-    GF_ASSERT(param2 >= param4);
+    GF_ASSERT(playerTileX >= offsetTileX);
+    GF_ASSERT(playerTileY >= offsetTileY);
 
-    v3 = (param1 - param3) / 32;
-    v4 = (param2 - param4) / 32;
-    v0 = ov5_021E8ABC(param1, param2, param3, param4, param7);
-    v1 = ov5_021E935C(v0, param7);
-    v2 = (v4 * param5) + v3;
+    mapMatrixX = (playerTileX - offsetTileX) / 32;
+    mapMatrixY = (playerTileY - offsetTileY) / 32;
+    playerTile = ov5_021E8ABC_CalculatePlayerTile(playerTileX, playerTileY, offsetTileX, offsetTileY, mapTilesWidth);
+    playerLoadedMapIndex = ov5_021E935C_CalculateLoadedMapIndexForPlayer(playerTile, mapTilesWidth);
+    mapMatrixIndex = (mapMatrixY * mapMatrixWidth) + mapMatrixX;
 
-    switch (v1) {
+    switch (playerLoadedMapIndex) {
     case 0:
-        param8[3] = v2;
-        param8[0] = v2 - param5 - 1;
-        param8[1] = v2 - param5;
-        param8[2] = v2 - 1;
+        // Player is on the bottom-right map of the loaded maps
+        loadedMapMatrixIndexes[3] = mapMatrixIndex;
+        loadedMapMatrixIndexes[0] = mapMatrixIndex - mapMatrixWidth - 1;
+        loadedMapMatrixIndexes[1] = mapMatrixIndex - mapMatrixWidth;
+        loadedMapMatrixIndexes[2] = mapMatrixIndex - 1;
 
-        if (v3 - 1 < 0) {
-            param8[0] = -1;
-            param8[2] = -1;
+        if (mapMatrixX - 1 < 0) {
+            loadedMapMatrixIndexes[0] = -1;
+            loadedMapMatrixIndexes[2] = -1;
         }
 
-        if (v4 - 1 < 0) {
-            param8[1] = -1;
+        if (mapMatrixY - 1 < 0) {
+            loadedMapMatrixIndexes[1] = -1;
         }
         break;
     case 1:
-        param8[2] = v2;
-        param8[0] = v2 - param5;
-        param8[1] = v2 - param5 + 1;
-        param8[3] = v2 + 1;
+        // Player is on the bottom-left map of the loaded maps
+        loadedMapMatrixIndexes[2] = mapMatrixIndex;
+        loadedMapMatrixIndexes[0] = mapMatrixIndex - mapMatrixWidth;
+        loadedMapMatrixIndexes[1] = mapMatrixIndex - mapMatrixWidth + 1;
+        loadedMapMatrixIndexes[3] = mapMatrixIndex + 1;
 
-        if (v3 + 1 >= param5) {
-            param8[1] = -1;
-            param8[3] = -1;
+        if (mapMatrixX + 1 >= mapMatrixWidth) {
+            loadedMapMatrixIndexes[1] = -1;
+            loadedMapMatrixIndexes[3] = -1;
         }
 
-        if (v4 - 1 < 0) {
-            param8[0] = -1;
+        if (mapMatrixY - 1 < 0) {
+            loadedMapMatrixIndexes[0] = -1;
         }
         break;
     case 2:
-        param8[1] = v2;
-        param8[0] = v2 - 1;
-        param8[2] = v2 + param5 - 1;
-        param8[3] = v2 + param5;
+        // Player is on the top-right map of the loaded maps
+        loadedMapMatrixIndexes[1] = mapMatrixIndex;
+        loadedMapMatrixIndexes[0] = mapMatrixIndex - 1;
+        loadedMapMatrixIndexes[2] = mapMatrixIndex + mapMatrixWidth - 1;
+        loadedMapMatrixIndexes[3] = mapMatrixIndex + mapMatrixWidth;
 
-        if (v3 - 1 < 0) {
-            param8[0] = -1;
-            param8[2] = -1;
+        if (mapMatrixX - 1 < 0) {
+            loadedMapMatrixIndexes[0] = -1;
+            loadedMapMatrixIndexes[2] = -1;
         }
 
-        if (v4 + 1 > param6) {
-            param8[3] = -1;
+        if (mapMatrixY + 1 > mapMatrixHeight) {
+            loadedMapMatrixIndexes[3] = -1;
         }
         break;
     case 3:
-        param8[0] = v2;
-        param8[1] = v2 + 1;
-        param8[2] = v2 + param5;
-        param8[3] = v2 + param5 + 1;
+        // Player is on the top-left map of the loaded maps
+        loadedMapMatrixIndexes[0] = mapMatrixIndex;
+        loadedMapMatrixIndexes[1] = mapMatrixIndex + 1;
+        loadedMapMatrixIndexes[2] = mapMatrixIndex + mapMatrixWidth;
+        loadedMapMatrixIndexes[3] = mapMatrixIndex + mapMatrixWidth + 1;
 
-        if (v3 + 1 >= param5) {
-            param8[1] = -1;
-            param8[3] = -1;
+        if (mapMatrixX + 1 >= mapMatrixWidth) {
+            loadedMapMatrixIndexes[1] = -1;
+            loadedMapMatrixIndexes[3] = -1;
         }
 
-        if (v4 + 1 > param6) {
-            param8[0] = -1;
+        if (mapMatrixY + 1 > mapMatrixHeight) {
+            loadedMapMatrixIndexes[0] = -1;
         }
         break;
     default:
@@ -344,28 +358,26 @@ static void ov5_021E7838(const int param0, const int param1, const int param2, c
     }
 }
 
-static void ov5_021E79A8(UnkStruct_ov5_021E8F60 *param0)
+static void UnkStruct_ov5_021E8F60_Init(UnkStruct_ov5_021E8F60 *param0)
 {
-    u8 v0;
+    u8 i;
 
-    for (v0 = 0; v0 < 4; v0++) {
-        UnkStruct_ov5_021E79A8 *v1 = NULL;
+    for (i = 0; i < 4; i++) {
+        LoadedMap *v1 = Heap_AllocFromHeap(4, sizeof(LoadedMap));
+        param0->loadedMaps[i] = v1;
+        param0->loadedMaps[i]->present = 0;
 
-        v1 = Heap_AllocFromHeap(4, sizeof(UnkStruct_ov5_021E79A8));
-        param0->unk_84[v0] = v1;
-        param0->unk_84[v0]->unk_864 = 0;
-
-        ov5_021EEB84(v0, param0->unk_00, (void **)&(param0->unk_84[v0]->unk_854));
-        ov5_021EEB90(v0, param0->unk_00, (void **)&(param0->unk_84[v0]->bdhcBuffer));
+        ov5_021EEB84(i, param0->unk_00, (void **)&(param0->loadedMaps[i]->nsbmdFile));
+        ov5_021EEB90(i, param0->unk_00, (void **)&(param0->loadedMaps[i]->bdhcBuffer));
 
         if (param0->unk_FC == 0) {
-            param0->unk_84[v0]->unk_868 = MapPropManager_New(HEAP_ID_FIELD);
+            param0->loadedMaps[i]->mapPropManager = MapPropManager_New(HEAP_ID_FIELD);
         } else {
-            param0->unk_84[v0]->unk_868 = NULL;
+            param0->loadedMaps[i]->mapPropManager = NULL;
         }
 
-        param0->unk_84[v0]->unk_860 = -1;
-        MI_CpuFillFast(param0->unk_84[v0]->unk_00, 0xffffffff, 2 * 32 * 32);
+        param0->loadedMaps[i]->mapMatrixIndex = -1;
+        MI_CpuFillFast(param0->loadedMaps[i]->movementPermissions, 0xffffffff, 2 * 32 * 32);
     }
 }
 
@@ -374,20 +386,20 @@ void ov5_021E7A54(UnkStruct_ov5_021E8F60 *param0)
     u8 v0;
 
     for (v0 = 0; v0 < 4; v0++) {
-        UnkStruct_ov5_021E79A8 *v1 = NULL;
+        LoadedMap *v1 = NULL;
 
-        v1 = Heap_AllocFromHeap(4, sizeof(UnkStruct_ov5_021E79A8));
+        v1 = Heap_AllocFromHeap(4, sizeof(LoadedMap));
 
-        param0->unk_84[v0] = v1;
-        param0->unk_84[v0]->unk_864 = 0;
+        param0->loadedMaps[v0] = v1;
+        param0->loadedMaps[v0]->present = 0;
 
         if (param0->unk_FC == 0) {
-            param0->unk_84[v0]->unk_868 = MapPropManager_New(HEAP_ID_FIELD);
+            param0->loadedMaps[v0]->mapPropManager = MapPropManager_New(HEAP_ID_FIELD);
         } else {
-            param0->unk_84[v0]->unk_868 = NULL;
+            param0->loadedMaps[v0]->mapPropManager = NULL;
         }
 
-        param0->unk_84[v0]->unk_860 = -1;
+        param0->loadedMaps[v0]->mapMatrixIndex = -1;
     }
 }
 
@@ -396,22 +408,22 @@ static void ov5_021E7AC4(UnkStruct_ov5_021E8F60 *param0)
     u8 v0;
 
     for (v0 = 0; v0 < 4; v0++) {
-        UnkStruct_ov5_021E79A8 *v1 = NULL;
+        LoadedMap *v1 = NULL;
 
-        v1 = Heap_AllocFromHeap(4, sizeof(UnkStruct_ov5_021E79A8));
+        v1 = Heap_AllocFromHeap(4, sizeof(LoadedMap));
 
-        param0->unk_84[v0] = v1;
-        param0->unk_84[v0]->unk_864 = 0;
+        param0->loadedMaps[v0] = v1;
+        param0->loadedMaps[v0]->present = 0;
 
-        ov5_021EEB84(v0, param0->unk_00, (void **)&(param0->unk_84[v0]->unk_854));
+        ov5_021EEB84(v0, param0->unk_00, (void **)&(param0->loadedMaps[v0]->nsbmdFile));
 
         if (param0->unk_FC == 0) {
-            param0->unk_84[v0]->unk_868 = MapPropManager_New(HEAP_ID_FIELD);
+            param0->loadedMaps[v0]->mapPropManager = MapPropManager_New(HEAP_ID_FIELD);
         } else {
-            param0->unk_84[v0]->unk_868 = NULL;
+            param0->loadedMaps[v0]->mapPropManager = NULL;
         }
 
-        param0->unk_84[v0]->unk_860 = -1;
+        param0->loadedMaps[v0]->mapMatrixIndex = -1;
     }
 }
 
@@ -420,53 +432,47 @@ static void ov5_021E7B4C(UnkStruct_ov5_021E8F60 *param0)
     u8 v0;
 
     for (v0 = 0; v0 < 4; v0++) {
-        param0->unk_84[v0]->unk_864 = 0;
-        ov5_021EEB84(v0, param0->unk_00, (void **)&(param0->unk_84[v0]->unk_854));
+        param0->loadedMaps[v0]->present = 0;
+        ov5_021EEB84(v0, param0->unk_00, (void **)&(param0->loadedMaps[v0]->nsbmdFile));
 
-        if (param0->unk_84[v0]->unk_868 != NULL) {
-            MapPropManager_Init(param0->unk_84[v0]->unk_868);
+        if (param0->loadedMaps[v0]->mapPropManager != NULL) {
+            MapPropManager_Init(param0->loadedMaps[v0]->mapPropManager);
         }
 
-        param0->unk_84[v0]->unk_860 = -1;
+        param0->loadedMaps[v0]->mapMatrixIndex = -1;
     }
 }
 
-static void ov5_021E7BAC(NARC *param0, const int param1, UnkStruct_ov5_021E7BAC *param2)
+static void LandDataHeader_Load(NARC *landDataNARC, const int landDataID, LandDataHeader *landDataHeader)
 {
-    void *v0;
-    int *v1;
-    int v2 = sizeof(int) * 4;
+    void *buffer;
+    int *iter;
+    int bufferSize = sizeof(int) * 4;
 
-    if (param0 != NULL) {
-        v0 = Heap_AllocFromHeapAtEnd(4, v2);
-        NARC_ReadFromMember(param0, param1, 0, v2, v0);
+    if (landDataNARC != NULL) {
+        buffer = Heap_AllocFromHeapAtEnd(4, bufferSize);
+        NARC_ReadFromMember(landDataNARC, landDataID, 0, bufferSize, buffer);
     } else {
         GF_ASSERT(FALSE);
-        v0 = NARC_AllocAtEndAndReadFromMemberByIndexPair(NARC_INDEX_FIELDDATA__LAND_DATA__LAND_DATA, param1, 4, 0, v2);
+        buffer = NARC_AllocAtEndAndReadFromMemberByIndexPair(NARC_INDEX_FIELDDATA__LAND_DATA__LAND_DATA, landDataID, 4, 0, bufferSize);
     }
 
-    v1 = &((int *)(v0))[0];
+    iter = (int *)buffer;
 
-    param2->unk_00 = *v1;
-    v1++;
+    landDataHeader->sectionSizeMovementPermission = *(iter++);
+    landDataHeader->sectionSize3DObject = *(iter++);
+    landDataHeader->sectionSizeNSBMD = *(iter++);
+    landDataHeader->sectionSizeBDHC = *iter;
 
-    param2->unk_0C = *v1;
-    v1++;
-
-    param2->unk_04 = *v1;
-    v1++;
-
-    param2->unk_08 = *v1;
-
-    Heap_FreeToHeap(v0);
+    Heap_FreeToHeap(buffer);
 }
 
 static void ov5_021E7C00(const u8 param0, UnkStruct_ov5_021EF76C *const param1, const MapMatrix *param2, const int param3, const int param4, UnkStruct_ov5_021E8F60 *param5, UnkStruct_ov5_021E7814 *param6)
 {
     int v0;
     u8 v1;
-    int v2;
-    UnkStruct_ov5_021E7BAC v3;
+    int landDataId;
+    LandDataHeader landDataHeader;
 
     v0 = param6->unk_18[param0];
 
@@ -474,33 +480,33 @@ static void ov5_021E7C00(const u8 param0, UnkStruct_ov5_021EF76C *const param1, 
         return;
     }
 
-    v2 = MapMatrix_GetLandDataIdByIndex(v0, param2);
+    landDataId = MapMatrix_GetLandDataIdByIndex(v0, param2);
 
-    if (v2 == 0xffff) {
+    if (landDataId == 0xffff) {
         return;
     }
 
-    ov5_021E7BAC(param5->unk_EC, v2, &v3);
+    LandDataHeader_Load(param5->landDataNARC, landDataId, &landDataHeader);
 
     {
         void *v4;
 
-        v4 = &(param6->unk_00[param0]->unk_00[0]);
-        NARC_ReadFile(param5->unk_EC, v3.unk_00, v4);
+        v4 = &(param6->unk_00[param0]->movementPermissions[0]);
+        NARC_ReadFile(param5->landDataNARC, landDataHeader.sectionSizeMovementPermission, v4);
     }
 
-    if (param6->unk_00[param0]->unk_868 != NULL) {
-        MapPropManager_Load(param5->unk_EC, v3.unk_0C, param1, param6->unk_00[param0]->unk_868, param5->unk_E4);
+    if (param6->unk_00[param0]->mapPropManager != NULL) {
+        MapPropManager_Load(param5->landDataNARC, landDataHeader.sectionSize3DObject, param1, param6->unk_00[param0]->mapPropManager, param5->unk_E4);
     }
 
     {
         param6->unk_10.unk_00++;
-        param6->unk_08 = ov5_021E976C(param5->unk_EC, v3.unk_04, &param6->unk_00[param0]->unk_800, &(param6->unk_00[param0]->unk_854), ov5_021EFA8C(param1), &(param6->unk_00[param0]->unk_864), &param6->unk_10.unk_00);
+        param6->unk_08 = ov5_021E976C(param5->landDataNARC, landDataHeader.sectionSizeNSBMD, &param6->unk_00[param0]->mapRenderObj, &(param6->unk_00[param0]->nsbmdFile), ov5_021EFA8C_GetMapTexture(param1), &(param6->unk_00[param0]->present), &param6->unk_10.unk_00);
     }
 
     {
         param6->unk_10.unk_04++;
-        param6->unk_0C = BDHC_LazyLoad(param5->unk_EC, v3.unk_08, param6->unk_00[param0]->bdhc, &param6->unk_10.unk_04, &param6->unk_00[param0]->bdhcBuffer, &param6->unk_10.unk_00);
+        param6->unk_0C = BDHC_LazyLoad(param5->landDataNARC, landDataHeader.sectionSizeBDHC, param6->unk_00[param0]->bdhc, &param6->unk_10.unk_04, &param6->unk_00[param0]->bdhcBuffer, &param6->unk_10.unk_00);
     }
 }
 
@@ -508,8 +514,8 @@ static void ov5_021E7CD4(const u8 param0, UnkStruct_ov5_021EF76C *const param1, 
 {
     int v0;
     u8 v1;
-    int v2;
-    UnkStruct_ov5_021E7BAC v3;
+    int landDataId;
+    LandDataHeader landDataHeader;
 
     v0 = param6->unk_18[param0];
 
@@ -517,26 +523,26 @@ static void ov5_021E7CD4(const u8 param0, UnkStruct_ov5_021EF76C *const param1, 
         return;
     }
 
-    v2 = MapMatrix_GetLandDataIdByIndex(v0, param2);
+    landDataId = MapMatrix_GetLandDataIdByIndex(v0, param2);
 
-    if (v2 == 0xffff) {
+    if (landDataId == 0xffff) {
         return;
     }
 
-    ov5_021E7BAC(param5->unk_EC, v2, &v3);
+    LandDataHeader_Load(param5->landDataNARC, landDataId, &landDataHeader);
 
     {
         u8 v4[0x800];
-        NARC_ReadFile(param5->unk_EC, 0x800, v4);
+        NARC_ReadFile(param5->landDataNARC, 0x800, v4);
     }
 
-    if (param6->unk_00[param0]->unk_868 != NULL) {
-        MapPropManager_Load(param5->unk_EC, v3.unk_0C, param1, param6->unk_00[param0]->unk_868, param5->unk_E4);
+    if (param6->unk_00[param0]->mapPropManager != NULL) {
+        MapPropManager_Load(param5->landDataNARC, landDataHeader.sectionSize3DObject, param1, param6->unk_00[param0]->mapPropManager, param5->unk_E4);
     }
 
     {
         param6->unk_10.unk_00++;
-        param6->unk_08 = ov5_021E976C(param5->unk_EC, v3.unk_04, &param6->unk_00[param0]->unk_800, &(param6->unk_00[param0]->unk_854), ov5_021EFA8C(param1), &(param6->unk_00[param0]->unk_864), &param6->unk_10.unk_00);
+        param6->unk_08 = ov5_021E976C(param5->landDataNARC, landDataHeader.sectionSizeNSBMD, &param6->unk_00[param0]->mapRenderObj, &(param6->unk_00[param0]->nsbmdFile), ov5_021EFA8C_GetMapTexture(param1), &(param6->unk_00[param0]->present), &param6->unk_10.unk_00);
     }
 }
 
@@ -544,8 +550,8 @@ static void ov5_021E7D98(const u8 param0, const UnkStruct_ov5_021EF76C *param1, 
 {
     int v0;
     u8 v1;
-    int v2;
-    UnkStruct_ov5_021E7BAC v3;
+    int landDataId;
+    LandDataHeader landDataHeader;
 
     v0 = param6->unk_18[param0];
 
@@ -553,151 +559,143 @@ static void ov5_021E7D98(const u8 param0, const UnkStruct_ov5_021EF76C *param1, 
         return;
     }
 
-    v2 = MapMatrix_GetLandDataIdByIndex(v0, param2);
+    landDataId = MapMatrix_GetLandDataIdByIndex(v0, param2);
 
-    if (v2 == 0xffff) {
+    if (landDataId == 0xffff) {
         return;
     }
 
-    ov5_021E7BAC(param5->unk_EC, v2, &v3);
+    LandDataHeader_Load(param5->landDataNARC, landDataId, &landDataHeader);
 
-    NARC_Seek(param5->unk_EC, 0x800);
-    NARC_Seek(param5->unk_EC, v3.unk_0C);
+    NARC_Seek(param5->landDataNARC, 0x800);
+    NARC_Seek(param5->landDataNARC, landDataHeader.sectionSize3DObject);
 
     {
         param6->unk_10.unk_00++;
-        param6->unk_08 = ov5_021E976C(param5->unk_EC, v3.unk_04, &param6->unk_00[param0]->unk_800, &(param6->unk_00[param0]->unk_854), ov5_021EFA8C(param1), &(param6->unk_00[param0]->unk_864), &param6->unk_10.unk_00);
+        param6->unk_08 = ov5_021E976C(param5->landDataNARC, landDataHeader.sectionSizeNSBMD, &param6->unk_00[param0]->mapRenderObj, &(param6->unk_00[param0]->nsbmdFile), ov5_021EFA8C_GetMapTexture(param1), &(param6->unk_00[param0]->present), &param6->unk_10.unk_00);
     }
 }
 
-static void ov5_021E7E28(const int param0, const u8 param1, UnkStruct_ov5_021EF76C *const param2, const MapMatrix *param3, const int param4, const int param5, const BOOL param6, const UnkStruct_ov5_021E8F60 *param7)
+static void ov5_021E7E28_LoadLandData(const int mapMatrixIndex, const u8 loadedMapIndex, UnkStruct_ov5_021EF76C *const param2, const MapMatrix *mapMatrix, const int mapMatrixWidth, const int mapMatrixHeight, const BOOL param6, const UnkStruct_ov5_021E8F60 *param7)
 {
-    int v0;
-    NNSG3dResMdl *v1;
-    UnkStruct_ov5_021E7BAC v2;
+    int landDataId;
+    NNSG3dResMdl *mapResMdl;
+    LandDataHeader landDataHeader;
 
-    if ((param0 < 0) || (param0 >= param4 * param5)) {
+    if ((mapMatrixIndex < 0) || (mapMatrixIndex >= mapMatrixWidth * mapMatrixHeight)) {
         return;
     }
 
-    v0 = MapMatrix_GetLandDataIdByIndex(param0, param3);
+    landDataId = MapMatrix_GetLandDataIdByIndex(mapMatrixIndex, mapMatrix);
 
-    if (v0 == 0xffff) {
+    if (landDataId == 0xFFFF) {
         return;
     }
 
-    ov5_021E7BAC(param7->unk_EC, v0, &v2);
+    LandDataHeader_Load(param7->landDataNARC, landDataId, &landDataHeader);
 
-    {
-        void *v3;
+    void *movementPermissions = param7->loadedMaps[loadedMapIndex]->movementPermissions;
+    NARC_ReadFile(param7->landDataNARC, landDataHeader.sectionSizeMovementPermission, movementPermissions);
 
-        v3 = &(param7->unk_84[param1]->unk_00[0]);
-        NARC_ReadFile(param7->unk_EC, v2.unk_00, v3);
+    if (param7->loadedMaps[loadedMapIndex]->mapPropManager != NULL) {
+        MapPropManager_Load(param7->landDataNARC, landDataHeader.sectionSize3DObject, param2, param7->loadedMaps[loadedMapIndex]->mapPropManager, param7->unk_E4);
     }
 
-    if (param7->unk_84[param1]->unk_868 != NULL) {
-        MapPropManager_Load(param7->unk_EC, v2.unk_0C, param2, param7->unk_84[param1]->unk_868, param7->unk_E4);
+    mapResMdl = ov5_021E97AC_LoadNSBMD(param7->landDataNARC, landDataHeader.sectionSizeNSBMD, &param7->loadedMaps[loadedMapIndex]->mapRenderObj, &(param7->loadedMaps[loadedMapIndex]->nsbmdFile), ov5_021EFA8C_GetMapTexture(param2));
+
+    if (param6 == TRUE) {
+        ov5_021D53A4(mapResMdl);
     }
 
-    {
-        v1 = ov5_021E97AC(param7->unk_EC, v2.unk_04, &param7->unk_84[param1]->unk_800, &(param7->unk_84[param1]->unk_854), ov5_021EFA8C(param2));
+    param7->loadedMaps[loadedMapIndex]->present = 1;
 
-        if (param6 == 1) {
-            ov5_021D53A4(v1);
-        }
+    BDHC_Load(param7->landDataNARC, landDataHeader.sectionSizeBDHC, param7->loadedMaps[loadedMapIndex]->bdhc, param7->loadedMaps[loadedMapIndex]->bdhcBuffer);
 
-        param7->unk_84[param1]->unk_864 = 1;
-    }
-
-    {
-        BDHC_Load(param7->unk_EC, v2.unk_08, param7->unk_84[param1]->bdhc, param7->unk_84[param1]->bdhcBuffer);
-    }
-
-    param7->unk_84[param1]->unk_860 = param0;
+    param7->loadedMaps[loadedMapIndex]->mapMatrixIndex = mapMatrixIndex;
 
     if (param7->unk_F0 != NULL) {
-        param7->unk_F0(param7->unk_F4, param0, param7->unk_84[param1]->unk_868);
+        param7->unk_F0(param7->unk_F4, mapMatrixIndex, param7->loadedMaps[loadedMapIndex]->mapPropManager);
     }
 }
 
 static void ov5_021E7F1C(const int param0, const u8 param1, UnkStruct_ov5_021EF76C *const param2, const MapMatrix *param3, const int param4, const int param5, const BOOL param6, UnkStruct_ov5_021E8F60 *param7)
 {
-    int v0;
-    UnkStruct_ov5_021E7BAC v1;
+    int landDataId;
+    LandDataHeader landDataHeader;
     NNSG3dResMdl *v2;
 
     if ((param0 < 0) || (param0 >= param4 * param5)) {
         return;
     }
 
-    v0 = MapMatrix_GetLandDataIdByIndex(param0, param3);
+    landDataId = MapMatrix_GetLandDataIdByIndex(param0, param3);
 
-    if (v0 == 0xffff) {
+    if (landDataId == 0xffff) {
         return;
     }
 
-    ov5_021E7BAC(param7->unk_EC, v0, &v1);
+    LandDataHeader_Load(param7->landDataNARC, landDataId, &landDataHeader);
 
     {
         u8 v3[0x800];
-        NARC_ReadFile(param7->unk_EC, 0x800, v3);
+        NARC_ReadFile(param7->landDataNARC, 0x800, v3);
     }
 
-    if (param7->unk_84[param1]->unk_868 != NULL) {
-        MapPropManager_Load(param7->unk_EC, v1.unk_0C, param2, param7->unk_84[param1]->unk_868, param7->unk_E4);
+    if (param7->loadedMaps[param1]->mapPropManager != NULL) {
+        MapPropManager_Load(param7->landDataNARC, landDataHeader.sectionSize3DObject, param2, param7->loadedMaps[param1]->mapPropManager, param7->unk_E4);
     }
 
     {
-        v2 = ov5_021E97AC(param7->unk_EC, v1.unk_04, &param7->unk_84[param1]->unk_800, &(param7->unk_84[param1]->unk_854), ov5_021EFA8C(param2));
+        v2 = ov5_021E97AC_LoadNSBMD(param7->landDataNARC, landDataHeader.sectionSizeNSBMD, &param7->loadedMaps[param1]->mapRenderObj, &(param7->loadedMaps[param1]->nsbmdFile), ov5_021EFA8C_GetMapTexture(param2));
 
         if (param6 == 1) {
             ov5_021D53A4(v2);
         }
 
-        param7->unk_84[param1]->unk_864 = 1;
+        param7->loadedMaps[param1]->present = 1;
     }
 
-    param7->unk_84[param1]->unk_860 = param0;
+    param7->loadedMaps[param1]->mapMatrixIndex = param0;
 }
 
 static void ov5_021E7FF0(const int param0, const u8 param1, UnkStruct_ov5_021EF76C *const param2, const MapMatrix *param3, const int param4, const int param5, const BOOL param6, UnkStruct_ov5_021E8F60 *param7)
 {
-    int v0;
-    UnkStruct_ov5_021E7BAC v1;
+    int landDataId;
+    LandDataHeader landDataHeader;
 
     if ((param0 < 0) || (param0 >= param4 * param5)) {
         return;
     }
 
-    v0 = MapMatrix_GetLandDataIdByIndex(param0, param3);
+    landDataId = MapMatrix_GetLandDataIdByIndex(param0, param3);
 
-    if (v0 == 0xffff) {
+    if (landDataId == 0xffff) {
         return;
     }
 
-    ov5_021E7BAC(param7->unk_EC, v0, &v1);
+    LandDataHeader_Load(param7->landDataNARC, landDataId, &landDataHeader);
 
     {
         void *v2;
 
-        v2 = &(param7->unk_84[param1]->unk_00[0]);
-        NARC_ReadFile(param7->unk_EC, v1.unk_00, v2);
+        v2 = &(param7->loadedMaps[param1]->movementPermissions[0]);
+        NARC_ReadFile(param7->landDataNARC, landDataHeader.sectionSizeMovementPermission, v2);
     }
 
-    if (param7->unk_84[param1]->unk_868 != NULL) {
-        MapPropManager_Load(param7->unk_EC, v1.unk_0C, param2, param7->unk_84[param1]->unk_868, param7->unk_E4);
+    if (param7->loadedMaps[param1]->mapPropManager != NULL) {
+        MapPropManager_Load(param7->landDataNARC, landDataHeader.sectionSize3DObject, param2, param7->loadedMaps[param1]->mapPropManager, param7->unk_E4);
     }
 
-    NARC_Seek(param7->unk_EC, v1.unk_04);
+    NARC_Seek(param7->landDataNARC, landDataHeader.sectionSizeNSBMD);
 
     {
-        BDHC_Load(param7->unk_EC, v1.unk_08, param7->unk_84[param1]->bdhc, param7->unk_84[param1]->bdhcBuffer);
+        BDHC_Load(param7->landDataNARC, landDataHeader.sectionSizeBDHC, param7->loadedMaps[param1]->bdhc, param7->loadedMaps[param1]->bdhcBuffer);
     }
 
-    param7->unk_84[param1]->unk_860 = param0;
+    param7->loadedMaps[param1]->mapMatrixIndex = param0;
 
     if (param7->unk_F0 != NULL) {
-        param7->unk_F0(param7->unk_F4, param0, param7->unk_84[param1]->unk_868);
+        param7->unk_F0(param7->unk_F4, param0, param7->loadedMaps[param1]->mapPropManager);
     }
 }
 
@@ -720,8 +718,8 @@ static BOOL ov5_021E80D0(UnkStruct_ov5_021E8F60 *param0, const int param1, const
     param0->unk_04[param5].unk_00.unk_18[1] = param2;
     param0->unk_04[param5].unk_00.unk_20[0] = param3;
     param0->unk_04[param5].unk_00.unk_20[1] = param4;
-    param0->unk_04[param5].unk_00.unk_00[0] = param0->unk_84[param3];
-    param0->unk_04[param5].unk_00.unk_00[1] = param0->unk_84[param4];
+    param0->unk_04[param5].unk_00.unk_00[0] = param0->loadedMaps[param3];
+    param0->unk_04[param5].unk_00.unk_00[1] = param0->loadedMaps[param4];
     param0->unk_04[param5].unk_00.unk_22 = 0;
     param0->unk_04[param5].unk_00.unk_24 = 0;
 
@@ -729,8 +727,8 @@ static BOOL ov5_021E80D0(UnkStruct_ov5_021E8F60 *param0, const int param1, const
         param0->unk_A8 = 0;
     }
 
-    param0->unk_84[param3]->unk_860 = param1;
-    param0->unk_84[param4]->unk_860 = param2;
+    param0->loadedMaps[param3]->mapMatrixIndex = param1;
+    param0->loadedMaps[param4]->mapMatrixIndex = param2;
     param0->unk_94++;
     param0->unk_95 = (param0->unk_95 + 1) % 2;
 
@@ -826,7 +824,7 @@ void ov5_021E8188(FieldSystem *fieldSystem, UnkStruct_ov5_021E8F60 *param1)
         if (param1->unk_74[v1->unk_20[v1->unk_22]] == 1) {
             (void)0;
         } else {
-            param1->unk_E8->unk_04(v1->unk_22, param1->unk_AC, param1->unk_B0, param1->unk_B4, param1->unk_B8, param1, v1);
+            param1->unk_E8->unk_04(v1->unk_22, param1->unk_AC, param1->mapMatrix, param1->mapMatrixWidth, param1->mapMatrixHeight, param1, v1);
         }
 
         v1->unk_22++;
@@ -845,8 +843,8 @@ void ov5_021E8188(FieldSystem *fieldSystem, UnkStruct_ov5_021E8F60 *param1)
                 param1->unk_A8 = 0;
             }
 
-            if (v1->unk_00[v1->unk_22 - 1]->unk_864 == 1) {
-                NNSG3dResMdlSet *v5 = NNS_G3dGetMdlSet(v1->unk_00[v1->unk_22 - 1]->unk_854);
+            if (v1->unk_00[v1->unk_22 - 1]->present == 1) {
+                NNSG3dResMdlSet *v5 = NNS_G3dGetMdlSet(v1->unk_00[v1->unk_22 - 1]->nsbmdFile);
                 NNSG3dResMdl *v6 = NNS_G3dGetMdlByIdx(v5, 0);
 
                 if (ov5_021EFAC0(param1->unk_AC) == 1) {
@@ -854,9 +852,9 @@ void ov5_021E8188(FieldSystem *fieldSystem, UnkStruct_ov5_021E8F60 *param1)
                 }
             }
 
-            if ((0 <= v1->unk_00[v1->unk_22 - 1]->unk_860) && (v1->unk_00[v1->unk_22 - 1]->unk_860 < param1->unk_B4 * param1->unk_B8)) {
+            if ((0 <= v1->unk_00[v1->unk_22 - 1]->mapMatrixIndex) && (v1->unk_00[v1->unk_22 - 1]->mapMatrixIndex < param1->mapMatrixWidth * param1->mapMatrixHeight)) {
                 if (param1->unk_F0 != NULL) {
-                    param1->unk_F0(param1->unk_F4, v1->unk_00[v1->unk_22 - 1]->unk_860, v1->unk_00[v1->unk_22 - 1]->unk_868);
+                    param1->unk_F0(param1->unk_F4, v1->unk_00[v1->unk_22 - 1]->mapMatrixIndex, v1->unk_00[v1->unk_22 - 1]->mapPropManager);
                 }
             }
         }
@@ -921,11 +919,11 @@ static void ov5_021E8558(const int param0, const int param1, const u8 param2, co
             param5->unk_5C.unk_10[1] = param1;
             param5->unk_5C.unk_18[0] = param2;
             param5->unk_5C.unk_18[1] = param3;
-            param5->unk_5C.unk_00[0] = param5->unk_84[param2];
-            param5->unk_5C.unk_00[1] = param5->unk_84[param3];
+            param5->unk_5C.unk_00[0] = param5->loadedMaps[param2];
+            param5->unk_5C.unk_00[1] = param5->loadedMaps[param3];
             param5->unk_5C.unk_0C = param4;
-            param5->unk_84[param2]->unk_860 = param0;
-            param5->unk_84[param3]->unk_860 = param1;
+            param5->loadedMaps[param2]->mapMatrixIndex = param0;
+            param5->loadedMaps[param3]->mapMatrixIndex = param1;
         } else {
             v2 = ov5_021E80D0(param5, param0, param1, param2, param3, param5->unk_95, param4);
 
@@ -942,34 +940,34 @@ static void ov5_021E8558(const int param0, const int param1, const u8 param2, co
 
 static void ov5_021E8614(const u8 param0, UnkStruct_ov5_021E8F60 *param1)
 {
-    param1->unk_84[param0]->unk_864 = 0;
-    BDHC_Reset(param1->unk_84[param0]->bdhc);
+    param1->loadedMaps[param0]->present = 0;
+    BDHC_Reset(param1->loadedMaps[param0]->bdhc);
 
-    if (param1->unk_84[param0]->unk_868 != NULL) {
+    if (param1->loadedMaps[param0]->mapPropManager != NULL) {
         MapPropManager_Init(
-            param1->unk_84[param0]->unk_868);
+            param1->loadedMaps[param0]->mapPropManager);
     }
 
-    param1->unk_84[param0]->unk_860 = -1;
-    MI_CpuFillFast(param1->unk_84[param0]->unk_00, 0xffffffff, 2 * 32 * 32);
+    param1->loadedMaps[param0]->mapMatrixIndex = -1;
+    MI_CpuFillFast(param1->loadedMaps[param0]->movementPermissions, 0xffffffff, 2 * 32 * 32);
     param1->unk_74[param0] = 1;
 }
 
 static void ov5_021E8668(const u8 param0, const u8 param1, const u8 param2, const u8 param3, UnkStruct_ov5_021E8F60 *param4)
 {
-    UnkStruct_ov5_021E79A8 *v0[2];
+    LoadedMap *v0[2];
 
     ov5_021E8614(param0, param4);
     ov5_021E8614(param1, param4);
 
-    v0[0] = param4->unk_84[param0];
-    v0[1] = param4->unk_84[param1];
+    v0[0] = param4->loadedMaps[param0];
+    v0[1] = param4->loadedMaps[param1];
 
-    param4->unk_84[param0] = param4->unk_84[param2];
-    param4->unk_84[param1] = param4->unk_84[param3];
+    param4->loadedMaps[param0] = param4->loadedMaps[param2];
+    param4->loadedMaps[param1] = param4->loadedMaps[param3];
 
-    param4->unk_84[param2] = v0[0];
-    param4->unk_84[param3] = v0[1];
+    param4->loadedMaps[param2] = v0[0];
+    param4->loadedMaps[param3] = v0[1];
 }
 
 static void ov5_021E86A0(const int param0, const u8 param1, UnkStruct_ov5_021E8F60 *param2)
@@ -984,8 +982,8 @@ static void ov5_021E86A0(const int param0, const u8 param1, UnkStruct_ov5_021E8F
         ov5_021E8668(2, 3, 0, 1, param2);
 
         if (param2->unk_A1 == 2) {
-            v2 = param0 - param2->unk_B4;
-            v3 = param0 - param2->unk_B4 - 1;
+            v2 = param0 - param2->mapMatrixWidth;
+            v3 = param0 - param2->mapMatrixWidth - 1;
             v5 = 1;
             v6 = 0;
 
@@ -993,13 +991,13 @@ static void ov5_021E86A0(const int param0, const u8 param1, UnkStruct_ov5_021E8F
                 v2 = -1;
                 v3 = -1;
             } else {
-                if ((v3 < 0) || (!ov5_021E77C0(v2, v3, param2->unk_B4))) {
+                if ((v3 < 0) || (!ov5_021E77C0(v2, v3, param2->mapMatrixWidth))) {
                     v3 = -1;
                 }
             }
         } else if (param2->unk_A1 == 3) {
-            v2 = param0 - param2->unk_B4;
-            v3 = param0 - param2->unk_B4 + 1;
+            v2 = param0 - param2->mapMatrixWidth;
+            v3 = param0 - param2->mapMatrixWidth + 1;
             v5 = 0;
             v6 = 1;
 
@@ -1007,7 +1005,7 @@ static void ov5_021E86A0(const int param0, const u8 param1, UnkStruct_ov5_021E8F
                 v2 = -1;
                 v3 = -1;
             } else {
-                if (!ov5_021E77C0(v2, v3, param2->unk_B4)) {
+                if (!ov5_021E77C0(v2, v3, param2->mapMatrixWidth)) {
                     v3 = -1;
                 }
             }
@@ -1022,30 +1020,30 @@ static void ov5_021E86A0(const int param0, const u8 param1, UnkStruct_ov5_021E8F
 
         if (param2->unk_A1 == 1) {
             v2 = param0 - 1;
-            v3 = param0 - param2->unk_B4 - 1;
+            v3 = param0 - param2->mapMatrixWidth - 1;
             v5 = 2;
             v6 = 0;
 
-            if ((v2 < 0) || (!ov5_021E77C0(v2, param0, param2->unk_B4))) {
+            if ((v2 < 0) || (!ov5_021E77C0(v2, param0, param2->mapMatrixWidth))) {
                 v2 = -1;
                 v3 = -1;
             }
 
-            if ((v3 < 0) || (!ov5_021E779C(v2, v3, param2->unk_B4))) {
+            if ((v3 < 0) || (!ov5_021E779C(v2, v3, param2->mapMatrixWidth))) {
                 v3 = -1;
             }
         } else if (param2->unk_A1 == 3) {
             v2 = param0 - 1;
-            v3 = param0 + param2->unk_B4 - 1;
+            v3 = param0 + param2->mapMatrixWidth - 1;
             v5 = 0;
             v6 = 2;
 
-            if ((v2 < 0) || (!ov5_021E77C0(v2, param0, param2->unk_B4))) {
+            if ((v2 < 0) || (!ov5_021E77C0(v2, param0, param2->mapMatrixWidth))) {
                 v2 = -1;
                 v3 = -1;
             }
 
-            if ((param2->unk_B4 * param2->unk_B8 <= v3) || (!ov5_021E779C(v2, v3, param2->unk_B4))) {
+            if ((param2->mapMatrixWidth * param2->mapMatrixHeight <= v3) || (!ov5_021E779C(v2, v3, param2->mapMatrixWidth))) {
                 v3 = -1;
             }
         } else {
@@ -1059,30 +1057,30 @@ static void ov5_021E86A0(const int param0, const u8 param1, UnkStruct_ov5_021E8F
 
         if (param2->unk_A1 == 0) {
             v2 = param0 + 1;
-            v3 = param0 - param2->unk_B4 + 1;
+            v3 = param0 - param2->mapMatrixWidth + 1;
             v5 = 3;
             v6 = 1;
 
-            if ((param2->unk_B4 * param2->unk_B8 <= v2) || (!ov5_021E77C0(v2, param0, param2->unk_B4))) {
+            if ((param2->mapMatrixWidth * param2->mapMatrixHeight <= v2) || (!ov5_021E77C0(v2, param0, param2->mapMatrixWidth))) {
                 v2 = -1;
                 v3 = -1;
             }
 
-            if ((param2->unk_B4 * param2->unk_B8 <= v3) || (!ov5_021E779C(v2, v3, param2->unk_B4))) {
+            if ((param2->mapMatrixWidth * param2->mapMatrixHeight <= v3) || (!ov5_021E779C(v2, v3, param2->mapMatrixWidth))) {
                 v3 = -1;
             }
         } else if (param2->unk_A1 == 2) {
             v2 = param0 + 1;
-            v3 = param0 + param2->unk_B4 + 1;
+            v3 = param0 + param2->mapMatrixWidth + 1;
             v5 = 1;
             v6 = 3;
 
-            if ((param2->unk_B4 * param2->unk_B8 <= v2) || (!ov5_021E77C0(v2, param0, param2->unk_B4))) {
+            if ((param2->mapMatrixWidth * param2->mapMatrixHeight <= v2) || (!ov5_021E77C0(v2, param0, param2->mapMatrixWidth))) {
                 v2 = -1;
                 v3 = -1;
             }
 
-            if ((v3 < 0) || (!ov5_021E779C(v2, v3, param2->unk_B4))) {
+            if ((v3 < 0) || (!ov5_021E779C(v2, v3, param2->mapMatrixWidth))) {
                 v3 = -1;
             }
         } else {
@@ -1095,30 +1093,30 @@ static void ov5_021E86A0(const int param0, const u8 param1, UnkStruct_ov5_021E8F
         ov5_021E8668(0, 1, 2, 3, param2);
 
         if (param2->unk_A1 == 0) {
-            v2 = param0 + param2->unk_B4;
-            v3 = param0 + param2->unk_B4 - 1;
+            v2 = param0 + param2->mapMatrixWidth;
+            v3 = param0 + param2->mapMatrixWidth - 1;
             v5 = 3;
             v6 = 2;
 
-            if (param2->unk_B4 * param2->unk_B8 <= v2) {
+            if (param2->mapMatrixWidth * param2->mapMatrixHeight <= v2) {
                 v2 = -1;
                 v3 = -1;
             } else {
-                if (!ov5_021E77C0(v2, v3, param2->unk_B4)) {
+                if (!ov5_021E77C0(v2, v3, param2->mapMatrixWidth)) {
                     v3 = -1;
                 }
             }
         } else if (param2->unk_A1 == 1) {
-            v2 = param0 + param2->unk_B4;
-            v3 = param0 + param2->unk_B4 + 1;
+            v2 = param0 + param2->mapMatrixWidth;
+            v3 = param0 + param2->mapMatrixWidth + 1;
             v5 = 2;
             v6 = 3;
 
-            if (param2->unk_B4 * param2->unk_B8 <= v2) {
+            if (param2->mapMatrixWidth * param2->mapMatrixHeight <= v2) {
                 v2 = -1;
                 v3 = -1;
             } else {
-                if ((param2->unk_B4 * param2->unk_B8 <= v3) || (!ov5_021E77C0(v2, v3, param2->unk_B4))) {
+                if ((param2->mapMatrixWidth * param2->mapMatrixHeight <= v3) || (!ov5_021E77C0(v2, v3, param2->mapMatrixWidth))) {
                     v3 = -1;
                 }
             }
@@ -1138,22 +1136,22 @@ static void ov5_021E89D0(const u8 param0, const UnkStruct_ov5_021E8F60 *param1, 
 {
     VecFx32 v0 = { 0, 0, 0 };
 
-    ov5_021E901C(param1->unk_84[param0]->unk_860, param1->unk_B4, param1->unk_B0, &v0);
+    ov5_021E901C(param1->loadedMaps[param0]->mapMatrixIndex, param1->mapMatrixWidth, param1->mapMatrix, &v0);
 
     v0.x += param1->unk_10C.x;
     v0.y += param1->unk_10C.y;
     v0.z += param1->unk_10C.z;
 
-    if (param1->unk_84[param0]->unk_864 == 1) {
+    if (param1->loadedMaps[param0]->present == 1) {
         VecFx32 v1 = { FX32_ONE, FX32_ONE, FX32_ONE };
         MtxFx33 v2 = { FX32_ONE, 0, 0, 0, FX32_ONE, 0, 0, 0, FX32_ONE };
 
-        Easy3D_DrawRenderObj(&(param1->unk_84[param0]->unk_800), &v0, &v2, &v1);
+        Easy3D_DrawRenderObj(&(param1->loadedMaps[param0]->mapRenderObj), &v0, &v2, &v1);
     }
 
-    if (param1->unk_84[param0]->unk_864 == 1) {
-        if (param1->unk_84[param0]->unk_868 != NULL) {
-            MapPropManager_Render(&v0, param1->unk_AC, ov5_021EFAC0(param1->unk_AC), param2, param1->unk_84[param0]->unk_868);
+    if (param1->loadedMaps[param0]->present == 1) {
+        if (param1->loadedMaps[param0]->mapPropManager != NULL) {
+            MapPropManager_Render(&v0, param1->unk_AC, ov5_021EFAC0(param1->unk_AC), param2, param1->loadedMaps[param0]->mapPropManager);
         }
     }
 }
@@ -1173,11 +1171,11 @@ static int ov5_021E8A98(const u32 param0, const int param1, const int param2)
     return v4;
 }
 
-static int ov5_021E8ABC(const int param0, const int param1, const int param2, const int param3, const int param4)
+static int ov5_021E8ABC_CalculatePlayerTile(const int playerTileX, const int playerTileY, const int offsetTileX, const int offsetTileY, const int mapTilesWidth)
 {
     int v0;
 
-    v0 = (param0 - param2) + ((param1 - param3) * param4);
+    v0 = (playerTileX - offsetTileX) + ((playerTileY - offsetTileY) * mapTilesWidth);
     return v0;
 }
 
@@ -1389,8 +1387,8 @@ static void ov5_021E8D50(UnkStruct_ov5_021E8F60 *param0)
 
     GF_ASSERT(v1 == 1);
 
-    v2->unk_00[0]->unk_860 = v2->unk_10[0];
-    v2->unk_00[1]->unk_860 = v2->unk_10[1];
+    v2->unk_00[0]->mapMatrixIndex = v2->unk_10[0];
+    v2->unk_00[1]->mapMatrixIndex = v2->unk_10[1];
 
     param0->unk_94++;
     param0->unk_95 = (param0->unk_95 + 1) % 2;
@@ -1432,19 +1430,19 @@ static void ov5_021E8DD4(const u8 param0, UnkStruct_ov5_021E8F60 *param1)
     }
 }
 
-static void ov5_021E8E28(UnkStruct_ov5_021E8F60 *param0, const int param1, const int param2, const int param3, const int param4, const int param5)
+static void ov5_021E8E28(UnkStruct_ov5_021E8F60 *param0, const int playerTileX, const int playerTileY, const int offsetTileX, const int offsetTileY, const int mapTilesWidth)
 {
-    u8 v0;
-    int v1[4];
+    u8 i;
+    int loadedMapMatrixIndexes[4];
 
-    ov5_021E79A8(param0);
-    ov5_021E7838(param0->unk_F8, param1, param2, param3, param4, param0->unk_B4, param0->unk_B8, param5, v1);
+    UnkStruct_ov5_021E8F60_Init(param0);
+    ov5_021E7838_CalculateLoadedMapMatrixIndexes(param0->unk_F8, playerTileX, playerTileY, offsetTileX, offsetTileY, param0->mapMatrixWidth, param0->mapMatrixHeight, mapTilesWidth, loadedMapMatrixIndexes);
 
-    for (v0 = 0; v0 < 4; v0++) {
-        param0->unk_84[v0]->bdhc = BDHC_New();
+    for (i = 0; i < 4; i++) {
+        param0->loadedMaps[i]->bdhc = BDHC_New();
 
-        BDHC_MarkNotLoaded(param0->unk_84[v0]->bdhc);
-        ov5_021E7E28(v1[v0], v0, param0->unk_AC, param0->unk_B0, param0->unk_B4, param0->unk_B8, ov5_021EFAC0(param0->unk_AC), param0);
+        BDHC_MarkNotLoaded(param0->loadedMaps[i]->bdhc);
+        ov5_021E7E28_LoadLandData(loadedMapMatrixIndexes[i], i, param0->unk_AC, param0->mapMatrix, param0->mapMatrixWidth, param0->mapMatrixHeight, ov5_021EFAC0(param0->unk_AC), param0);
     }
 }
 
@@ -1454,11 +1452,11 @@ static void ov5_021E8ECC(UnkStruct_ov5_021E8F60 *param0, const int param1, const
     int v1[4];
 
     ov5_021E7AC4(param0);
-    ov5_021E7838(param0->unk_F8, param1, param2, param3, param4, param0->unk_B4, param0->unk_B8, param5, v1);
+    ov5_021E7838_CalculateLoadedMapMatrixIndexes(param0->unk_F8, param1, param2, param3, param4, param0->mapMatrixWidth, param0->mapMatrixHeight, param5, v1);
 
     for (v0 = 0; v0 < 4; v0++) {
-        param0->unk_84[v0]->bdhc = NULL;
-        ov5_021E7F1C(v1[v0], v0, param0->unk_AC, param0->unk_B0, param0->unk_B4, param0->unk_B8, ov5_021EFAC0(param0->unk_AC), param0);
+        param0->loadedMaps[v0]->bdhc = NULL;
+        ov5_021E7F1C(v1[v0], v0, param0->unk_AC, param0->mapMatrix, param0->mapMatrixWidth, param0->mapMatrixHeight, ov5_021EFAC0(param0->unk_AC), param0);
     }
 }
 
@@ -1478,28 +1476,28 @@ static void ov5_021E8F60(UnkStruct_ov5_021E8F60 *param0)
     ov5_021E8DBC(param0);
 }
 
-static void ov5_021E8F90(const int param0, const int param1, const int param2, const int param3, UnkStruct_ov5_021E8F60 *param4)
+static void ov5_021E8F90(const int playerTileX, const int playerTileY, const int param2, const int param3, UnkStruct_ov5_021E8F60 *param4)
 {
-    int v0 = param0, v1 = param1;
+    int v0 = playerTileX, v1 = playerTileY;
 
     if (param4->unk_F8 == 1) {
-        if (param4->unk_B4 > 1) {
+        if (param4->mapMatrixWidth > 1) {
             v0 = param2 + 31;
         } else {
             v0 = param2 + 16;
         }
 
-        if (param4->unk_B8 > 1) {
+        if (param4->mapMatrixHeight > 1) {
             v1 = param3 + 31;
         } else {
             v1 = param3 + 16;
         }
     }
 
-    param4->unk_9C = ov5_021E8ABC(v0, v1, param2, param3, param4->unk_BC);
-    param4->unk_A1 = ov5_021E935C(param4->unk_9C, param4->unk_BC);
+    param4->unk_9C = ov5_021E8ABC_CalculatePlayerTile(v0, v1, param2, param3, param4->mapTilesWidth);
+    param4->unk_A1 = ov5_021E935C_CalculateLoadedMapIndexForPlayer(param4->unk_9C, param4->mapTilesWidth);
     param4->unk_A0 = ov5_021E8AF0(param4->unk_A1);
-    param4->unk_98 = ov5_021E8ACC(param4->unk_9C, param4->unk_B4, param4->unk_BC);
+    param4->unk_98 = ov5_021E8ACC(param4->unk_9C, param4->mapMatrixWidth, param4->mapTilesWidth);
 }
 
 static void ov5_021E901C(const int param0, const int param1, const MapMatrix *param2, VecFx32 *param3)
@@ -1532,7 +1530,7 @@ static void ov5_021E901C(const int param0, const int param1, const MapMatrix *pa
     param3->z += v1 * 32 * 16 * FX32_ONE;
 }
 
-UnkStruct_ov5_021E8F60 *ov5_021E9084(MapMatrix *param0, UnkStruct_ov5_021EF76C *param1, UnkStruct_ov5_021D3CAC *param2, const int param3)
+UnkStruct_ov5_021E8F60 *ov5_021E9084(MapMatrix *mapMatrix, UnkStruct_ov5_021EF76C *param1, UnkStruct_ov5_021D3CAC *param2, const int param3)
 {
     UnkStruct_ov5_021E8F60 *v0;
     BOOL v1;
@@ -1552,10 +1550,10 @@ UnkStruct_ov5_021E8F60 *ov5_021E9084(MapMatrix *param0, UnkStruct_ov5_021EF76C *
 
     v0->unk_00 = ov5_021EEAC8(v1);
     v0->unk_AC = param1;
-    v0->unk_B0 = param0;
-    v0->unk_B4 = MapMatrix_GetWidth(param0);
-    v0->unk_B8 = MapMatrix_GetHeight(param0);
-    v0->unk_BC = v0->unk_B4 * 32;
+    v0->mapMatrix = mapMatrix;
+    v0->mapMatrixWidth = MapMatrix_GetWidth(mapMatrix);
+    v0->mapMatrixHeight = MapMatrix_GetHeight(mapMatrix);
+    v0->mapTilesWidth = v0->mapMatrixWidth * 32;
     v0->unk_E4 = param2;
     v0->unk_C0.unk_20 = 1;
 
@@ -1563,16 +1561,16 @@ UnkStruct_ov5_021E8F60 *ov5_021E9084(MapMatrix *param0, UnkStruct_ov5_021EF76C *
 
     v0->unk_A4 = 0;
     v0->unk_A8 = 2;
-    v0->unk_EC = NARC_ctor(NARC_INDEX_FIELDDATA__LAND_DATA__LAND_DATA, 4);
+    v0->landDataNARC = NARC_ctor(NARC_INDEX_FIELDDATA__LAND_DATA__LAND_DATA, 4);
     v0->unk_F0 = NULL;
 
     return v0;
 }
 
-void ov5_021E9150(UnkStruct_ov5_021E8F60 *param0, const int param1, const int param2)
+void ov5_021E9150(UnkStruct_ov5_021E8F60 *param0, const int playerTileX, const int playerTileY)
 {
-    param0->unk_E8->unk_00(param0, param1, param2, param0->unk_100, param0->unk_108, param0->unk_BC);
-    ov5_021E8F90(param1, param2, param0->unk_100, param0->unk_108, param0);
+    param0->unk_E8->unk_00(param0, playerTileX, playerTileY, param0->unk_100, param0->unk_108, param0->mapTilesWidth);
+    ov5_021E8F90(playerTileX, playerTileY, param0->unk_100, param0->unk_108, param0);
 }
 
 void ov5_021E9190(const u8 param0, UnkStruct_ov5_021E8F60 *param1)
@@ -1581,9 +1579,9 @@ void ov5_021E9190(const u8 param0, UnkStruct_ov5_021E8F60 *param1)
     u32 v1;
     u8 v2;
 
-    v1 = ov5_021E8B1C(param0, param1->unk_B8, param1->unk_BC, param1->unk_9C);
-    v0 = ov5_021E8A98(v1, param1->unk_B4, param1->unk_BC);
-    v2 = ov5_021E935C(v1, param1->unk_BC);
+    v1 = ov5_021E8B1C(param0, param1->mapMatrixHeight, param1->mapTilesWidth, param1->unk_9C);
+    v0 = ov5_021E8A98(v1, param1->mapMatrixWidth, param1->mapTilesWidth);
+    v2 = ov5_021E935C_CalculateLoadedMapIndexForPlayer(v1, param1->mapTilesWidth);
 
     if (param1->unk_98 != v0) {
         return;
@@ -1600,7 +1598,7 @@ void ov5_021E91FC(const UnkStruct_ov5_021E8F60 *param0, UnkStruct_ov5_021D5894 *
     u8 v0;
 
     for (v0 = 0; v0 < 4; v0++) {
-        if (param0->unk_84[v0]->unk_860 != -1) {
+        if (param0->loadedMaps[v0]->mapMatrixIndex != -1) {
             ov5_021E89D0(v0, param0, param1);
         }
     }
@@ -1626,16 +1624,16 @@ void ov5_021E924C(UnkStruct_ov5_021E8F60 *param0)
     }
 
     for (v0 = 0; v0 < 4; v0++) {
-        param0->unk_84[v0]->unk_864 = 0;
+        param0->loadedMaps[v0]->present = 0;
 
-        BDHC_Free(param0->unk_84[v0]->bdhc);
+        BDHC_Free(param0->loadedMaps[v0]->bdhc);
 
-        if (param0->unk_84[v0]->unk_868 != NULL) {
-            MapPropManager_Free(param0->unk_84[v0]->unk_868);
+        if (param0->loadedMaps[v0]->mapPropManager != NULL) {
+            MapPropManager_Free(param0->loadedMaps[v0]->mapPropManager);
         }
 
-        Heap_FreeToHeap(param0->unk_84[v0]);
-        param0->unk_84[v0] = NULL;
+        Heap_FreeToHeap(param0->loadedMaps[v0]);
+        param0->loadedMaps[v0] = NULL;
     }
 
     param0->unk_A8 = 3;
@@ -1645,7 +1643,7 @@ void ov5_021E924C(UnkStruct_ov5_021E8F60 *param0)
 
 void ov5_021E92E4(UnkStruct_ov5_021E8F60 *param0)
 {
-    NARC_dtor(param0->unk_EC);
+    NARC_dtor(param0->landDataNARC);
     ov5_021EEB48(param0->unk_00);
     Heap_FreeToHeap((void *)param0);
 }
@@ -1672,7 +1670,7 @@ void ov5_021E9338(UnkStruct_ov5_021E8F60 *param0)
 
 void ov5_021E9340(const u8 param0, const UnkStruct_ov5_021E8F60 *param1, MapPropManager **param2)
 {
-    *param2 = param1->unk_84[param0]->unk_868;
+    *param2 = param1->loadedMaps[param0]->mapPropManager;
 }
 
 u8 ov5_021E9354(const UnkStruct_ov5_021E8F60 *param0)
@@ -1680,31 +1678,35 @@ u8 ov5_021E9354(const UnkStruct_ov5_021E8F60 *param0)
     return param0->unk_A0;
 }
 
-u8 ov5_021E935C(const u32 param0, const int param1)
+u8 ov5_021E935C_CalculateLoadedMapIndexForPlayer(const u32 playerTile, const int mapTilesWidth)
 {
-    u8 v0;
-    int v1, v2;
-    int v3;
+    u8 playerLoadedMapIndex;
+    int playerTileX, playerTileYMod;
+    int playerTileY;
 
-    v1 = param0 % 32;
-    v3 = param0 / param1;
-    v2 = v3 % 32;
+    playerTileX = playerTile % 32;
+    playerTileY = playerTile / mapTilesWidth;
+    playerTileYMod = playerTileY % 32;
 
-    if (v1 < 32 / 2) {
-        if (v2 < 32 / 2) {
-            v0 = 0;
+    if (playerTileX < 32 / 2) {
+        if (playerTileYMod < 32 / 2) {
+            // Player is on the top-left corner of the map square
+            playerLoadedMapIndex = 0;
         } else {
-            v0 = 2;
+            // Player is on the bottom-left corner of the map square
+            playerLoadedMapIndex = 2;
         }
     } else {
-        if (v2 < 32 / 2) {
-            v0 = 1;
+        if (playerTileYMod < 32 / 2) {
+            // Player is on the top-right corner of the map square
+            playerLoadedMapIndex = 1;
         } else {
-            v0 = 3;
+            // Player is on the bottom-right corner of the map square
+            playerLoadedMapIndex = 3;
         }
     }
 
-    return v0;
+    return playerLoadedMapIndex;
 }
 
 u8 ov5_021E9390(const int param0, const u8 param1, const UnkStruct_ov5_021E8F60 *param2)
@@ -1719,44 +1721,44 @@ u8 ov5_021E9390(const int param0, const u8 param1, const UnkStruct_ov5_021E8F60 
 
     switch (param2->unk_A0) {
     case 0:
-        if (param0 - param2->unk_98 == param2->unk_B4) {
+        if (param0 - param2->unk_98 == param2->mapMatrixWidth) {
             v0 = param2->unk_A0 + 2;
-        } else if ((param0 - param2->unk_98 == 1) && (ov5_021E77C0(param2->unk_98, param0, param2->unk_B4))) {
+        } else if ((param0 - param2->unk_98 == 1) && (ov5_021E77C0(param2->unk_98, param0, param2->mapMatrixWidth))) {
             v0 = param2->unk_A0 + 1;
-        } else if ((param0 - param2->unk_98 == param2->unk_B4 + 1) && (!ov5_021E77C0(param2->unk_98, param0, param2->unk_B4))) {
+        } else if ((param0 - param2->unk_98 == param2->mapMatrixWidth + 1) && (!ov5_021E77C0(param2->unk_98, param0, param2->mapMatrixWidth))) {
             v0 = param2->unk_A0 + 3;
         } else {
             v0 = 4;
         }
         break;
     case 1:
-        if (param0 - param2->unk_98 == param2->unk_B4) {
+        if (param0 - param2->unk_98 == param2->mapMatrixWidth) {
             v0 = param2->unk_A0 + 2;
-        } else if ((param2->unk_98 - param0 == 1) && (ov5_021E77C0(param2->unk_98, param0, param2->unk_B4))) {
+        } else if ((param2->unk_98 - param0 == 1) && (ov5_021E77C0(param2->unk_98, param0, param2->mapMatrixWidth))) {
             v0 = param2->unk_A0 - 1;
-        } else if ((param0 - param2->unk_98 == param2->unk_B4 - 1) && (!ov5_021E77C0(param2->unk_98, param0, param2->unk_B4))) {
+        } else if ((param0 - param2->unk_98 == param2->mapMatrixWidth - 1) && (!ov5_021E77C0(param2->unk_98, param0, param2->mapMatrixWidth))) {
             v0 = param2->unk_A0 + 1;
         } else {
             v0 = 4;
         }
         break;
     case 2:
-        if (param2->unk_98 - param0 == param2->unk_B4) {
+        if (param2->unk_98 - param0 == param2->mapMatrixWidth) {
             v0 = param2->unk_A0 - 2;
-        } else if ((param2->unk_98 - param0 == param2->unk_B4 - 1) && (!ov5_021E77C0(param2->unk_98, param0, param2->unk_B4))) {
+        } else if ((param2->unk_98 - param0 == param2->mapMatrixWidth - 1) && (!ov5_021E77C0(param2->unk_98, param0, param2->mapMatrixWidth))) {
             v0 = param2->unk_A0 - 1;
-        } else if ((param0 - param2->unk_98 == 1) && (ov5_021E77C0(param2->unk_98, param0, param2->unk_B4))) {
+        } else if ((param0 - param2->unk_98 == 1) && (ov5_021E77C0(param2->unk_98, param0, param2->mapMatrixWidth))) {
             v0 = param2->unk_A0 + 1;
         } else {
             v0 = 4;
         }
         break;
     case 3:
-        if (param2->unk_98 - param0 == param2->unk_B4) {
+        if (param2->unk_98 - param0 == param2->mapMatrixWidth) {
             v0 = param2->unk_A0 - 2;
-        } else if ((param2->unk_98 - param0 == param2->unk_B4 + 1) && (!ov5_021E77C0(param2->unk_98, param0, param2->unk_B4))) {
+        } else if ((param2->unk_98 - param0 == param2->mapMatrixWidth + 1) && (!ov5_021E77C0(param2->unk_98, param0, param2->mapMatrixWidth))) {
             v0 = param2->unk_A0 - 3;
-        } else if ((param2->unk_98 - param0 == 1) && (ov5_021E77C0(param2->unk_98, param0, param2->unk_B4))) {
+        } else if ((param2->unk_98 - param0 == 1) && (ov5_021E77C0(param2->unk_98, param0, param2->mapMatrixWidth))) {
             v0 = param2->unk_A0 - 1;
         } else {
             v0 = 4;
@@ -1769,10 +1771,10 @@ u8 ov5_021E9390(const int param0, const u8 param1, const UnkStruct_ov5_021E8F60 
     return v0;
 }
 
-int ov5_021E9560(const UnkStruct_ov5_021E8F60 *param0, const u8 param1)
+int ov5_021E9560_GetMapMatrixIndex(const UnkStruct_ov5_021E8F60 *param0, const u8 loadedMapIndex)
 {
-    GF_ASSERT(param1 < 4);
-    return param0->unk_84[param1]->unk_860;
+    GF_ASSERT(loadedMapIndex < 4);
+    return param0->loadedMaps[loadedMapIndex]->mapMatrixIndex;
 }
 
 BOOL ov5_021E9580(const UnkStruct_ov5_021E8F60 *param0, const int param1, const int param2, u8 *param3)
@@ -1788,18 +1790,18 @@ BOOL ov5_021E9580(const UnkStruct_ov5_021E8F60 *param0, const int param1, const 
     v1 = param2 - param0->unk_108;
     v2 = v0 / 32;
     v3 = v1 / 32;
-    v4 = v2 + (v3 * param0->unk_B4);
+    v4 = v2 + (v3 * param0->mapMatrixWidth);
 
-    if (!(v4 < param0->unk_B4 * param0->unk_B8)) {
+    if (!(v4 < param0->mapMatrixWidth * param0->mapMatrixHeight)) {
         if (Link_SetErrorState(1)) {
             return 0;
         }
     }
 
-    GF_ASSERT(v4 < param0->unk_B4 * param0->unk_B8);
+    GF_ASSERT(v4 < param0->mapMatrixWidth * param0->mapMatrixHeight);
 
-    v6 = v0 + (v1 * param0->unk_BC);
-    v7 = ov5_021E935C(v6, param0->unk_BC);
+    v6 = v0 + (v1 * param0->mapTilesWidth);
+    v7 = ov5_021E935C_CalculateLoadedMapIndexForPlayer(v6, param0->mapTilesWidth);
     v5 = ov5_021E9390(v4, v7, param0);
 
     if (param3 != NULL) {
@@ -1813,14 +1815,14 @@ BOOL ov5_021E9580(const UnkStruct_ov5_021E8F60 *param0, const int param1, const 
     }
 }
 
-const BDHC *ov5_021E9610(const UnkStruct_ov5_021E8F60 *param0, const u8 param1)
+const BDHC *LoadedMaps_GetBDHC(const UnkStruct_ov5_021E8F60 *param0, const u8 loadedMapIndex)
 {
-    return param0->unk_84[param1]->bdhc;
+    return param0->loadedMaps[loadedMapIndex]->bdhc;
 }
 
-u16 const *ov5_021E9624(const UnkStruct_ov5_021E8F60 *param0, const u8 param1)
+u16 const *LoadedMaps_GetMovementPermissions(const UnkStruct_ov5_021E8F60 *param0, const u8 loadedMapIndex)
 {
-    return param0->unk_84[param1]->unk_00;
+    return param0->loadedMaps[loadedMapIndex]->movementPermissions;
 }
 
 void ov5_021E9630(UnkStruct_ov5_021E8F60 *param0, UnkFuncPtr_ov5_021E9630 param1, void *param2)
@@ -1864,7 +1866,7 @@ static void ov5_021E964C(SysTask *param0, void *param1)
         }
 
         v4 = &((u8 *)(*v1->unk_0C))[v1->unk_24];
-        NARC_ReadFile(v1->unk_00, v3, v4);
+        NARC_ReadFile(v1->landDataNARC, v3, v4);
         v1->unk_24 += v3;
         break;
     case 1: {
@@ -1880,7 +1882,7 @@ static void ov5_021E964C(SysTask *param0, void *param1)
         }
 
         v4 = &((u8 *)(*v1->unk_0C))[v1->unk_24];
-        NARC_ReadFile(v1->unk_00, v3, v4);
+        NARC_ReadFile(v1->landDataNARC, v3, v4);
 
         if (v5) {
             v1->unk_14 = 2;
@@ -1921,14 +1923,14 @@ static void ov5_021E964C(SysTask *param0, void *param1)
     }
 }
 
-SysTask *ov5_021E976C(NARC *param0, const int param1, NNSG3dRenderObj *param2, NNSG3dResFileHeader **param3, NNSG3dResTex *param4, BOOL *param5, int *param6)
+SysTask *ov5_021E976C(NARC *landDataNARC, const int param1, NNSG3dRenderObj *param2, NNSG3dResFileHeader **param3, NNSG3dResTex *param4, BOOL *param5, int *param6)
 {
     SysTask *v0;
     UnkStruct_ov5_021E9640 *v1;
 
     v1 = (UnkStruct_ov5_021E9640 *)Heap_AllocFromHeapAtEnd(4, sizeof(UnkStruct_ov5_021E9640));
 
-    v1->unk_00 = param0;
+    v1->landDataNARC = landDataNARC;
     v1->unk_04 = param1;
     v1->unk_08 = &param2[0];
     v1->unk_0C = param3;
@@ -1943,43 +1945,37 @@ SysTask *ov5_021E976C(NARC *param0, const int param1, NNSG3dRenderObj *param2, N
     return v0;
 }
 
-NNSG3dResMdl *ov5_021E97AC(NARC *param0, const int param1, NNSG3dRenderObj *param2, NNSG3dResFileHeader **param3, NNSG3dResTex *param4)
+NNSG3dResMdl *ov5_021E97AC_LoadNSBMD(NARC *landDataNARC, const int nsbmdSize, NNSG3dRenderObj *mapRenderObj, NNSG3dResFileHeader **nsbmdBuffer, NNSG3dResTex *mapTexture)
 {
-    BOOL v0;
-    NNSG3dResMdl *v1;
+    BOOL textureBound;
+    NNSG3dResMdl *mapResMdl;
 
-    NARC_ReadFile(param0, param1, *(param3));
+    NARC_ReadFile(landDataNARC, nsbmdSize, *nsbmdBuffer);
 
-    if (param4 != NULL) {
-        if (Easy3D_IsTextureUploadedToVRAM(param4) == 1) {
-            v0 = Easy3D_BindTextureToResource(*param3, param4);
-            GF_ASSERT(v0);
-        } else {
-            (void)0;
+    if (mapTexture != NULL) {
+        if (Easy3D_IsTextureUploadedToVRAM(mapTexture) == 1) {
+            textureBound = Easy3D_BindTextureToResource(*nsbmdBuffer, mapTexture);
+            GF_ASSERT(textureBound);
         }
     }
 
-    {
-        u8 v2;
-        u16 v3;
-        NNSG3dResMdlSet *v4 = NNS_G3dGetMdlSet(*param3);
+    NNSG3dResMdlSet *mapResMdlSet = NNS_G3dGetMdlSet(*nsbmdBuffer);
 
-        GF_ASSERT(v4->dict.numEntry == 1);
-        v1 = NNS_G3dGetMdlByIdx(NNS_G3dGetMdlSet(*param3), 0);
+    GF_ASSERT(mapResMdlSet->dict.numEntry == 1);
+    mapResMdl = NNS_G3dGetMdlByIdx(NNS_G3dGetMdlSet(*nsbmdBuffer), 0);
 
-        GF_ASSERT(v1);
-        NNS_G3dRenderObjInit(param2, v1);
-    }
+    GF_ASSERT(mapResMdl);
+    NNS_G3dRenderObjInit(mapRenderObj, mapResMdl);
 
-    return v1;
+    return mapResMdl;
 }
 
-NARC *ov5_021E9828(UnkStruct_ov5_021E8F60 *param0)
+NARC *ov5_021E9828_GetLandDataNARC(UnkStruct_ov5_021E8F60 *param0)
 {
-    return param0->unk_EC;
+    return param0->landDataNARC;
 }
 
-UnkStruct_ov5_021E8F60 *ov5_021E9830(MapMatrix *param0, UnkStruct_ov5_021EF76C *param1, NARC *param2)
+UnkStruct_ov5_021E8F60 *ov5_021E9830(MapMatrix *mapMatrix, UnkStruct_ov5_021EF76C *param1, NARC *landDataNARC)
 {
     UnkStruct_ov5_021E8F60 *v0;
     BOOL v1;
@@ -1989,46 +1985,46 @@ UnkStruct_ov5_021E8F60 *ov5_021E9830(MapMatrix *param0, UnkStruct_ov5_021EF76C *
 
     v0->unk_00 = ov5_021EEBC0(0);
     v0->unk_AC = param1;
-    v0->unk_B0 = param0;
+    v0->mapMatrix = mapMatrix;
 
-    if (param0 != NULL) {
-        v0->unk_B4 = MapMatrix_GetWidth(param0);
-        v0->unk_B8 = MapMatrix_GetHeight(param0);
-        v0->unk_BC = v0->unk_B4 * 32;
+    if (mapMatrix != NULL) {
+        v0->mapMatrixWidth = MapMatrix_GetWidth(mapMatrix);
+        v0->mapMatrixHeight = MapMatrix_GetHeight(mapMatrix);
+        v0->mapTilesWidth = v0->mapMatrixWidth * 32;
     }
 
     v0->unk_C0.unk_20 = 0;
     ov5_021E8F60(v0);
     v0->unk_A4 = 0;
     v0->unk_A8 = 2;
-    v0->unk_EC = param2;
+    v0->landDataNARC = landDataNARC;
 
-    if (param2 == NULL) {
-        v0->unk_EC = NARC_ctor(NARC_INDEX_FIELDDATA__LAND_DATA__LAND_DATA, 4);
+    if (landDataNARC == NULL) {
+        v0->landDataNARC = NARC_ctor(NARC_INDEX_FIELDDATA__LAND_DATA__LAND_DATA, 4);
     }
 
     return v0;
 }
 
-void ov5_021E98C8(UnkStruct_ov5_021E8F60 *param0, MapMatrix *param1, UnkStruct_ov5_021EF76C *param2, NARC *param3)
+void ov5_021E98C8(UnkStruct_ov5_021E8F60 *param0, MapMatrix *mapMatrix, UnkStruct_ov5_021EF76C *param2, NARC *landDataNARC)
 {
     BOOL v0;
 
     param0->unk_AC = param2;
-    param0->unk_B0 = param1;
-    param0->unk_B4 = MapMatrix_GetWidth(param1);
-    param0->unk_B8 = MapMatrix_GetHeight(param1);
-    param0->unk_BC = param0->unk_B4 * 32;
+    param0->mapMatrix = mapMatrix;
+    param0->mapMatrixWidth = MapMatrix_GetWidth(mapMatrix);
+    param0->mapMatrixHeight = MapMatrix_GetHeight(mapMatrix);
+    param0->mapTilesWidth = param0->mapMatrixWidth * 32;
     param0->unk_C0.unk_20 = 0;
 
     ov5_021E8F60(param0);
 
     param0->unk_A4 = 0;
     param0->unk_A8 = 2;
-    param0->unk_EC = param3;
+    param0->landDataNARC = landDataNARC;
 
-    if (param3 == NULL) {
-        param0->unk_EC = NARC_ctor(NARC_INDEX_FIELDDATA__LAND_DATA__LAND_DATA, 4);
+    if (landDataNARC == NULL) {
+        param0->landDataNARC = NARC_ctor(NARC_INDEX_FIELDDATA__LAND_DATA__LAND_DATA, 4);
     }
 }
 
@@ -2037,14 +2033,14 @@ void ov5_021E9938(UnkStruct_ov5_021E8F60 *param0)
     u8 v0;
 
     for (v0 = 0; v0 < 4; v0++) {
-        param0->unk_84[v0]->unk_864 = 0;
+        param0->loadedMaps[v0]->present = 0;
 
-        if (param0->unk_84[v0]->unk_868 != NULL) {
-            MapPropManager_Free(param0->unk_84[v0]->unk_868);
+        if (param0->loadedMaps[v0]->mapPropManager != NULL) {
+            MapPropManager_Free(param0->loadedMaps[v0]->mapPropManager);
         }
 
-        Heap_FreeToHeap(param0->unk_84[v0]);
-        param0->unk_84[v0] = NULL;
+        Heap_FreeToHeap(param0->loadedMaps[v0]);
+        param0->loadedMaps[v0] = NULL;
     }
 
     param0->unk_A8 = 3;
@@ -2057,9 +2053,9 @@ void ov5_021E9998(UnkStruct_ov5_021E8F60 *param0)
     u8 v0;
 
     for (v0 = 0; v0 < 4; v0++) {
-        if (param0->unk_84[v0]->unk_868 != NULL) {
+        if (param0->loadedMaps[v0]->mapPropManager != NULL) {
             MapPropManager_Init(
-                param0->unk_84[v0]->unk_868);
+                param0->loadedMaps[v0]->mapPropManager);
         }
     }
 }
@@ -2072,7 +2068,7 @@ void ov5_021E99C4(UnkStruct_ov5_021E8F60 *param0)
 
 void ov5_021E99D8(UnkStruct_ov5_021E8F60 *param0, const int param1, const int param2)
 {
-    ov5_021E9A14(param0, param1, param2, param0->unk_100, param0->unk_108, param0->unk_BC);
+    ov5_021E9A14(param0, param1, param2, param0->unk_100, param0->unk_108, param0->mapTilesWidth);
     ov5_021E8F90(param1, param2, param0->unk_100, param0->unk_108, param0);
 }
 
@@ -2082,11 +2078,11 @@ static void ov5_021E9A14(UnkStruct_ov5_021E8F60 *param0, const int param1, const
     int v1[4];
 
     ov5_021E7AC4(param0);
-    ov5_021E7838(param0->unk_F8, param1, param2, param0->unk_100, param0->unk_108, param0->unk_B4, param0->unk_B8, param5, v1);
+    ov5_021E7838_CalculateLoadedMapMatrixIndexes(param0->unk_F8, param1, param2, param0->unk_100, param0->unk_108, param0->mapMatrixWidth, param0->mapMatrixHeight, param5, v1);
 
     for (v0 = 0; v0 < 4; v0++) {
-        param0->unk_84[v0]->bdhc = NULL;
-        ov5_021E9B70(v1[v0], v0, param0->unk_AC, param0->unk_B0, param0->unk_B4, param0->unk_B8, ov5_021EFAC0(param0->unk_AC), param0);
+        param0->loadedMaps[v0]->bdhc = NULL;
+        ov5_021E9B70(v1[v0], v0, param0->unk_AC, param0->mapMatrix, param0->mapMatrixWidth, param0->mapMatrixHeight, ov5_021EFAC0(param0->unk_AC), param0);
     }
 }
 
@@ -2095,45 +2091,45 @@ void ov5_021E9AAC(UnkStruct_ov5_021E8F60 *param0, const int param1, const int pa
     int v0;
 
     ov5_021E7B4C(param0);
-    ov5_021E7838(param0->unk_F8, param1, param2, param0->unk_100, param0->unk_108, param0->unk_B4, param0->unk_B8, param0->unk_BC, param3);
+    ov5_021E7838_CalculateLoadedMapMatrixIndexes(param0->unk_F8, param1, param2, param0->unk_100, param0->unk_108, param0->mapMatrixWidth, param0->mapMatrixHeight, param0->mapTilesWidth, param3);
 
     for (v0 = 0; v0 < 4; v0++) {
-        param0->unk_84[v0]->unk_864 = 0;
+        param0->loadedMaps[v0]->present = 0;
     }
 }
 
 void ov5_021E9B10(UnkStruct_ov5_021E8F60 *param0, int param1, int param2)
 {
-    param0->unk_84[param1]->bdhc = NULL;
-    ov5_021E9B70(param2, param1, param0->unk_AC, param0->unk_B0, param0->unk_B4, param0->unk_B8, ov5_021EFAC0(param0->unk_AC), param0);
-    param0->unk_84[param1]->unk_864 = 0;
+    param0->loadedMaps[param1]->bdhc = NULL;
+    ov5_021E9B70(param2, param1, param0->unk_AC, param0->mapMatrix, param0->mapMatrixWidth, param0->mapMatrixHeight, ov5_021EFAC0(param0->unk_AC), param0);
+    param0->loadedMaps[param1]->present = 0;
 }
 
 static void ov5_021E9B70(const int param0, const u8 param1, const UnkStruct_ov5_021EF76C *param2, const MapMatrix *param3, const int param4, const int param5, const BOOL param6, UnkStruct_ov5_021E8F60 *param7)
 {
-    int v0, v1;
-    UnkStruct_ov5_021E7BAC v2;
+    int landDataId, v1;
+    LandDataHeader landDataHeader;
     NNSG3dResMdl *v3;
 
     if ((param0 < 0) || (param0 >= param4 * param5)) {
         return;
     }
 
-    v0 = MapMatrix_GetLandDataIdByIndex(param0, param3);
-    ov5_021E7BAC(param7->unk_EC, v0, &v2);
+    landDataId = MapMatrix_GetLandDataIdByIndex(param0, param3);
+    LandDataHeader_Load(param7->landDataNARC, landDataId, &landDataHeader);
 
-    v1 = 0x800 + v2.unk_0C;
-    NARC_Seek(param7->unk_EC, v1);
+    v1 = 0x800 + landDataHeader.sectionSize3DObject;
+    NARC_Seek(param7->landDataNARC, v1);
 
-    DC_FlushRange((void *)param7->unk_84[param1]->unk_854, v2.unk_04);
-    v3 = ov5_021E97AC(param7->unk_EC, v2.unk_04, &param7->unk_84[param1]->unk_800, &(param7->unk_84[param1]->unk_854), ov5_021EFA8C(param2));
+    DC_FlushRange((void *)param7->loadedMaps[param1]->nsbmdFile, landDataHeader.sectionSizeNSBMD);
+    v3 = ov5_021E97AC_LoadNSBMD(param7->landDataNARC, landDataHeader.sectionSizeNSBMD, &param7->loadedMaps[param1]->mapRenderObj, &(param7->loadedMaps[param1]->nsbmdFile), ov5_021EFA8C_GetMapTexture(param2));
 
     if (param6 == 1) {
         ov5_021D53A4(v3);
     }
 
-    param7->unk_84[param1]->unk_864 = 1;
-    param7->unk_84[param1]->unk_860 = param0;
+    param7->loadedMaps[param1]->present = 1;
+    param7->loadedMaps[param1]->mapMatrixIndex = param0;
 }
 
 void ov5_021E9C0C(const UnkStruct_ov5_021E8F60 *param0, const UnkStruct_ov5_021D5894 *param1)
@@ -2141,7 +2137,7 @@ void ov5_021E9C0C(const UnkStruct_ov5_021E8F60 *param0, const UnkStruct_ov5_021D
     int v0;
 
     for (v0 = 0; v0 < 4; v0++) {
-        if (param0->unk_84[v0]->unk_860 != -1) {
+        if (param0->loadedMaps[v0]->mapMatrixIndex != -1) {
             ov5_021E9C40(v0, param0, param1);
         }
     }
@@ -2153,14 +2149,14 @@ static void ov5_021E9C40(const u8 param0, const UnkStruct_ov5_021E8F60 *param1, 
     VecFx32 v1 = { FX32_ONE, FX32_ONE, FX32_ONE };
     MtxFx33 v2 = { FX32_ONE, 0, 0, 0, FX32_ONE, 0, 0, 0, FX32_ONE };
 
-    ov5_021E901C(param1->unk_84[param0]->unk_860, param1->unk_B4, param1->unk_B0, &v0);
+    ov5_021E901C(param1->loadedMaps[param0]->mapMatrixIndex, param1->mapMatrixWidth, param1->mapMatrix, &v0);
 
     v0.x += param1->unk_10C.x;
     v0.y += param1->unk_10C.y;
     v0.z += param1->unk_10C.z;
 
-    if (param1->unk_84[param0]->unk_864 == 1) {
-        Easy3D_DrawRenderObj(&(param1->unk_84[param0]->unk_800), &v0, &v2, &v1);
+    if (param1->loadedMaps[param0]->present == 1) {
+        Easy3D_DrawRenderObj(&(param1->loadedMaps[param0]->mapRenderObj), &v0, &v2, &v1);
     }
 }
 
@@ -2173,7 +2169,7 @@ void ov5_021E9CD8(UnkStruct_ov5_021E8F60 *param0)
     }
 
     for (v0 = 0; v0 < 4; v0++) {
-        param0->unk_84[v0]->unk_864 = 0;
+        param0->loadedMaps[v0]->present = 0;
     }
 
     param0->unk_A8 = 3;
@@ -2181,7 +2177,7 @@ void ov5_021E9CD8(UnkStruct_ov5_021E8F60 *param0)
     param0->unk_C0.unk_20 = 0;
 
     for (v0 = 0; v0 < 4; v0++) {
-        MI_CpuFillFast(param0->unk_84[v0]->unk_00, 0xffffffff, 2 * 32 * 32);
+        MI_CpuFillFast(param0->loadedMaps[v0]->movementPermissions, 0xffffffff, 2 * 32 * 32);
     }
 }
 
@@ -2191,7 +2187,7 @@ void ov5_021E9D3C(MapMatrix *param0, UnkStruct_ov5_021EF76C *param1, UnkStruct_o
     int v1[4];
 
     ov5_021EEC24(param2->unk_00, param3->unk_00);
-    MapMatrix_Copy(param0, param3->unk_B0);
+    MapMatrix_Copy(param0, param3->mapMatrix);
 
     for (v0 = 0; v0 < 2; v0++) {
         param3->unk_04[v0] = param2->unk_04[v0];
@@ -2210,16 +2206,16 @@ void ov5_021E9D3C(MapMatrix *param0, UnkStruct_ov5_021EF76C *param1, UnkStruct_o
     param3->unk_A1 = param2->unk_A1;
 
     for (v0 = 0; v0 < 4; v0++) {
-        param3->unk_84[v0]->unk_800 = param2->unk_84[v0]->unk_800;
-        param3->unk_84[v0]->unk_854 = param2->unk_84[v0]->unk_854;
-        param3->unk_84[v0]->unk_864 = param2->unk_84[v0]->unk_864;
-        param3->unk_84[v0]->unk_860 = param2->unk_84[v0]->unk_860;
+        param3->loadedMaps[v0]->mapRenderObj = param2->loadedMaps[v0]->mapRenderObj;
+        param3->loadedMaps[v0]->nsbmdFile = param2->loadedMaps[v0]->nsbmdFile;
+        param3->loadedMaps[v0]->present = param2->loadedMaps[v0]->present;
+        param3->loadedMaps[v0]->mapMatrixIndex = param2->loadedMaps[v0]->mapMatrixIndex;
     }
 
     param3->unk_AC = param1;
-    param3->unk_B4 = param2->unk_B4;
-    param3->unk_B8 = param2->unk_B8;
-    param3->unk_BC = param2->unk_B4 * 32;
+    param3->mapMatrixWidth = param2->mapMatrixWidth;
+    param3->mapMatrixHeight = param2->mapMatrixHeight;
+    param3->mapTilesWidth = param2->mapMatrixWidth * 32;
     param3->unk_C0 = param2->unk_C0;
     param3->unk_F8 = param2->unk_F8;
     param3->unk_100 = param2->unk_100;
@@ -2233,22 +2229,22 @@ void ov5_021E9D3C(MapMatrix *param0, UnkStruct_ov5_021EF76C *param1, UnkStruct_o
     param3->unk_A8 = param2->unk_A8;
 
     for (v0 = 0; v0 < 4; v0++) {
-        v1[v0] = param3->unk_84[v0]->unk_860;
-        BDHC_MarkNotLoaded(param3->unk_84[v0]->bdhc);
+        v1[v0] = param3->loadedMaps[v0]->mapMatrixIndex;
+        BDHC_MarkNotLoaded(param3->loadedMaps[v0]->bdhc);
     }
 
     for (v0 = 0; v0 < 4; v0++) {
-        ov5_021E7FF0(v1[v0], v0, param3->unk_AC, param3->unk_B0, param3->unk_B4, param3->unk_B8, ov5_021EFAC0(param3->unk_AC), param3);
+        ov5_021E7FF0(v1[v0], v0, param3->unk_AC, param3->mapMatrix, param3->mapMatrixWidth, param3->mapMatrixHeight, ov5_021EFAC0(param3->unk_AC), param3);
     }
 }
 
-void ov5_021E9F98(UnkStruct_ov5_021E8F60 *param0, UnkStruct_ov5_021E8F60 *param1)
+void ov5_021E9F98_Copy(UnkStruct_ov5_021E8F60 *param0, UnkStruct_ov5_021E8F60 *param1)
 {
     int v0;
     int v1[4];
 
     ov5_021EEC24(param1->unk_00, param0->unk_00);
-    MapMatrix_Copy(param1->unk_B0, param0->unk_B0);
+    MapMatrix_Copy(param1->mapMatrix, param0->mapMatrix);
 
     for (v0 = 0; v0 < 2; v0++) {
         param0->unk_04[v0] = param1->unk_04[v0];
@@ -2267,16 +2263,16 @@ void ov5_021E9F98(UnkStruct_ov5_021E8F60 *param0, UnkStruct_ov5_021E8F60 *param1
     param0->unk_A1 = param1->unk_A1;
 
     for (v0 = 0; v0 < 4; v0++) {
-        param0->unk_84[v0]->unk_800 = param1->unk_84[v0]->unk_800;
-        param0->unk_84[v0]->unk_854 = param1->unk_84[v0]->unk_854;
-        param0->unk_84[v0]->unk_864 = param1->unk_84[v0]->unk_864;
-        param0->unk_84[v0]->unk_860 = param1->unk_84[v0]->unk_860;
+        param0->loadedMaps[v0]->mapRenderObj = param1->loadedMaps[v0]->mapRenderObj;
+        param0->loadedMaps[v0]->nsbmdFile = param1->loadedMaps[v0]->nsbmdFile;
+        param0->loadedMaps[v0]->present = param1->loadedMaps[v0]->present;
+        param0->loadedMaps[v0]->mapMatrixIndex = param1->loadedMaps[v0]->mapMatrixIndex;
     }
 
     param0->unk_AC = param1->unk_AC;
-    param0->unk_B4 = param1->unk_B4;
-    param0->unk_B8 = param1->unk_B8;
-    param0->unk_BC = param1->unk_B4 * 32;
+    param0->mapMatrixWidth = param1->mapMatrixWidth;
+    param0->mapMatrixHeight = param1->mapMatrixHeight;
+    param0->mapTilesWidth = param1->mapMatrixWidth * 32;
     param0->unk_C0 = param1->unk_C0;
     param0->unk_F8 = param1->unk_F8;
     param0->unk_100 = param1->unk_100;
@@ -2376,7 +2372,7 @@ void ov5_021EA174(FieldSystem *fieldSystem, UnkStruct_ov5_021E8F60 *param1)
         if (param1->unk_74[v1->unk_20[v1->unk_22]] == 1) {
             (void)0;
         } else {
-            ov5_021E7D98(v1->unk_22, param1->unk_AC, param1->unk_B0, param1->unk_B4, param1->unk_B8, param1, v1);
+            ov5_021E7D98(v1->unk_22, param1->unk_AC, param1->mapMatrix, param1->mapMatrixWidth, param1->mapMatrixHeight, param1, v1);
         }
 
         v1->unk_22++;
@@ -2395,8 +2391,8 @@ void ov5_021EA174(FieldSystem *fieldSystem, UnkStruct_ov5_021E8F60 *param1)
                 param1->unk_A8 = 0;
             }
 
-            if (v1->unk_00[v1->unk_22 - 1]->unk_864 == 1) {
-                NNSG3dResMdlSet *v5 = NNS_G3dGetMdlSet(v1->unk_00[v1->unk_22 - 1]->unk_854);
+            if (v1->unk_00[v1->unk_22 - 1]->present == 1) {
+                NNSG3dResMdlSet *v5 = NNS_G3dGetMdlSet(v1->unk_00[v1->unk_22 - 1]->nsbmdFile);
                 NNSG3dResMdl *v6 = NNS_G3dGetMdlByIdx(v5, 0);
 
                 if (ov5_021EFAC0(param1->unk_AC) == 1) {
@@ -2405,8 +2401,8 @@ void ov5_021EA174(FieldSystem *fieldSystem, UnkStruct_ov5_021E8F60 *param1)
             }
 
             if (param1->unk_F0 != NULL) {
-                if ((0 <= v1->unk_00[v1->unk_22 - 1]->unk_860) && (v1->unk_00[v1->unk_22 - 1]->unk_860 < param1->unk_B4 * param1->unk_B8)) {
-                    param1->unk_F0(param1->unk_F4, v1->unk_00[v1->unk_22 - 1]->unk_860, v1->unk_00[v1->unk_22 - 1]->unk_868);
+                if ((0 <= v1->unk_00[v1->unk_22 - 1]->mapMatrixIndex) && (v1->unk_00[v1->unk_22 - 1]->mapMatrixIndex < param1->mapMatrixWidth * param1->mapMatrixHeight)) {
+                    param1->unk_F0(param1->unk_F4, v1->unk_00[v1->unk_22 - 1]->mapMatrixIndex, v1->unk_00[v1->unk_22 - 1]->mapPropManager);
                 }
             }
         }
@@ -2452,13 +2448,13 @@ void ov5_021EA174(FieldSystem *fieldSystem, UnkStruct_ov5_021E8F60 *param1)
     }
 }
 
-void ov5_021EA540(UnkStruct_ov5_021E8F60 *param0, MapMatrix *param1, UnkStruct_ov5_021EF76C *param2)
+void ov5_021EA540(UnkStruct_ov5_021E8F60 *param0, MapMatrix *mapMatrix, UnkStruct_ov5_021EF76C *param2)
 {
     param0->unk_AC = param2;
-    param0->unk_B0 = param1;
-    param0->unk_B4 = MapMatrix_GetWidth(param1);
-    param0->unk_B8 = MapMatrix_GetHeight(param1);
-    param0->unk_BC = param0->unk_B4 * 32;
+    param0->mapMatrix = mapMatrix;
+    param0->mapMatrixWidth = MapMatrix_GetWidth(mapMatrix);
+    param0->mapMatrixHeight = MapMatrix_GetHeight(mapMatrix);
+    param0->mapTilesWidth = param0->mapMatrixWidth * 32;
 
     ov5_021E8F60(param0);
 
@@ -2470,24 +2466,24 @@ void ov5_021EA58C(UnkStruct_ov5_021E8F60 *param0, const int param1, const int pa
 {
     int v0;
 
-    ov5_021E7838(param0->unk_F8, param1, param2, param0->unk_100, param0->unk_108, param0->unk_B4, param0->unk_B8, param0->unk_BC, param3);
+    ov5_021E7838_CalculateLoadedMapMatrixIndexes(param0->unk_F8, param1, param2, param0->unk_100, param0->unk_108, param0->mapMatrixWidth, param0->mapMatrixHeight, param0->mapTilesWidth, param3);
 
     for (v0 = 0; v0 < 4; v0++) {
-        param0->unk_84[v0]->unk_864 = 0;
+        param0->loadedMaps[v0]->present = 0;
     }
 }
 
 void ov5_021EA5E0(UnkStruct_ov5_021E8F60 *param0, int param1, int param2)
 {
-    param0->unk_84[param1]->unk_864 = 0;
-    ov5_021EEB84(param1, param0->unk_00, (void **)&(param0->unk_84[param1]->unk_854));
-    ov5_021EEB90(param1, param0->unk_00, (void **)&(param0->unk_84[param1]->bdhcBuffer));
-    param0->unk_84[param1]->unk_860 = -1;
+    param0->loadedMaps[param1]->present = 0;
+    ov5_021EEB84(param1, param0->unk_00, (void **)&(param0->loadedMaps[param1]->nsbmdFile));
+    ov5_021EEB90(param1, param0->unk_00, (void **)&(param0->loadedMaps[param1]->bdhcBuffer));
+    param0->loadedMaps[param1]->mapMatrixIndex = -1;
 
-    MI_CpuFillFast(param0->unk_84[param1]->unk_00, 0xffffffff, 2 * 32 * 32);
+    MI_CpuFillFast(param0->loadedMaps[param1]->movementPermissions, 0xffffffff, 2 * 32 * 32);
 
-    BDHC_MarkNotLoaded(param0->unk_84[param1]->bdhc);
-    ov5_021E7E28(param2, param1, param0->unk_AC, param0->unk_B0, param0->unk_B4, param0->unk_B8, ov5_021EFAC0(param0->unk_AC), param0);
+    BDHC_MarkNotLoaded(param0->loadedMaps[param1]->bdhc);
+    ov5_021E7E28_LoadLandData(param2, param1, param0->unk_AC, param0->mapMatrix, param0->mapMatrixWidth, param0->mapMatrixHeight, ov5_021EFAC0(param0->unk_AC), param0);
 }
 
 void ov5_021EA678(UnkStruct_ov5_021E8F60 *param0, int param1, int param2, int param3)
@@ -2525,14 +2521,14 @@ void ov5_021EA6D0(UnkStruct_ov5_021E8F60 *param0, int param1)
     param0->unk_FC = param1;
 }
 
-void ov5_021EA6D8(UnkStruct_ov5_021E8F60 *param0, MapMatrix *param1)
+void ov5_021EA6D8_SetMapMatrix(UnkStruct_ov5_021E8F60 *param0, MapMatrix *mapMatrix)
 {
-    param0->unk_B0 = param1;
+    param0->mapMatrix = mapMatrix;
 }
 
 void ov5_021EA6E0(UnkStruct_ov5_021E8F60 *param0, int param1, BOOL param2)
 {
-    param0->unk_84[param1]->unk_864 = param2;
+    param0->loadedMaps[param1]->present = param2;
 }
 
 void ov5_021EA6F4(UnkStruct_ov5_021E8F60 *param0, int param1, int param2)

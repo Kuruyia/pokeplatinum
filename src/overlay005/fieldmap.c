@@ -912,7 +912,7 @@ static void ov5_021D1968(FieldSystem *fieldSystem)
     fieldSystem->unk_64 = ov5_021E1B08(4);
     fieldSystem->unk_04->unk_10 = ov5_021D5CB0();
 
-    ov5_021D5CE4(fieldSystem->unk_04->unk_10, ov5_021EFA8C(fieldSystem->unk_30));
+    ov5_021D5CE4(fieldSystem->unk_04->unk_10, ov5_021EFA8C_GetMapTexture(fieldSystem->unk_30));
     sub_02068344(fieldSystem);
     ov5_021EE7C0(fieldSystem);
     SetVBlankCallback(fieldmap, fieldSystem);

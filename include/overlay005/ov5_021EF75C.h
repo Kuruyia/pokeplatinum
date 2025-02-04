@@ -11,7 +11,7 @@ UnkStruct_ov5_021EF76C *ov5_021EF76C(int param0, UnkStruct_ov5_021D3CAC *param1)
 void ov5_021EF7A0(UnkStruct_ov5_021EF76C *param0);
 NNSG3dResFileHeader **ov5_021EF9E8(const int param0, UnkStruct_ov5_021EF76C *const param1);
 void ov5_021EFA10(UnkStruct_ov5_021EF76C **param0);
-NNSG3dResTex *ov5_021EFA8C(const UnkStruct_ov5_021EF76C *param0);
+NNSG3dResTex *ov5_021EFA8C_GetMapTexture(const UnkStruct_ov5_021EF76C *param0);
 NNSG3dResTex *ov5_021EFAA0(const UnkStruct_ov5_021EF76C *param0);
 const MapPropMaterialShape *ov5_021EFAB4(const UnkStruct_ov5_021EF76C *param0);
 BOOL ov5_021EFAC0(const UnkStruct_ov5_021EF76C *param0);
