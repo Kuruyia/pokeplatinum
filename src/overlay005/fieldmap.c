@@ -22,6 +22,7 @@
 #include "overlay005/const_ov5_021FF7D0.h"
 #include "overlay005/hblank_system.h"
 #include "overlay005/honey_tree.h"
+#include "overlay005/land_data.h"
 #include "overlay005/map_name_popup.h"
 #include "overlay005/map_prop.h"
 #include "overlay005/map_prop_animation.h"
@@ -34,7 +35,6 @@
 #include "overlay005/ov5_021D5EB8.h"
 #include "overlay005/ov5_021DF440.h"
 #include "overlay005/ov5_021E1B08.h"
-#include "overlay005/ov5_021E779C.h"
 #include "overlay005/ov5_021EA714.h"
 #include "overlay005/ov5_021ECC20.h"
 #include "overlay005/ov5_021ECE40.h"
@@ -263,12 +263,12 @@ static BOOL FieldMap_Main(OverlayManager *overlayMan, int *param1)
 static BOOL FieldMap_Exit(OverlayManager *overlayMan, int *param1)
 {
     FieldSystem *fieldSystem = OverlayManager_Args(overlayMan);
-    ov5_021E8188(fieldSystem, fieldSystem->unk_28);
+    LandDataManager_Tick(fieldSystem, fieldSystem->landDataMan);
 
     switch (*param1) {
     case 0:
         sub_02068368(fieldSystem);
-        ov5_021E9338(fieldSystem->unk_28);
+        LandDataManager_ForgetTrackedPosition(fieldSystem->landDataMan);
 
         fieldSystem->location->x = Player_GetXPos(fieldSystem->playerAvatar);
         fieldSystem->location->z = Player_GetZPos(fieldSystem->playerAvatar);
@@ -278,7 +278,7 @@ static BOOL FieldMap_Exit(OverlayManager *overlayMan, int *param1)
 
         {
             GF_ASSERT(fieldSystem->mapPropAnimMan != 0);
-            ov5_021E924C(fieldSystem->unk_28);
+            LandDataManager_End(fieldSystem->landDataMan);
         }
 
         MapPropAnimationManager_UnloadAllAnimations(fieldSystem->mapPropAnimMan);
@@ -302,9 +302,9 @@ static BOOL FieldMap_Exit(OverlayManager *overlayMan, int *param1)
         (*param1)++;
         break;
     case 1:
-        if (ov5_021E9300(fieldSystem->unk_28) == 1) {
+        if (LandDataManager_HasEnded(fieldSystem->landDataMan) == TRUE) {
             AreaDataManager_Free(&fieldSystem->areaDataManager);
-            ov5_021E92E4(fieldSystem->unk_28);
+            LandDataManager_FreeNARCAndLoadedMapBuffers(fieldSystem->landDataMan);
             HoneyTree_FreeShakeData(&fieldSystem->unk_A8);
             ov5_021D5BA8(fieldSystem);
             AreaLightManager_Free(&fieldSystem->areaLightMan);
@@ -406,8 +406,8 @@ static BOOL FieldMap_ChangeZone(FieldSystem *fieldSystem)
         return FALSE;
     }
 
-    x = (Player_GetXPos(fieldSystem->playerAvatar) - ov5_021EA6AC(fieldSystem->unk_28)) / 32;
-    y = (Player_GetZPos(fieldSystem->playerAvatar) - ov5_021EA6B4(fieldSystem->unk_28)) / 32;
+    x = (Player_GetXPos(fieldSystem->playerAvatar) - LandDataManager_GetOffsetTileX(fieldSystem->landDataMan)) / 32;
+    y = (Player_GetZPos(fieldSystem->playerAvatar) - LandDataManager_GetOffsetTileY(fieldSystem->landDataMan)) / 32;
     v0 = MapMatrix_GetMapHeaderIDAtCoords(fieldSystem->mapMatrix, x, y);
     mapId = fieldSystem->location->mapId;
 
@@ -498,7 +498,7 @@ static void ov5_021D134C(FieldSystem *fieldSystem, u8 param1)
     }
 
     if ((param1 & 2) != 0) {
-        ov5_021E8188(fieldSystem, fieldSystem->unk_28);
+        LandDataManager_Tick(fieldSystem, fieldSystem->landDataMan);
 
         if (FieldMap_InDistortionWorld(fieldSystem) == TRUE) {
             ov9_0224CA5C(fieldSystem);
@@ -520,8 +520,8 @@ static void ov5_021D13B4(FieldSystem *fieldSystem)
     }
 
     v0 = sub_0203A76C(SaveData_GetFieldOverworldState(fieldSystem->saveData));
-    v1 = (Player_GetXPos(fieldSystem->playerAvatar) - ov5_021EA6AC(fieldSystem->unk_28)) / 32;
-    v2 = (Player_GetZPos(fieldSystem->playerAvatar) - ov5_021EA6B4(fieldSystem->unk_28)) / 32;
+    v1 = (Player_GetXPos(fieldSystem->playerAvatar) - LandDataManager_GetOffsetTileX(fieldSystem->landDataMan)) / 32;
+    v2 = (Player_GetZPos(fieldSystem->playerAvatar) - LandDataManager_GetOffsetTileY(fieldSystem->landDataMan)) / 32;
     v3 = PlayerAvatar_GetDir(fieldSystem->playerAvatar);
 
     sub_02055740(v0, v1, v2, v3);
@@ -707,7 +707,7 @@ static void ov5_021D15F4(FieldSystem *fieldSystem)
     }
 
     sub_0206979C(fieldSystem);
-    ov5_021E91FC(fieldSystem->unk_28, fieldSystem->areaModelAttrs);
+    LandDataManager_RenderLoadedMaps(fieldSystem->landDataMan, fieldSystem->areaModelAttrs);
 
     if (FieldMap_InDistortionWorld(fieldSystem) == TRUE) {
         ov9_0224CA50(fieldSystem);
@@ -802,25 +802,25 @@ static void ov5_021D1790(FieldSystem *fieldSystem)
 
 static void ov5_021D17EC(FieldSystem *fieldSystem)
 {
-    fieldSystem->unk_28 = ov5_021E9084(fieldSystem->mapMatrix, fieldSystem->areaDataManager, fieldSystem->mapPropAnimMan, fieldSystem->unk_60);
+    fieldSystem->landDataMan = LandDataManager_New(fieldSystem->mapMatrix, fieldSystem->areaDataManager, fieldSystem->mapPropAnimMan, fieldSystem->skipMapCollisions);
 
     if (FieldMap_InDistortionWorld(fieldSystem) == TRUE) {
         int v0 = 0, v1 = 0, v2 = 0;
 
         ov9_02251094(fieldSystem->location->mapId, &v0, &v1, &v2);
-        ov5_021EA678(fieldSystem->unk_28, v0, v1, v2);
-        ov5_021EA6A4(fieldSystem->unk_28, 1);
-        ov5_021EA6D0(fieldSystem->unk_28, 1);
+        LandDataManager_DistortionWorldSetOffsets(fieldSystem->landDataMan, v0, v1, v2);
+        LandDataManager_SetInDistortionWorld(fieldSystem->landDataMan, TRUE);
+        LandDataManager_SetSkipMapProps(fieldSystem->landDataMan, TRUE);
     }
 
     fieldSystem->unk_A0 = ov5_021EF28C(8, 4);
     fieldSystem->unk_A8 = HoneyTree_ShakeDataInit();
 
     if (fieldSystem->mapLoadType == MAP_LOAD_TYPE_OVERWORLD) {
-        ov5_021E9630(fieldSystem->unk_28, ov5_021F0030, fieldSystem);
+        LandDataManager_SetMapLoadedCallback(fieldSystem->landDataMan, ov5_021F0030, fieldSystem);
     }
 
-    ov5_021E9150(fieldSystem->unk_28, fieldSystem->location->x, fieldSystem->location->z);
+    LandDataManager_InitialLoad(fieldSystem->landDataMan, fieldSystem->location->x, fieldSystem->location->z);
 }
 
 static void ov5_021D1878(FieldSystem *fieldSystem)
@@ -881,7 +881,7 @@ static void ov5_021D1878(FieldSystem *fieldSystem)
     sub_02061C48(fieldSystem->mapObjMan);
     CommPlayerMan_ForcePos();
     sub_02062C3C(fieldSystem->mapObjMan);
-    ov5_021E931C(PlayerAvatar_PosVector(fieldSystem->playerAvatar), fieldSystem->unk_28);
+    LandDataManager_TrackPosition(PlayerAvatar_PosVector(fieldSystem->playerAvatar), fieldSystem->landDataMan);
 
     fieldSystem->unk_04->unk_18 = sub_02055C8C(fieldSystem, 4);
 }

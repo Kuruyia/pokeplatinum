@@ -77,7 +77,7 @@ typedef struct FieldSystem_t {
     Location *location;
     int unk_20;
     Camera *camera;
-    UnkStruct_ov5_021E8F60 *unk_28;
+    LandDataManager *landDataMan;
     MapMatrix *mapMatrix;
     AreaDataManager *areaDataManager;
     UnkStruct_ov5_021D1A68 *unk_34;
@@ -91,7 +91,7 @@ typedef struct FieldSystem_t {
     MapPropOneShotAnimationManager *mapPropOneShotAnimMan;
     UnkStruct_02054C18 *unk_58;
     const TerrainCollisionManager *terrainCollisionMan;
-    int unk_60;
+    BOOL skipMapCollisions;
     UnkStruct_ov5_021E1B20 *unk_64;
     BOOL runningFieldMap;
     UnkStruct_ov23_0224942C *unk_6C;
