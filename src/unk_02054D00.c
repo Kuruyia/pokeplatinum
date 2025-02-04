@@ -94,14 +94,14 @@ static const fx32 sub_02054D0C(const FieldSystem *fieldSystem, const fx32 param1
         v11.z = param3 - v13 - v17.z;
 
         v9 = v3 + v4 * v20;
-        v10 = ov5_021E935C(v9, v20);
+        v10 = ov5_021E935C_CalculateLoadedMapIndexForPlayer(v9, v20);
         v8 = ov5_021E9390(v7, v10, v18);
 
         if (v8 > 3) {
             v1 = 0;
         } else {
             {
-                const BDHC *v21 = ov5_021E9610(v18, v8);
+                const BDHC *v21 = LoadedMaps_GetBDHC(v18, v8);
                 v1 = CalculateObjectHeight(v16, v11.x, v11.z, v21, &v11.y);
             }
         }
@@ -208,7 +208,7 @@ static BOOL sub_02054E84(const FieldSystem *fieldSystem, const int param1, const
 
             v11 = (v6 % 32) * 32 + (v5 % 32);
 
-            v12 = ov5_021E9624(v7, v4);
+            v12 = LoadedMaps_GetMovementPermissions(v7, v4);
             *param3 = v12[v11];
 
             return 1;
@@ -460,7 +460,7 @@ BOOL sub_02055178(const FieldSystem *fieldSystem, const int param1, const UnkStr
             int v5;
             BOOL v6;
 
-            v4 = ov5_021E9560(fieldSystem->unk_28, v0);
+            v4 = ov5_021E9560_GetMapMatrixIndex(fieldSystem->unk_28, v0);
             v5 = MapMatrix_GetWidth(fieldSystem->mapMatrix);
 
             sub_020553A4(v4, v5, &v3);
@@ -510,7 +510,7 @@ BOOL sub_02055208(const FieldSystem *fieldSystem, const int *param1, const u8 pa
             int v5;
             BOOL v6;
 
-            v4 = ov5_021E9560(fieldSystem->unk_28, v0);
+            v4 = ov5_021E9560_GetMapMatrixIndex(fieldSystem->unk_28, v0);
             v5 = MapMatrix_GetWidth(fieldSystem->mapMatrix);
 
             sub_020553A4(v4, v5, &v3);
@@ -579,7 +579,7 @@ BOOL sub_020552B4(const FieldSystem *fieldSystem, const int param1, MapProp **pa
                         }
 
                         if (param3 != NULL) {
-                            (*param3) = ov5_021E9560(fieldSystem->unk_28, v0);
+                            (*param3) = ov5_021E9560_GetMapMatrixIndex(fieldSystem->unk_28, v0);
                         }
 
                         return 1;
