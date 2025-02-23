@@ -10,7 +10,7 @@
 
 typedef struct AreaDataManagerLoadData {
     int areaDataArchiveID;
-    UnkStruct_ov5_021D3CAC *unk_04;
+    MapPropAnimationManager *unk_04;
     u16 mapPropModelIDsCount;
     int dummy0C;
 } AreaDataManagerLoadData;
@@ -37,7 +37,7 @@ typedef struct AreaDataManager {
     u16 *mapPropModelIDs;
 } AreaDataManager;
 
-AreaDataManager *AreaDataManager_Alloc(int areaDataArchiveID, UnkStruct_ov5_021D3CAC *param1);
+AreaDataManager *AreaDataManager_Alloc(int areaDataArchiveID, MapPropAnimationManager *param1);
 void AreaDataManager_Load(AreaDataManager *areaDataManager);
 NNSG3dResFileHeader **AreaDataManager_GetMapPropModelFile(const int mapPropModelID, AreaDataManager *const areaDataManager);
 void AreaDataManager_Free(AreaDataManager **areaDataManager);

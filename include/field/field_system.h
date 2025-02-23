@@ -88,8 +88,8 @@ typedef struct FieldSystem_t {
     UnkStruct_ov5_021D5894 *unk_44;
     UnkStruct_ov5_021D57D8 *unk_48;
     UnkStruct_ov5_021D538C *unk_4C;
-    UnkStruct_ov5_021D3CAC *unk_50;
-    UnkStruct_ov5_021D41B4 *unk_54;
+    MapPropAnimationManager *mapPropAnimationManager;
+    MapPropOneShotAnimationManager *mapPropOneShotAnimationManager;
     UnkStruct_02054C18 *unk_58;
     const TerrainCollisionManager *terrainCollisionMan;
     int unk_60;

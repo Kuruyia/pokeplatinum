@@ -11,7 +11,7 @@
 
 #include "field/field_system.h"
 #include "overlay005/map_prop.h"
-#include "overlay005/ov5_021D37AC.h"
+#include "overlay005/map_prop_animation.h"
 #include "overlay005/ov5_021E779C.h"
 
 #include "heap.h"
@@ -200,7 +200,7 @@ void HoneyTree_StopShaking(FieldSystem *fieldSystem)
         v4 = MapProp_GetRenderObj(v2);
 
         if (v2 != NULL) {
-            ov5_021D3D18(fieldSystem->unk_50, v4, 26, fieldSystem->unk_A8->trees[treeId].shakeValue);
+            MapPropAnimationManager_RemoveAnimationFromRenderObj(fieldSystem->mapPropAnimationManager, v4, 26, fieldSystem->unk_A8->trees[treeId].shakeValue);
         }
 
         fieldSystem->unk_A8->trees[treeId].isShaking = FALSE;
@@ -373,12 +373,12 @@ static void DoTreeShakingAnimation(FieldSystem *fieldSystem, MapPropManager *par
 
                 v7 = MapProp_GetRenderObj(v4);
 
-                ov5_021D3D18(fieldSystem->unk_50, v7, 26, fieldSystem->unk_A8->trees[treeId].shakeValue);
+                MapPropAnimationManager_RemoveAnimationFromRenderObj(fieldSystem->mapPropAnimationManager, v7, 26, fieldSystem->unk_A8->trees[treeId].shakeValue);
 
                 fieldSystem->unk_A8->trees[treeId].shakeValue = shakeValue;
                 fieldSystem->unk_A8->trees[treeId].isShaking = isShaking;
 
-                ov5_021D3B24(26, shakeValue, 1, v7, fieldSystem->unk_50);
+                MapPropAnimationManager_AddAnimationToRenderObj(26, shakeValue, 1, v7, fieldSystem->mapPropAnimationManager);
             }
         }
     }

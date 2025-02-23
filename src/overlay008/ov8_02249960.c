@@ -20,7 +20,7 @@
 #include "field/field_system.h"
 #include "field/field_system_sub2_t.h"
 #include "overlay005/map_prop.h"
-#include "overlay005/ov5_021D37AC.h"
+#include "overlay005/map_prop_animation.h"
 #include "overlay005/ov5_021D57BC.h"
 #include "overlay005/ov5_021DF440.h"
 #include "overlay005/ov5_021E779C.h"
@@ -305,7 +305,7 @@ static void ov8_0224996C(const u8 param0, int *param1);
 static BOOL ov8_02249A94(FieldTask *param0);
 static BOOL ov8_02249B74(FieldTask *param0);
 static BOOL ov8_02249CD8(FieldTask *param0);
-static void ov8_02249F14(const u8 param0, UnkStruct_ov5_021D3CAC *param1);
+static void ov8_02249F14(const u8 param0, MapPropAnimationManager *param1);
 static BOOL ov8_0224A018(FieldTask *param0);
 static BOOL ov8_0224A0E8(FieldTask *param0);
 static BOOL ov8_0224A4FC(FieldTask *param0);
@@ -417,20 +417,20 @@ static BOOL ov8_02249A94(FieldTask *taskMan)
     switch (v2->unk_00) {
     case 0:
 
-        ov8_02249F14(0, fieldSystem->unk_50);
+        ov8_02249F14(0, fieldSystem->mapPropAnimationManager);
         (v2->unk_00)++;
         break;
     case 1: {
-        UnkStruct_ov5_021D3CE4 *v3;
-        UnkStruct_ov5_021D3CE4 *v4;
-        UnkStruct_ov5_021D3CE4 *v5;
+        MapPropAnimation *v3;
+        MapPropAnimation *v4;
+        MapPropAnimation *v5;
 
-        v3 = ov5_021D3DA0(1, fieldSystem->unk_50);
-        v4 = ov5_021D3DA0(2, fieldSystem->unk_50);
-        v5 = ov5_021D3DA0(3, fieldSystem->unk_50);
+        v3 = MapPropAnimationManager_GetAnimationByPastoriaGymButtonGroup(1, fieldSystem->mapPropAnimationManager);
+        v4 = MapPropAnimationManager_GetAnimationByPastoriaGymButtonGroup(2, fieldSystem->mapPropAnimationManager);
+        v5 = MapPropAnimationManager_GetAnimationByPastoriaGymButtonGroup(3, fieldSystem->mapPropAnimationManager);
 
-        if (ov5_021D3F70(v3) && ov5_021D3F70(v4) && ov5_021D3F70(v5)) {
-            v0 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, MAP_PROP_MODEL_ID_UNK_242);
+        if (MapPropAnimation_IsLoopFinished(v3) && MapPropAnimation_IsLoopFinished(v4) && MapPropAnimation_IsLoopFinished(v5)) {
+            v0 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, MAP_PROP_MODEL_ID_PASTORIA_GYM_WATER_FLOOR);
 
             {
                 VecFx32 v6;
@@ -468,20 +468,20 @@ static BOOL ov8_02249B74(FieldTask *taskMan)
 
     switch (v2->unk_00) {
     case 0:
-        ov8_02249F14(1, fieldSystem->unk_50);
+        ov8_02249F14(1, fieldSystem->mapPropAnimationManager);
         (v2->unk_00)++;
         break;
     case 1: {
-        UnkStruct_ov5_021D3CE4 *v3;
-        UnkStruct_ov5_021D3CE4 *v4;
-        UnkStruct_ov5_021D3CE4 *v5;
+        MapPropAnimation *v3;
+        MapPropAnimation *v4;
+        MapPropAnimation *v5;
 
-        v3 = ov5_021D3DA0(1, fieldSystem->unk_50);
-        v4 = ov5_021D3DA0(2, fieldSystem->unk_50);
-        v5 = ov5_021D3DA0(3, fieldSystem->unk_50);
+        v3 = MapPropAnimationManager_GetAnimationByPastoriaGymButtonGroup(1, fieldSystem->mapPropAnimationManager);
+        v4 = MapPropAnimationManager_GetAnimationByPastoriaGymButtonGroup(2, fieldSystem->mapPropAnimationManager);
+        v5 = MapPropAnimationManager_GetAnimationByPastoriaGymButtonGroup(3, fieldSystem->mapPropAnimationManager);
 
-        if (ov5_021D3F70(v3) && ov5_021D3F70(v4) && ov5_021D3F70(v5)) {
-            v0 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, MAP_PROP_MODEL_ID_UNK_242);
+        if (MapPropAnimation_IsLoopFinished(v3) && MapPropAnimation_IsLoopFinished(v4) && MapPropAnimation_IsLoopFinished(v5)) {
+            v0 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, MAP_PROP_MODEL_ID_PASTORIA_GYM_WATER_FLOOR);
             {
                 VecFx32 v6;
 
@@ -501,7 +501,7 @@ static BOOL ov8_02249B74(FieldTask *taskMan)
         }
     } break;
     case 2:
-        v0 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, MAP_PROP_MODEL_ID_UNK_242);
+        v0 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, MAP_PROP_MODEL_ID_PASTORIA_GYM_WATER_FLOOR);
 
         {
             VecFx32 v7;
@@ -518,7 +518,7 @@ static BOOL ov8_02249B74(FieldTask *taskMan)
         }
         break;
     case 3:
-        v0 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, MAP_PROP_MODEL_ID_UNK_242);
+        v0 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, MAP_PROP_MODEL_ID_PASTORIA_GYM_WATER_FLOOR);
 
         {
             VecFx32 v8;
@@ -555,20 +555,20 @@ static BOOL ov8_02249CD8(FieldTask *taskMan)
 
     switch (v2->unk_00) {
     case 0:
-        ov8_02249F14(2, fieldSystem->unk_50);
+        ov8_02249F14(2, fieldSystem->mapPropAnimationManager);
         (v2->unk_00)++;
         break;
     case 1: {
-        UnkStruct_ov5_021D3CE4 *v3;
-        UnkStruct_ov5_021D3CE4 *v4;
-        UnkStruct_ov5_021D3CE4 *v5;
+        MapPropAnimation *v3;
+        MapPropAnimation *v4;
+        MapPropAnimation *v5;
 
-        v3 = ov5_021D3DA0(1, fieldSystem->unk_50);
-        v4 = ov5_021D3DA0(2, fieldSystem->unk_50);
-        v5 = ov5_021D3DA0(3, fieldSystem->unk_50);
+        v3 = MapPropAnimationManager_GetAnimationByPastoriaGymButtonGroup(1, fieldSystem->mapPropAnimationManager);
+        v4 = MapPropAnimationManager_GetAnimationByPastoriaGymButtonGroup(2, fieldSystem->mapPropAnimationManager);
+        v5 = MapPropAnimationManager_GetAnimationByPastoriaGymButtonGroup(3, fieldSystem->mapPropAnimationManager);
 
-        if (ov5_021D3F70(v3) && ov5_021D3F70(v4) && ov5_021D3F70(v5)) {
-            v0 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, MAP_PROP_MODEL_ID_UNK_242);
+        if (MapPropAnimation_IsLoopFinished(v3) && MapPropAnimation_IsLoopFinished(v4) && MapPropAnimation_IsLoopFinished(v5)) {
+            v0 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, MAP_PROP_MODEL_ID_PASTORIA_GYM_WATER_FLOOR);
 
             {
                 VecFx32 v6;
@@ -613,7 +613,7 @@ void ov8_02249DBC(FieldSystem *fieldSystem)
 
     {
         VecFx32 v9 = { FX32_ONE * 16 * 16, 0, FX32_ONE * 16 * 16 };
-        MapPropManager_LoadOne(fieldSystem->mapPropManager, fieldSystem->areaDataManager, 242, &v9, NULL, fieldSystem->unk_50);
+        MapPropManager_LoadOne(fieldSystem->mapPropManager, fieldSystem->areaDataManager, 242, &v9, NULL, fieldSystem->mapPropAnimationManager);
     }
 
     ov5_021EF2CC(0, 1, 2, 25, 38, (FX32_ONE * 16 * 0), fieldSystem->unk_A0);
@@ -651,7 +651,7 @@ void ov8_02249DBC(FieldSystem *fieldSystem)
         v6 = 0;
     }
 
-    v1 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, MAP_PROP_MODEL_ID_UNK_242);
+    v1 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, MAP_PROP_MODEL_ID_PASTORIA_GYM_WATER_FLOOR);
 
     {
         VecFx32 v10;
@@ -665,37 +665,37 @@ void ov8_02249DBC(FieldSystem *fieldSystem)
     ov5_021EF388(0, v3, fieldSystem->unk_A0);
 
     {
-        UnkStruct_ov5_021D3CE4 *v11;
+        MapPropAnimation *v11;
 
-        v11 = ov5_021D3DE4(239, 0, fieldSystem->unk_50);
+        v11 = MapPropAnimationManager_GetAnimation(239, 0, fieldSystem->mapPropAnimationManager);
 
-        ov5_021D3F0C(v11, 1);
-        ov5_021D3F04(v11, v4);
-        ov5_021D3F08(v11, 1);
-        ov5_021D3E40(v11, 1);
-        ov5_021D3E9C(v11);
+        MapPropAnimation_SetPastoriaGymButtonGroup(v11, 1);
+        MapPropAnimation_SetReversed(v11, v4);
+        MapPropAnimation_SetLoopCount(v11, 1);
+        MapPropAnimation_SetAnimationPaused(v11, 1);
+        MapPropAnimation_GoToLastFrame(v11);
 
-        v11 = ov5_021D3DE4(240, 0, fieldSystem->unk_50);
+        v11 = MapPropAnimationManager_GetAnimation(240, 0, fieldSystem->mapPropAnimationManager);
 
-        ov5_021D3F0C(v11, 2);
-        ov5_021D3F04(v11, v5);
-        ov5_021D3F08(v11, 1);
-        ov5_021D3E40(v11, 1);
-        ov5_021D3E9C(v11);
+        MapPropAnimation_SetPastoriaGymButtonGroup(v11, 2);
+        MapPropAnimation_SetReversed(v11, v5);
+        MapPropAnimation_SetLoopCount(v11, 1);
+        MapPropAnimation_SetAnimationPaused(v11, 1);
+        MapPropAnimation_GoToLastFrame(v11);
 
-        v11 = ov5_021D3DE4(241, 0, fieldSystem->unk_50);
+        v11 = MapPropAnimationManager_GetAnimation(241, 0, fieldSystem->mapPropAnimationManager);
 
-        ov5_021D3F0C(v11, 3);
-        ov5_021D3F04(v11, v6);
-        ov5_021D3F08(v11, 1);
-        ov5_021D3E40(v11, 1);
-        ov5_021D3E9C(v11);
+        MapPropAnimation_SetPastoriaGymButtonGroup(v11, 3);
+        MapPropAnimation_SetReversed(v11, v6);
+        MapPropAnimation_SetLoopCount(v11, 1);
+        MapPropAnimation_SetAnimationPaused(v11, 1);
+        MapPropAnimation_GoToLastFrame(v11);
     }
 }
 
-static void ov8_02249F14(const u8 param0, UnkStruct_ov5_021D3CAC *param1)
+static void ov8_02249F14(const u8 param0, MapPropAnimationManager *param1)
 {
-    UnkStruct_ov5_021D3CE4 *v0;
+    MapPropAnimation *v0;
     int v1, v2, v3;
 
     if (param0 == 2) {
@@ -714,26 +714,26 @@ static void ov8_02249F14(const u8 param0, UnkStruct_ov5_021D3CAC *param1)
         GF_ASSERT(0);
     }
 
-    v0 = ov5_021D3DA0(v1, param1);
+    v0 = MapPropAnimationManager_GetAnimationByPastoriaGymButtonGroup(v1, param1);
 
-    ov5_021D3F04(v0, 0);
-    ov5_021D3E7C(v0);
-    ov5_021D3E40(v0, 0);
-    ov5_021D3E44(v0);
+    MapPropAnimation_SetReversed(v0, 0);
+    MapPropAnimation_GoToFirstFrame(v0);
+    MapPropAnimation_SetAnimationPaused(v0, 0);
+    MapPropAnimation_StartLoop(v0);
 
-    v0 = ov5_021D3DA0(v2, param1);
+    v0 = MapPropAnimationManager_GetAnimationByPastoriaGymButtonGroup(v2, param1);
 
-    ov5_021D3F04(v0, 1);
-    ov5_021D3E7C(v0);
-    ov5_021D3E40(v0, 0);
-    ov5_021D3E44(v0);
+    MapPropAnimation_SetReversed(v0, 1);
+    MapPropAnimation_GoToFirstFrame(v0);
+    MapPropAnimation_SetAnimationPaused(v0, 0);
+    MapPropAnimation_StartLoop(v0);
 
-    v0 = ov5_021D3DA0(v3, param1);
+    v0 = MapPropAnimationManager_GetAnimationByPastoriaGymButtonGroup(v3, param1);
 
-    ov5_021D3F04(v0, 1);
-    ov5_021D3E7C(v0);
-    ov5_021D3E40(v0, 0);
-    ov5_021D3E44(v0);
+    MapPropAnimation_SetReversed(v0, 1);
+    MapPropAnimation_GoToFirstFrame(v0);
+    MapPropAnimation_SetAnimationPaused(v0, 0);
+    MapPropAnimation_StartLoop(v0);
 
     Sound_PlayEffect(1626);
 }
@@ -784,7 +784,7 @@ static BOOL ov8_0224A018(FieldTask *taskMan)
         (v2->unk_00)++;
         break;
     case 1: {
-        v0 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, MAP_PROP_MODEL_ID_UNK_258);
+        v0 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, MAP_PROP_MODEL_ID_IRON_ISLAND_LIFT_PLATFORM);
 
         {
             VecFx32 v3;
@@ -830,7 +830,7 @@ static BOOL ov8_0224A0E8(FieldTask *taskMan)
         (v2->unk_00)++;
         break;
     case 1: {
-        v0 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, MAP_PROP_MODEL_ID_UNK_258);
+        v0 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, MAP_PROP_MODEL_ID_IRON_ISLAND_LIFT_PLATFORM);
 
         {
             VecFx32 v3;
@@ -1584,13 +1584,13 @@ void ov8_0224A8C8(FieldSystem *fieldSystem)
         VecFx32 v3 = { FX32_ONE * (16 * 16), 0, FX32_ONE * (16 * 16) };
 
         v3.y = (FX32_ONE * 16) * 10;
-        v0->unk_04 = MapPropManager_LoadOne(fieldSystem->mapPropManager, fieldSystem->areaDataManager, 300, &v3, NULL, fieldSystem->unk_50);
+        v0->unk_04 = MapPropManager_LoadOne(fieldSystem->mapPropManager, fieldSystem->areaDataManager, 300, &v3, NULL, fieldSystem->mapPropAnimationManager);
 
         v3.y = (FX32_ONE * 16) * 10 * 2;
-        v0->unk_08 = MapPropManager_LoadOne(fieldSystem->mapPropManager, fieldSystem->areaDataManager, 301, &v3, NULL, fieldSystem->unk_50);
+        v0->unk_08 = MapPropManager_LoadOne(fieldSystem->mapPropManager, fieldSystem->areaDataManager, 301, &v3, NULL, fieldSystem->mapPropAnimationManager);
 
         v3.y = (FX32_ONE * 16) * 10 * 3;
-        v0->unk_0C = MapPropManager_LoadOne(fieldSystem->mapPropManager, fieldSystem->areaDataManager, 302, &v3, NULL, fieldSystem->unk_50);
+        v0->unk_0C = MapPropManager_LoadOne(fieldSystem->mapPropManager, fieldSystem->areaDataManager, 302, &v3, NULL, fieldSystem->mapPropAnimationManager);
     }
 
     {
@@ -1617,7 +1617,7 @@ void ov8_0224A8C8(FieldSystem *fieldSystem)
             v4.x += (FX32_ONE * 8);
             v4.z += (FX32_ONE * 8);
 
-            v0->unk_28[v5] = MapPropManager_LoadOne(fieldSystem->mapPropManager, fieldSystem->areaDataManager, Unk_ov8_0224CB68[v5].unk_00, &v4, NULL, fieldSystem->unk_50);
+            v0->unk_28[v5] = MapPropManager_LoadOne(fieldSystem->mapPropManager, fieldSystem->areaDataManager, Unk_ov8_0224CB68[v5].unk_00, &v4, NULL, fieldSystem->mapPropAnimationManager);
             v0->unk_88[v5] = Unk_ov8_0224CB68[v5].unk_00;
         }
     }
@@ -2123,7 +2123,7 @@ void ov8_0224ABD4(FieldSystem *fieldSystem)
                 ov8_0224AB64(&(v7[v5]), v2->unk_00, &v4);
             }
 
-            v0->unk_04[v5] = MapPropManager_LoadOne(fieldSystem->mapPropManager, fieldSystem->areaDataManager, v7[v5].unk_00, &v3, &v4, fieldSystem->unk_50);
+            v0->unk_04[v5] = MapPropManager_LoadOne(fieldSystem->mapPropManager, fieldSystem->areaDataManager, v7[v5].unk_00, &v3, &v4, fieldSystem->mapPropAnimationManager);
         }
     }
 }
@@ -2452,7 +2452,7 @@ void ov8_0224B020(FieldSystem *fieldSystem)
             v4->unk_0C = *v5;
 
             v4->unk_10 = MapPropManager_LoadOne(
-                fieldSystem->mapPropManager, fieldSystem->areaDataManager, *v5, v6, &v7, fieldSystem->unk_50);
+                fieldSystem->mapPropManager, fieldSystem->areaDataManager, *v5, v6, &v7, fieldSystem->mapPropAnimationManager);
 
             v4->unk_14 = MapPropManager_FindLoadedPropByModelID(fieldSystem->mapPropManager, *v5);
         }

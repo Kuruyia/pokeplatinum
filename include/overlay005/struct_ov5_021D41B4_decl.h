@@ -1,6 +1,6 @@
 #ifndef POKEPLATINUM_STRUCT_OV5_021D41B4_DECL_H
 #define POKEPLATINUM_STRUCT_OV5_021D41B4_DECL_H
 
-typedef struct UnkStruct_ov5_021D41B4_t UnkStruct_ov5_021D41B4;
+typedef struct UnkStruct_ov5_021D41B4_t MapPropOneShotAnimationManager;
 
 #endif // POKEPLATINUM_STRUCT_OV5_021D41B4_DECL_H
