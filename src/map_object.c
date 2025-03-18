@@ -2531,3 +2531,19 @@ void sub_020633FC(MapObject *mapObj)
 {
     return;
 }
+
+void MapObjectManager_HideAll(MapObjectManager *mapObjMan)
+{
+    int maxObjects = MapObjectMan_GetMaxObjects(mapObjMan);
+    MapObject *mapObj = MapObjectMan_GetMapObject(mapObjMan);
+
+    do {
+        if (MapObject_CheckStatus(mapObj, MAP_OBJ_STATUS_0)) {
+            MapObject_SetHidden(mapObj, TRUE);
+            MapObject_SetStatusFlagOn(mapObj, MAP_OBJ_STATUS_HIDE_SHADOW);
+        }
+
+        mapObj++;
+        maxObjects--;
+    } while (maxObjects);
+}

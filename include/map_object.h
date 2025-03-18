@@ -293,5 +293,6 @@ void sub_020633F0(MapObject *mapObj);
 void sub_020633F4(MapObject *mapObj);
 void sub_020633F8(MapObject *mapObj);
 void sub_020633FC(MapObject *mapObj);
+void MapObjectManager_HideAll(MapObjectManager *mapObjMan);
 
 #endif // POKEPLATINUM_UNK_02061804_H

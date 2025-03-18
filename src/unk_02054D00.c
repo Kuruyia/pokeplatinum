@@ -3,6 +3,8 @@
 #include <nitro.h>
 #include <string.h>
 
+#include "constants/field/map.h"
+
 #include "struct_defs/struct_02055130.h"
 
 #include "field/field_system.h"
@@ -46,65 +48,58 @@ static fx32 sub_02054D00(const fx32 param0, const fx32 param1)
     return v0;
 }
 
-static const fx32 sub_02054D0C(const FieldSystem *fieldSystem, const fx32 param1, const fx32 param2, const fx32 param3, u8 *param4)
+static const fx32 sub_02054D0C(const FieldSystem *fieldSystem, const fx32 objectHeight, const fx32 objectX, const fx32 objectZ, u8 *param4)
 {
-    BOOL v0, v1;
+    BOOL v0, heightCalculated;
     u8 v2;
-    u32 v3, v4;
-    u32 v5, v6;
-    u32 v7;
-    u32 v8;
-    u32 v9;
-    u8 v10;
-    VecFx32 v11;
-    fx32 v12, v13;
+    u32 tileX, tileY;
+    u32 mapMatrixX, mapMatrixY;
+    u32 mapMatrixIndex;
+    u32 loadedMapIndex;
+    u32 tileIndex;
+    u8 unused;
+    VecFx32 objectPosition;
+    fx32 currentMapOriginX, currentMapOriginZ;
     u8 v14;
     fx32 v15;
-    fx32 v16;
-    VecFx32 v17;
-    const LandDataManager *v18 = fieldSystem->landDataMan;
+    fx32 currentObjectHeight;
+    VecFx32 offset;
+    const LandDataManager *landDataMan = fieldSystem->landDataMan;
 
-    LandDataManager_GetOffset(v18, &v17);
+    LandDataManager_GetOffset(landDataMan, &offset);
 
-    v16 = param1 - v17.y;
-    v0 = 0;
-    v1 = 0;
+    currentObjectHeight = objectHeight - offset.y;
+    v0 = FALSE;
+    heightCalculated = FALSE;
     v15 = 0;
 
-    v11.x = param2 - v17.x;
-    v11.z = param3 - v17.z;
-    v11.y = 0;
+    objectPosition.x = objectX - offset.x;
+    objectPosition.z = objectZ - offset.z;
+    objectPosition.y = 0;
 
-    {
-        int v19;
-        int v20;
+    int mapMatrixWidth = MapMatrix_GetWidth(fieldSystem->mapMatrix);
+    int mapMatrixWidthTiles = mapMatrixWidth * MAP_TILES_COUNT_X;
+    tileX = (objectX - offset.x) / MAP_OBJECT_TILE_SIZE;
+    tileY = (objectZ - offset.z) / MAP_OBJECT_TILE_SIZE;
+    v0 = ov5_021EF314(tileX, tileY, fieldSystem->unk_A0, &v14);
+    mapMatrixX = tileX / MAP_TILES_COUNT_X;
+    mapMatrixY = tileY / MAP_TILES_COUNT_Y;
+    mapMatrixIndex = mapMatrixX + mapMatrixY * mapMatrixWidth;
+    currentMapOriginX = ((mapMatrixX * MAP_TILES_COUNT_X) + (MAP_TILES_COUNT_X / 2)) * MAP_OBJECT_TILE_SIZE;
+    currentMapOriginZ = ((mapMatrixY * MAP_TILES_COUNT_Y) + (MAP_TILES_COUNT_Y / 2)) * MAP_OBJECT_TILE_SIZE;
 
-        v19 = MapMatrix_GetWidth(fieldSystem->mapMatrix);
-        v20 = v19 * 32;
-        v3 = (param2 - v17.x) / (16 * FX32_ONE);
-        v4 = (param3 - v17.z) / (16 * FX32_ONE);
-        v0 = ov5_021EF314(v3, v4, fieldSystem->unk_A0, &v14);
-        v5 = v3 / 32;
-        v6 = v4 / 32;
-        v7 = v5 + v6 * v19;
-        v12 = ((v5 * 32) + (32 / 2)) * 16 * FX32_ONE;
-        v13 = ((v6 * 32) + (32 / 2)) * 16 * FX32_ONE;
+    objectPosition.x = objectX - currentMapOriginX - offset.x;
+    objectPosition.z = objectZ - currentMapOriginZ - offset.z;
 
-        v11.x = param2 - v12 - v17.x;
-        v11.z = param3 - v13 - v17.z;
+    tileIndex = tileX + tileY * mapMatrixWidthTiles;
+    unused = LandDataManager_CalculateMapQuadrantOfTile(tileIndex, mapMatrixWidthTiles);
+    loadedMapIndex = LandDataManager_GetRelativeLoadedMapsQuadrant(mapMatrixIndex, unused, landDataMan);
 
-        v9 = v3 + v4 * v20;
-        v10 = LandDataManager_CalculateMapQuadrantOfTile(v9, v20);
-        v8 = LandDataManager_GetRelativeLoadedMapsQuadrant(v7, v10, v18);
-
-        if (v8 > 3) {
-            v1 = 0;
-        } else {
-            {
-                const BDHC *v21 = LandDataManager_GetLoadedMapBDHC(v18, v8);
-                v1 = CalculateObjectHeight(v16, v11.x, v11.z, v21, &v11.y);
-            }
-        }
+    if (loadedMapIndex > 3) {
+        heightCalculated = FALSE;
+    } else {
+        const BDHC *bdhc = LandDataManager_GetLoadedMapBDHC(landDataMan, loadedMapIndex);
+        heightCalculated = CalculateObjectHeight(currentObjectHeight, objectPosition.x, objectPosition.z, bdhc, &objectPosition.y);
     }
 
     if (v0) {
@@ -112,18 +107,18 @@ static const fx32 sub_02054D0C(const FieldSystem *fieldSystem, const fx32 param1
 
         v22 = ov5_021EF35C(v14, fieldSystem->unk_A0);
 
-        if (v1) {
-            if (v22 <= v11.y) {
+        if (heightCalculated) {
+            if (v22 <= objectPosition.y) {
                 v2 = 1;
-                v15 = v11.y;
+                v15 = objectPosition.y;
             } else {
                 fx32 v23, v24;
 
-                v23 = sub_02054D00(v11.y, v16);
-                v24 = sub_02054D00(v22, v16);
+                v23 = sub_02054D00(objectPosition.y, currentObjectHeight);
+                v24 = sub_02054D00(v22, currentObjectHeight);
 
                 if (v23 <= v24) {
-                    v15 = v11.y;
+                    v15 = objectPosition.y;
                     v2 = 1;
                 } else {
                     v15 = v22;
@@ -135,9 +130,9 @@ static const fx32 sub_02054D0C(const FieldSystem *fieldSystem, const fx32 param1
             v15 = v22;
         }
     } else {
-        if (v1) {
+        if (heightCalculated) {
             v2 = 1;
-            v15 = v11.y;
+            v15 = objectPosition.y;
         } else {
             v2 = 0;
         }
@@ -147,7 +142,7 @@ static const fx32 sub_02054D0C(const FieldSystem *fieldSystem, const fx32 param1
         *param4 = v2;
     }
 
-    v15 += v17.y;
+    v15 += offset.y;
 
     return v15;
 }

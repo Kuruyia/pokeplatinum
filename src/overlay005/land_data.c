@@ -1244,6 +1244,7 @@ static void LandDataManager_RenderLoadedMap(const u8 index, const LandDataManage
     }
 
     if (landDataMan->loadedMaps[index]->valid == TRUE && landDataMan->loadedMaps[index]->mapPropManager != NULL) {
+        // Disable me
         MapPropManager_Render(&position, landDataMan->areaDataMan, AreaDataManager_IsOutdoorsLighting(landDataMan->areaDataMan), modelAttrs, landDataMan->loadedMaps[index]->mapPropManager);
     }
 }

@@ -712,6 +712,7 @@ static void ov5_021D15F4(FieldSystem *fieldSystem)
         ov9_0224CA50(fieldSystem);
     }
 
+    // Disable me
     MapPropManager_Render2(fieldSystem->mapPropManager, fieldSystem->areaDataManager);
 
     {
@@ -727,6 +728,8 @@ static void ov5_021D15F4(FieldSystem *fieldSystem)
     }
 
     ov5_021DF4F8(fieldSystem->unk_40);
+    // Disable me
+    // MapObjectManager_HideAll(fieldSystem->mapObjMan);
     sub_02020C08();
 
     if (FieldMap_InDistortionWorld(fieldSystem) == TRUE) {
