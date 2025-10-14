@@ -200,7 +200,7 @@ typedef struct DistWorldFloatingPlatformJumpPointTemplate {
     s16 xDisplacement;
     s16 yDisplacement;
     s16 zDisplacement;
-    s16 unk_1A;
+    s16 playerSpriteRotation;
     s16 movementAnimSteps;
     u16 unk_1E;
     u16 unk_20;
@@ -335,15 +335,15 @@ typedef struct DistWorldFieldTaskContext {
 } DistWorldFieldTaskContext;
 
 typedef struct {
-    s16 unk_00;
-    s16 unk_02;
-    fx32 unk_04;
-    fx32 unk_08;
+    s16 rotation;
+    s16 stepsRemaining;
+    fx32 initialRotation;
+    fx32 rotationIncrement;
     fx32 unk_0C;
     NNSG3dAnmObj *unk_10;
     u16 unk_14;
     u16 unk_16;
-    MapObject *unk_18;
+    MapObject *mapObj;
     UnkStruct_020216E0 *unk_1C;
 } UnkStruct_ov9_0224A294;
 
@@ -955,7 +955,7 @@ static void ov9_0224A3C4(DistWorldSystem *param0, UnkStruct_020216E0 *param1, in
 static void ov9_0224A408(DistWorldSystem *param0, const UnkStruct_020216E0 *param1);
 static void ov9_0224A49C(DistWorldSystem *param0);
 static void ov9_0224A4C8(UnkStruct_020216E0 *param0, void *param1);
-static void ov9_0224A4D0(DistWorldSystem *param0, MapObject *param1, int param2, int param3);
+static void AnimateRotationOnMapObject(DistWorldSystem *param0, MapObject *param1, int param2, int param3);
 static void FieldTaskContextNoOp1(DistWorldSystem *system);
 static void FieldTaskContextNoOp2(DistWorldSystem *system);
 static void *InitFieldTaskContext(DistWorldSystem *system, int ctxSize);
@@ -1176,7 +1176,7 @@ static void ov9_0224F860(DistWorldSystem *param0, s16 param1);
 static void ov9_0224F86C(u16 param0, u16 param1, u16 param2, u16 *param3);
 static BOOL DistWorldBounds_AreCoordinatesInBounds(int tileX, int tileY, int tileZ, const DistWorldBounds *bounds);
 static int CalculateCameraAngleDelta(u16 currentAngleComponent, u16 targetAngleComponent);
-static void ov9_02250EE8(s16 *param0, s16 param1);
+static void ApplyRotationToTarget(s16 *param0, s16 param1);
 static void ov9_02250F1C(fx32 *param0, fx32 param1);
 static void GetPlayerPos(DistWorldSystem *system, int *playerX, int *playerY, int *playerZ);
 static u32 DistWorldSystem_GetMapHeaderID(DistWorldSystem *system);
@@ -1801,8 +1801,8 @@ static void ov9_0224A228(UnkStruct_ov9_0224A228 *param0, UnkStruct_ov9_0224A294 
 
     sub_02021444(param2, ov9_0224A4C8, param1);
 
-    if (param1->unk_18 != NULL) {
-        param1->unk_14 = MapObject_GetGraphicsID(param1->unk_18);
+    if (param1->mapObj != NULL) {
+        param1->unk_14 = MapObject_GetGraphicsID(param1->mapObj);
     }
 }
 
@@ -1822,9 +1822,9 @@ static void ov9_0224A2AC(UnkStruct_ov9_0224A228 *param0, UnkStruct_ov9_0224A294 
 
 static void ov9_0224A2C0(UnkStruct_ov9_0224A228 *param0, UnkStruct_ov9_0224A294 *param1)
 {
-    if (param1->unk_18 != NULL) {
+    if (param1->mapObj != NULL) {
         if (param1->unk_10 == NULL) {
-            UnkStruct_020216E0 *v0 = ov5_021EB1A0(param1->unk_18);
+            UnkStruct_020216E0 *v0 = ov5_021EB1A0(param1->mapObj);
 
             if (v0 == NULL) {
                 return;
@@ -1837,17 +1837,17 @@ static void ov9_0224A2C0(UnkStruct_ov9_0224A228 *param0, UnkStruct_ov9_0224A294 
 
 static int ov9_0224A2E4(UnkStruct_ov9_0224A294 *param0)
 {
-    if (param0->unk_18 != NULL) {
-        if (sub_02062CF8(param0->unk_18) == 0) {
+    if (param0->mapObj != NULL) {
+        if (sub_02062CF8(param0->mapObj) == 0) {
             return 1;
         }
 
-        if (MapObject_GetLocalID(param0->unk_18) != param0->unk_16) {
+        if (MapObject_GetLocalID(param0->mapObj) != param0->unk_16) {
             return 1;
         }
 
         if (param0->unk_10 != NULL) {
-            if (param0->unk_14 != MapObject_GetGraphicsID(param0->unk_18)) {
+            if (param0->unk_14 != MapObject_GetGraphicsID(param0->mapObj)) {
                 return 2;
             }
         }
@@ -1879,12 +1879,12 @@ static void ov9_0224A334(DistWorldSystem *param0)
 
 static void ov9_0224A374(UnkStruct_ov9_0224A294 *param0, MapObject *param1, int param2)
 {
-    param0->unk_00 = param2;
-    param0->unk_04 = (FX32_ONE * (param2));
-    param0->unk_0C = param0->unk_04;
+    param0->rotation = param2;
+    param0->initialRotation = (FX32_ONE * (param2));
+    param0->unk_0C = param0->initialRotation;
 
     if (param1 != NULL) {
-        param0->unk_18 = param1;
+        param0->mapObj = param1;
         param0->unk_16 = MapObject_GetLocalID(param1);
     }
 }
@@ -1896,7 +1896,7 @@ static void ov9_0224A390(DistWorldSystem *param0, MapObject *param1, int param2)
     UnkStruct_ov9_0224A294 *v2 = v1->unk_04;
 
     while (v0 < v1->unk_00) {
-        if ((v2->unk_18 == NULL) && (v2->unk_1C == NULL)) {
+        if ((v2->mapObj == NULL) && (v2->unk_1C == NULL)) {
             ov9_0224A374(v2, param1, param2);
             return;
         }
@@ -1915,7 +1915,7 @@ static void ov9_0224A3C4(DistWorldSystem *param0, UnkStruct_020216E0 *param1, in
     UnkStruct_ov9_0224A294 *v2 = v1->unk_04;
 
     while (v0 < v1->unk_00) {
-        if ((v2->unk_18 == NULL) && (v2->unk_1C == NULL)) {
+        if ((v2->mapObj == NULL) && (v2->unk_1C == NULL)) {
             ov9_0224A374(v2, NULL, param2);
             ov9_0224A228(v1, v2, param1);
             return;
@@ -1951,7 +1951,7 @@ static void ov9_0224A438(DistWorldSystem *param0, UnkStruct_ov9_0224A228 *param1
 {
     int v0;
 
-    if ((param2->unk_18 == NULL) && (param2->unk_1C == NULL)) {
+    if ((param2->mapObj == NULL) && (param2->unk_1C == NULL)) {
         return;
     }
 
@@ -1968,15 +1968,15 @@ static void ov9_0224A438(DistWorldSystem *param0, UnkStruct_ov9_0224A228 *param1
 
     ov9_0224A2C0(param1, param2);
 
-    if (param2->unk_02) {
-        param2->unk_02--;
-        ov9_02250F1C(&param2->unk_04, param2->unk_08);
+    if (param2->stepsRemaining) {
+        param2->stepsRemaining--;
+        ov9_02250F1C(&param2->initialRotation, param2->rotationIncrement);
 
-        if (param2->unk_02 == 0) {
-            param2->unk_04 = (FX32_ONE * (param2->unk_00));
+        if (param2->stepsRemaining == 0) {
+            param2->initialRotation = (FX32_ONE * (param2->rotation));
         }
 
-        param2->unk_0C = param2->unk_04;
+        param2->unk_0C = param2->initialRotation;
     }
 }
 
@@ -1997,23 +1997,24 @@ static void ov9_0224A4C8(UnkStruct_020216E0 *param0, void *param1)
     NNS_G3dAnmObjSetFrame(v0->unk_10, v0->unk_0C);
 }
 
-static void ov9_0224A4D0(DistWorldSystem *param0, MapObject *param1, int param2, int param3)
+static void AnimateRotationOnMapObject(DistWorldSystem *system, MapObject *mapObj, int rotation, int steps)
 {
-    int v0 = 0;
-    UnkStruct_ov9_0224A228 *v1 = &param0->unk_188;
+    int i = 0;
+    UnkStruct_ov9_0224A228 *v1 = &system->unk_188;
     UnkStruct_ov9_0224A294 *v2 = v1->unk_04;
 
-    while (v0 < v1->unk_00) {
-        if (v2->unk_18 == param1) {
-            v2->unk_04 = (FX32_ONE * (v2->unk_00));
-            v2->unk_08 = (FX32_ONE * (param2)) / param3;
-            v2->unk_02 = param3;
-            ov9_02250EE8(&v2->unk_00, param2);
+    while (i < v1->unk_00) {
+        if (v2->mapObj == mapObj) {
+            v2->initialRotation = FX32_ONE * v2->rotation;
+            v2->rotationIncrement = FX32_ONE * rotation / steps;
+            v2->stepsRemaining = steps;
+
+            ApplyRotationToTarget(&v2->rotation, rotation);
             return;
         }
 
         v2++;
-        v0++;
+        i++;
     }
 
     GF_ASSERT(0);
@@ -2027,7 +2028,7 @@ int ov9_0224A520(FieldSystem *fieldSystem, MapObject *param1)
     UnkStruct_ov9_0224A294 *v3 = v2->unk_04;
 
     while (v0 < v2->unk_00) {
-        if (v3->unk_18 == param1) {
+        if (v3->mapObj == param1) {
             int v4 = ((v3->unk_0C) / FX32_ONE);
 
             return v4;
@@ -2438,7 +2439,7 @@ static BOOL JumpOnFloatingPlatform(FieldTask *task)
 
         LocalMapObj_SetAnimationCode(playerMapObj, animCode);
         MapObject_TryFace(playerMapObj, playerDir);
-        ov9_0224A4D0(system, playerMapObj, ctx->template.unk_1A, ctx->template.movementAnimSteps);
+        AnimateRotationOnMapObject(system, playerMapObj, ctx->template.playerSpriteRotation, ctx->template.movementAnimSteps);
 
         ctx->state++;
     }
@@ -8004,12 +8005,12 @@ static void ov9_0224FA94(DistWorldSystem *param0, UnkStruct_ov9_0224FA94 *param1
 
     if ((param1->unk_04 == 0) && (v1 == -20)) {
         DoCameraTransition(param0, &Unk_ov9_02251E40);
-        ov9_0224A4D0(param0, v0, -32, 72);
+        AnimateRotationOnMapObject(param0, v0, -32, 72);
         param1->unk_04++;
     } else if ((param1->unk_04 == 1) && (v1 == -36)) {
         MapObject_TryFace(v0, 2);
         DoCameraTransition(param0, &Unk_ov9_02251888);
-        ov9_0224A4D0(param0, v0, 32, 31);
+        AnimateRotationOnMapObject(param0, v0, 32, 31);
         param1->unk_04++;
     }
 
@@ -8045,7 +8046,7 @@ static int ov9_0224FB3C(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
     v1->unk_04.z >>= 1;
     v4->unk_00 = 32;
 
-    ov9_0224A4D0(param0, v2, 90, v4->unk_00);
+    AnimateRotationOnMapObject(param0, v2, 90, v4->unk_00);
 
     {
         VecFx32 v6 = { 0, 0, 0 };
@@ -8210,7 +8211,7 @@ static int ov9_0224FD74(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
 
     if (v0 == 2) {
         v3->unk_00 = 16;
-        ov9_0224A4D0(param0, v2, 90, v3->unk_00);
+        AnimateRotationOnMapObject(param0, v2, 90, v3->unk_00);
 
         {
             v3->unk_18.x = (FX32_ONE * -90) / 16;
@@ -8387,7 +8388,7 @@ static int ov9_02250170(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
     v1->unk_04.z >>= 1;
     v4->unk_00 = 4;
 
-    ov9_0224A4D0(param0, v2, -90, v4->unk_00);
+    AnimateRotationOnMapObject(param0, v2, -90, v4->unk_00);
 
     {
         VecFx32 v6 = { 0, 0, 0 };
@@ -8526,7 +8527,7 @@ static int ov9_02250388(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
 
     if (v0 == 2) {
         v3->unk_00 = 2;
-        ov9_0224A4D0(param0, v2, -90, v3->unk_00);
+        AnimateRotationOnMapObject(param0, v2, -90, v3->unk_00);
 
         {
             v3->unk_14.x = (FX32_ONE * 90) / 2;
@@ -9411,16 +9412,16 @@ static int CalculateCameraAngleDelta(u16 currentAngleComponent, u16 targetAngleC
     return angleComponentDelta;
 }
 
-static void ov9_02250EE8(s16 *param0, s16 param1)
+static void ApplyRotationToTarget(s16 *target, s16 rotation)
 {
-    (*param0) += param1;
+    *target += rotation;
 
-    if ((*param0) < 0) {
+    if (*target < 0) {
         do {
-            (*param0) += 360;
-        } while ((*param0) < 0);
+            *target += 360;
+        } while (*target < 0);
     } else {
-        (*param0) %= 360;
+        *target %= 360;
     }
 }
 
