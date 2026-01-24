@@ -498,7 +498,7 @@ typedef struct {
     s16 unk_00;
     s16 unk_02;
     s16 unk_04;
-    u16 unk_06;
+    u16 propKind;
     u32 unk_08;
     DistWorldSystem *unk_0C;
 } UnkStruct_ov9_0224DFA0;
@@ -535,7 +535,7 @@ typedef struct {
     u16 unk_08;
     u16 unk_0A;
     u32 unk_0C;
-    u32 unk_10;
+    u32 propKind;
     u32 unk_14;
 } UnkStruct_ov9_0224DF10;
 
@@ -569,7 +569,7 @@ typedef struct DistWorldMapConnections {
 
 typedef struct {
     u32 unk_00;
-    u16 unk_04;
+    u16 propKind;
     s16 unk_06;
     s16 unk_08;
     s16 unk_0A;
@@ -1204,7 +1204,7 @@ static void *ov9_0224E37C(DistWorldSystem *param0, u32 param1);
 static void *ov9_0224E39C(DistWorldSystem *param0);
 static BOOL ov9_0224E3A0(DistWorldSystem *param0, FieldTask *param1);
 static BOOL ov9_0224E434(DistWorldSystem *param0, int param1, int param2, int param3);
-static void ov9_0224E498(DistWorldSystem *param0, const UnkStruct_ov9_02251438 *param1);
+static void CreateWaterfallTask(DistWorldSystem *param0, const UnkStruct_ov9_02251438 *param1);
 static void ov9_0224E4B0(DistWorldSystem *param0, const UnkStruct_ov9_02252044 *param1);
 static BOOL ov9_0224E4BC(FieldTask *param0);
 static void InitGiratinaShadowPropRenderer(DistWorldSystem *param0);
@@ -2170,15 +2170,18 @@ BOOL ov9_0224A59C(FieldSystem *fieldSystem, int param1)
 
         {
             u32 v6 = DistWorldSystem_GetMapHeaderID(v5);
+            // TODO: Remove this
+            // #include "debug.h"
+            // EmulatorLog("x = %d, y = %d, z = %d, dir = %d, map = %d", v1, v2, v3, param1, v6);
 
             if (v6 == 577) {
                 if ((param1 == 3) && (v1 == 104) && (v2 == 170) && (v3 >= 76) && (v3 <= 79)) {
-                    ov9_0224E498(v5, Unk_ov9_02251438);
+                    CreateWaterfallTask(v5, Unk_ov9_02251438);
                     return 1;
                 }
             } else if (v6 == 579) {
                 if ((param1 == 3) && (v1 == 104) && (v2 == 128) && (v3 >= 76) && (v3 <= 79)) {
-                    ov9_0224E498(v5, Unk_ov9_022513D8);
+                    CreateWaterfallTask(v5, Unk_ov9_022513D8);
                     return 1;
                 }
             }
@@ -3213,19 +3216,19 @@ static void HandleGhostPropTriggerAt(DistWorldSystem *system, int tileX, int til
     }
 }
 
-static BOOL ov9_0224B7B0(DistWorldSystem *system, u32 param1)
+static BOOL ov9_0224B7B0(DistWorldSystem *system, u32 propKind)
 {
     const DistWorldPropAnimInfo *v2;
     DistWorldGhostPropManager *ghostPropMan = &system->ghostPropMan;
 
-    GF_ASSERT(param1 != 25);
+    GF_ASSERT(propKind != 25);
 
     for (int i = 0; i < ghostPropMan->templateCount; i++) {
         if (OverworldAnimManager_IsActive(ghostPropMan->animMans[i]) == TRUE) {
             u16 ghostPropKind = GetAnimManagerGhostPropKind(ghostPropMan->animMans[i]);
             v2 = &sPropAnimInfoByKind[ghostPropKind];
 
-            if (param1 == v2->propKind) {
+            if (propKind == v2->propKind) {
                 return TRUE;
             }
         }
@@ -3238,7 +3241,7 @@ static BOOL ov9_0224B7B0(DistWorldSystem *system, u32 param1)
             u16 ghostPropKind = GetAnimManagerGhostPropKind(ghostPropMan->animMans[i]);
             v2 = &sPropAnimInfoByKind[ghostPropKind];
 
-            if (param1 == v2->propKind) {
+            if (propKind == v2->propKind) {
                 return TRUE;
             }
         }
@@ -3247,34 +3250,34 @@ static BOOL ov9_0224B7B0(DistWorldSystem *system, u32 param1)
     return FALSE;
 }
 
-static BOOL ov9_0224B844(DistWorldSystem *param0, u32 param1)
+static BOOL ov9_0224B844(DistWorldSystem *system, u32 animKind)
 {
     int v0;
     u16 v1;
     const DistWorldPropAnimInfo *v2;
-    DistWorldGhostPropManager *v3 = &param0->ghostPropMan;
+    DistWorldGhostPropManager *v3 = &system->ghostPropMan;
 
-    GF_ASSERT(param1 != 5);
+    GF_ASSERT(animKind != 5);
 
     for (v0 = 0; v0 < v3->templateCount; v0++) {
         if (OverworldAnimManager_IsActive(v3->animMans[v0]) == 1) {
             v1 = GetAnimManagerGhostPropKind(v3->animMans[v0]);
             v2 = &sPropAnimInfoByKind[v1];
 
-            if (param1 == v2->animKind) {
+            if (animKind == v2->animKind) {
                 return 1;
             }
         }
     }
 
-    v3 = &param0->inactiveGhostPropMan;
+    v3 = &system->inactiveGhostPropMan;
 
     for (v0 = 0; v0 < v3->templateCount; v0++) {
         if (OverworldAnimManager_IsActive(v3->animMans[v0]) == 1) {
             v1 = GetAnimManagerGhostPropKind(v3->animMans[v0]);
             v2 = &sPropAnimInfoByKind[v1];
 
-            if (param1 == v2->animKind) {
+            if (animKind == v2->animKind) {
                 return 1;
             }
         }
@@ -5849,7 +5852,7 @@ static OverworldAnimManager *ov9_0224DFA0(DistWorldSystem *param0, UnkStruct_ov9
     v1.unk_00 = param1->unk_04.unk_02;
     v1.unk_02 = param1->unk_04.unk_04;
     v1.unk_04 = param1->unk_04.unk_06;
-    v1.unk_06 = param1->unk_04.unk_10;
+    v1.propKind = param1->unk_04.propKind;
     v1.unk_0C = param0;
     v1.unk_08 = 0;
 
@@ -5916,21 +5919,21 @@ static void ov9_0224E0DC(UnkStruct_ov9_0224E0DC *param0, u32 param1)
     param0->unk_01 = param1;
 }
 
-static BOOL ov9_0224E0E0(DistWorldSystem *param0, u32 param1)
+static BOOL ov9_0224E0E0(DistWorldSystem *system, u32 propKind)
 {
     int v0;
-    u16 v1;
+    u16 currPropKind;
     const DistWorldPropAnimInfo *v2;
-    UnkStruct_ov9_0224DC34 *v3 = &param0->unk_1734;
+    UnkStruct_ov9_0224DC34 *v3 = &system->unk_1734;
 
-    GF_ASSERT(param1 != 25);
+    GF_ASSERT(propKind != 25);
 
     for (v0 = 0; v0 < 32; v0++) {
         if (v3->unk_00[v0].unk_00) {
-            v1 = v3->unk_00[v0].unk_04.unk_10;
-            v2 = &sPropAnimInfoByKind[v1];
+            currPropKind = v3->unk_00[v0].unk_04.propKind;
+            v2 = &sPropAnimInfoByKind[currPropKind];
 
-            if (param1 == v2->propKind) {
+            if (propKind == v2->propKind) {
                 return 1;
             }
         }
@@ -5939,21 +5942,21 @@ static BOOL ov9_0224E0E0(DistWorldSystem *param0, u32 param1)
     return 0;
 }
 
-static BOOL ov9_0224E120(DistWorldSystem *param0, u32 param1)
+static BOOL ov9_0224E120(DistWorldSystem *system, u32 animKind)
 {
     int v0;
-    u16 v1;
+    u16 propKind;
     const DistWorldPropAnimInfo *v2;
-    UnkStruct_ov9_0224DC34 *v3 = &param0->unk_1734;
+    UnkStruct_ov9_0224DC34 *v3 = &system->unk_1734;
 
-    GF_ASSERT(param1 != 5);
+    GF_ASSERT(animKind != 5);
 
     for (v0 = 0; v0 < 32; v0++) {
         if (v3->unk_00[v0].unk_00) {
-            v1 = v3->unk_00[v0].unk_04.unk_10;
-            v2 = &sPropAnimInfoByKind[v1];
+            propKind = v3->unk_00[v0].unk_04.propKind;
+            v2 = &sPropAnimInfoByKind[propKind];
 
-            if (param1 == v2->animKind) {
+            if (animKind == v2->animKind) {
                 return 1;
             }
         }
@@ -5967,7 +5970,7 @@ static BOOL ov9_0224E160(DistWorldSystem *system, int propKind)
     UnkStruct_ov9_0224DC34 *v2 = &system->unk_1734;
 
     for (int i = 0; i < 32; i++) {
-        if (v2->unk_00[i].unk_00 && v2->unk_00[i].unk_04.unk_10 == propKind) {
+        if (v2->unk_00[i].unk_00 && v2->unk_00[i].unk_04.propKind == propKind) {
             return TRUE;
         }
     }
@@ -6003,10 +6006,10 @@ static int ov9_0224E1CC(OverworldAnimManager *param0, void *param1)
     const UnkStruct_ov9_0224DFA0 *v2 = OverworldAnimManager_GetUserData(param0);
 
     v1->unk_10 = *v2;
-    v1->unk_20 = DistWorldPropRenderer_Init(v2->unk_0C, v2->unk_06, &v0);
+    v1->unk_20 = DistWorldPropRenderer_Init(v2->unk_0C, v2->propKind, &v0);
 
     if (v0 == 0) {
-        LoadRenderBuffersForProp(v2->unk_0C, v2->unk_06, &v1->unk_20->renderObj, &v1->unk_20->animation);
+        LoadRenderBuffersForProp(v2->unk_0C, v2->propKind, &v1->unk_20->renderObj, &v1->unk_20->animation);
     }
 
     VecFx32_FromMapObjectPos(v2->unk_00, v2->unk_04, &v1->unk_04);
@@ -6014,7 +6017,7 @@ static int ov9_0224E1CC(OverworldAnimManager *param0, void *param1)
 
     {
         VecFx32 v3;
-        const VecFx32 *v4 = &sPropInitialPosOffsetByKind[v2->unk_06];
+        const VecFx32 *v4 = &sPropInitialPosOffsetByKind[v2->propKind];
 
         v1->unk_04.x += v4->x;
         v1->unk_04.y += v4->y;
@@ -6041,7 +6044,7 @@ static void ov9_0224E274(OverworldAnimManager *param0, void *param1)
 {
     UnkStruct_ov9_0224E1CC *v0 = param1;
 
-    if (DistWorldPropAnimInfo_IsAnimKindValid(v0->unk_10.unk_06) == 1) {
+    if (DistWorldPropAnimInfo_IsAnimKindValid(v0->unk_10.propKind) == 1) {
         Simple3D_FreeAnimation(&v0->unk_20->animation);
     }
 
@@ -6085,11 +6088,11 @@ static void ov9_0224E2E4(OverworldAnimManager *param0, void *param1)
         if (v0->unk_00 == 1) {
             const UnkStruct_ov9_0224DFA0 *v1 = &v0->unk_10;
 
-            SetPropOpacityAndPolygonID(v1->unk_0C, v1->unk_06, v0->unk_02, 1);
+            SetPropOpacityAndPolygonID(v1->unk_0C, v1->propKind, v0->unk_02, 1);
             Simple3D_DrawRenderObjWithPos(&v0->unk_20->renderObj, &v0->unk_04);
 
-            SetPropPolygonID(v1->unk_0C, v1->unk_06, 0);
-            SetPropOpacity(v1->unk_0C, v1->unk_06, 31);
+            SetPropPolygonID(v1->unk_0C, v1->propKind, 0);
+            SetPropOpacity(v1->unk_0C, v1->propKind, 31);
         } else {
             Simple3D_DrawRenderObjWithPos(&v0->unk_20->renderObj, &v0->unk_04);
         }
@@ -6152,7 +6155,7 @@ static void *ov9_0224E39C(DistWorldSystem *param0)
     return v0;
 }
 
-static BOOL ov9_0224E3A0(DistWorldSystem *param0, FieldTask *param1)
+static BOOL ov9_0224E3A0(DistWorldSystem *system, FieldTask *task)
 {
     int v0;
     int v1;
@@ -6160,7 +6163,7 @@ static BOOL ov9_0224E3A0(DistWorldSystem *param0, FieldTask *param1)
     const UnkFuncPtr_ov9_02253BE4 *v3;
     const UnkStruct_ov9_02251438 *v4;
 
-    v2 = &param0->unk_D8;
+    v2 = &system->unk_D8;
     v4 = v2->unk_08;
 
     GF_ASSERT(v4 != NULL);
@@ -6170,7 +6173,7 @@ static BOOL ov9_0224E3A0(DistWorldSystem *param0, FieldTask *param1)
         v3 = Unk_ov9_02253BE4[v1];
 
         do {
-            v0 = v3[v2->unk_06](param0, param1, &v2->unk_06, v4[v2->unk_04].unk_04);
+            v0 = v3[v2->unk_06](system, task, &v2->unk_06, v4[v2->unk_04].unk_04);
         } while (v0 == 1);
 
         if (v0 == 0) {
@@ -6228,22 +6231,22 @@ static BOOL ov9_0224E434(DistWorldSystem *param0, int param1, int param2, int pa
     return 0;
 }
 
-static void ov9_0224E498(DistWorldSystem *param0, const UnkStruct_ov9_02251438 *param1)
+static void CreateWaterfallTask(DistWorldSystem *system, const UnkStruct_ov9_02251438 *param1)
 {
-    ov9_0224E350(param0, param1);
-    FieldSystem_CreateTask(param0->fieldSystem, ov9_0224E4BC, param0);
+    ov9_0224E350(system, param1);
+    FieldSystem_CreateTask(system->fieldSystem, ov9_0224E4BC, system);
 }
 
 static void ov9_0224E4B0(DistWorldSystem *param0, const UnkStruct_ov9_02252044 *param1)
 {
-    ov9_0224E498(param0, param1->unk_0C);
+    CreateWaterfallTask(param0, param1->unk_0C);
 }
 
-static BOOL ov9_0224E4BC(FieldTask *param0)
+static BOOL ov9_0224E4BC(FieldTask *task)
 {
-    DistWorldSystem *v0 = FieldTask_GetEnv(param0);
+    DistWorldSystem *system = FieldTask_GetEnv(task);
 
-    if (ov9_0224E3A0(v0, param0) == 1) {
+    if (ov9_0224E3A0(system, task) == 1) {
         return 1;
     }
 
@@ -6792,7 +6795,7 @@ static void ov9_0224EBCC(DistWorldSystem *param0, UnkStruct_ov9_0224EBB8 *param1
 
         v0.unk_00 = param0;
         v0.unk_04 = param1;
-        v1 = sPropAnimFuncsByKind[param2->unk_04];
+        v1 = sPropAnimFuncsByKind[param2->propKind];
 
         param1->unk_04 = ov5_021DF72C(param0->fieldSystem->unk_40, v1, NULL, 0, &v0, 2);
     }
@@ -6804,7 +6807,7 @@ static void ov9_0224EC10(DistWorldSystem *param0, const UnkStruct_ov9_02252548 *
     const UnkStruct_ov9_0224EC10 *v2 = param1->unk_04;
     UnkStruct_ov9_0224EBB8 *v3;
 
-    while (v2->unk_04 != 25) {
+    while (v2->propKind != 25) {
         v0 = v2->unk_0C;
         v1 = v2->unk_0E;
 
@@ -6867,15 +6870,15 @@ static void ov9_0224EC94(DistWorldSystem *param0, u32 param1)
     }
 }
 
-static BOOL ov9_0224ECC0(DistWorldSystem *param0, int param1)
+static BOOL ov9_0224ECC0(DistWorldSystem *system, int propKind)
 {
     int v0 = 0;
-    UnkStruct_ov9_0224EB68 *v1 = &param0->unk_1BB4;
+    UnkStruct_ov9_0224EB68 *v1 = &system->unk_1BB4;
     UnkStruct_ov9_0224EBB8 *v2 = v1->unk_00;
 
     while (v0 < 8) {
         if (v2->unk_04 != NULL) {
-            if (v2->unk_08.unk_04 == param1) {
+            if (v2->unk_08.propKind == propKind) {
                 return 1;
             }
         }
@@ -6887,18 +6890,18 @@ static BOOL ov9_0224ECC0(DistWorldSystem *param0, int param1)
     return 0;
 }
 
-static BOOL ov9_0224ECE8(DistWorldSystem *param0, u32 param1)
+static BOOL ov9_0224ECE8(DistWorldSystem *system, u32 propKind)
 {
     int v0 = 0;
     const DistWorldPropAnimInfo *v1;
-    UnkStruct_ov9_0224EB68 *v2 = &param0->unk_1BB4;
+    UnkStruct_ov9_0224EB68 *v2 = &system->unk_1BB4;
     UnkStruct_ov9_0224EBB8 *v3 = v2->unk_00;
 
     while (v0 < 8) {
         if (v3->unk_04 != NULL) {
-            v1 = &sPropAnimInfoByKind[v3->unk_08.unk_04];
+            v1 = &sPropAnimInfoByKind[v3->unk_08.propKind];
 
-            if (v1->propKind == param1) {
+            if (v1->propKind == propKind) {
                 return 1;
             }
         }
@@ -6910,18 +6913,18 @@ static BOOL ov9_0224ECE8(DistWorldSystem *param0, u32 param1)
     return 0;
 }
 
-static BOOL ov9_0224ED20(DistWorldSystem *param0, u32 param1)
+static BOOL ov9_0224ED20(DistWorldSystem *system, u32 animKind)
 {
     int v0 = 0;
     const DistWorldPropAnimInfo *v1;
-    UnkStruct_ov9_0224EB68 *v2 = &param0->unk_1BB4;
+    UnkStruct_ov9_0224EB68 *v2 = &system->unk_1BB4;
     UnkStruct_ov9_0224EBB8 *v3 = v2->unk_00;
 
     while (v0 < 8) {
         if (v3->unk_04 != NULL) {
-            v1 = &sPropAnimInfoByKind[v3->unk_08.unk_04];
+            v1 = &sPropAnimInfoByKind[v3->unk_08.propKind];
 
-            if (v1->animKind == param1) {
+            if (v1->animKind == animKind) {
                 return 1;
             }
         }
@@ -6941,10 +6944,10 @@ static int ov9_0224ED58(OverworldAnimManager *param0, void *param1)
     const UnkStruct_ov9_0224EC10 *v3 = &v2->unk_04->unk_08;
 
     v1->unk_1C = *v2;
-    v1->unk_24 = DistWorldPropRenderer_Init(v2->unk_00, v3->unk_04, &v0);
+    v1->unk_24 = DistWorldPropRenderer_Init(v2->unk_00, v3->propKind, &v0);
 
     if (v0 == 0) {
-        LoadRenderBuffersForProp(v1->unk_1C.unk_00, v3->unk_04, &v1->unk_24->renderObj, &v1->unk_24->animation);
+        LoadRenderBuffersForProp(v1->unk_1C.unk_00, v3->propKind, &v1->unk_24->renderObj, &v1->unk_24->animation);
     }
 
     VecFx32_FromMapObjectPos(v3->unk_06, v3->unk_0A, &v1->unk_04);
@@ -6952,7 +6955,7 @@ static int ov9_0224ED58(OverworldAnimManager *param0, void *param1)
 
     {
         VecFx32 v4;
-        const VecFx32 *v5 = &sPropInitialPosOffsetByKind[v3->unk_04];
+        const VecFx32 *v5 = &sPropInitialPosOffsetByKind[v3->propKind];
 
         v1->unk_04.x += v5->x;
         v1->unk_04.y += v5->y;
@@ -6968,7 +6971,7 @@ static void ov9_0224EDD8(OverworldAnimManager *param0, void *param1)
     UnkStruct_ov9_0224ED58 *v1 = param1;
     const UnkStruct_ov9_0224EC10 *v2 = &v1->unk_1C.unk_04->unk_08;
 
-    if (DistWorldPropAnimInfo_IsAnimKindValid(v2->unk_04) == 1) {
+    if (DistWorldPropAnimInfo_IsAnimKindValid(v2->propKind) == 1) {
         Simple3D_FreeAnimation(&v1->unk_24->animation);
     }
 
@@ -6978,7 +6981,7 @@ static void ov9_0224EDD8(OverworldAnimManager *param0, void *param1)
 static void ov9_0224EDFC(OverworldAnimManager *param0, void *param1)
 {
     UnkStruct_ov9_0224ED58 *v0 = param1;
-    int v1 = v0->unk_1C.unk_04->unk_08.unk_04;
+    int v1 = v0->unk_1C.unk_04->unk_08.propKind;
 
     if (DistWorldPropAnimInfo_IsAnimKindValid(v1) == 1) {
         Simple3D_UpdateAnim(&v0->unk_24->animation, FX32_ONE, 1);
