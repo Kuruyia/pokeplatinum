@@ -111,7 +111,7 @@ static int ov5_021F26A8(OverworldAnimManager *param0, void *param1)
 
     v0->unk_24 = *v1;
     v0->unk_0C = MapObject_GetLocalID(v2);
-    v0->unk_10 = sub_02062918(v2);
+    v0->unk_10 = MapObject_GetMapID(v2);
     v0->unk_08 = v1->unk_00;
     v0->unk_18 = OverworldAnimManager_GetID(param0);
     v0->unk_1C = FX32_ONE;

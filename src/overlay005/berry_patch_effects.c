@@ -140,7 +140,7 @@ static BOOL BerryPatchMoistureEffect_Init(OverworldAnimManager *effect, void *co
 
     moistureEffect->context = *effectContext;
     moistureEffect->localID = MapObject_GetLocalID(moistureEffect->context.mapObject);
-    moistureEffect->mapID = sub_02062918(moistureEffect->context.mapObject);
+    moistureEffect->mapID = MapObject_GetMapID(moistureEffect->context.mapObject);
 
     return TRUE;
 }
