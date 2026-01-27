@@ -7,6 +7,7 @@
 #include "constants/field/map.h"
 #include "constants/graphics.h"
 #include "constants/map_object.h"
+#include "constants/scrcmd.h"
 #include "constants/species.h"
 #include "constants/types.h"
 #include "generated/map_headers.h"
@@ -109,6 +110,7 @@
 
 #define MOVING_PLATFORM_MAP_COUNT              8
 #define MOVING_PLATFORM_MANAGER_ANIMATOR_COUNT 32
+#define MOVING_PLATFORM_VIBRATION_Y_DELTA      (FX32_ONE * 3)
 
 #define ELEVATOR_PLATFORM_PATH_COUNT        22
 #define ELEVATOR_PLATFORM_PATH_INVALID      ELEVATOR_PLATFORM_PATH_COUNT
@@ -238,8 +240,8 @@ enum ElevatorPlatformHandlerResult {
 };
 
 enum EventCmdKind {
-    EVENT_CMD_KIND_00 = 0,
-    EVENT_CMD_KIND_01,
+    EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION = 0,
+    EVENT_CMD_KIND_MOVE_PLATFORM,
     EVENT_CMD_KIND_ADD_MAP_OBJECT_WITH_LOCAL_ID,
     EVENT_CMD_KIND_DELETE_MAP_OBJECT_WITH_LOCAL_ID,
     EVENT_CMD_KIND_04,
@@ -264,6 +266,21 @@ enum EventCmdHandlerResult {
     EVENT_CMD_HANDLER_RES_CONTINUE = 0,
     EVENT_CMD_HANDLER_RES_LOOP,
     EVENT_CMD_HANDLER_RES_FINISH,
+};
+
+enum EventCmdSetMapObjectAnimationState {
+    EVENT_CMD_SET_MAP_OBJECT_ANIMATION_STATE_INIT = 0,
+    EVENT_CMD_SET_MAP_OBJECT_ANIMATION_STATE_START,
+    EVENT_CMD_SET_MAP_OBJECT_ANIMATION_STATE_FINISH,
+    EVENT_CMD_SET_MAP_OBJECT_ANIMATION_STATE_COUNT,
+};
+
+enum EventCmdMovePlatformState {
+    EVENT_CMD_MOVE_PLATFORM_STATE_INIT = 0,
+    EVENT_CMD_MOVE_PLATFORM_STATE_VIBRATE,
+    EVENT_CMD_MOVE_PLATFORM_STATE_MOVE,
+    EVENT_CMD_MOVE_PLATFORM_STATE_END,
+    EVENT_CMD_MOVE_PLATFORM_STATE_COUNT,
 };
 
 typedef struct DistWorldSystem DistWorldSystem;
@@ -699,20 +716,20 @@ typedef struct DistWorldMapObjectManager {
     MapObject *mapObjs[MAP_OBJECT_MANAGER_OBJECT_COUNT];
 } DistWorldMapObjectManager;
 
-typedef struct {
-    u16 unk_00;
-    u16 unk_02;
-    u16 unk_04;
-    s16 unk_06;
-    s16 unk_08;
-    s16 unk_0A;
-    VecFx32 unk_0C;
-} UnkStruct_ov9_0224E550;
+typedef struct DistWorldEventCmdMovePlatformParams {
+    u16 platformIndex;
+    u16 movePlayer;
+    u16 dummy04;
+    s16 finalTileXOffset;
+    s16 finalTileYOffset;
+    s16 finalTileZOffset;
+    VecFx32 posDelta;
+} DistWorldEventCmdMovePlatformParams;
 
-typedef struct {
-    u32 unk_00;
-    u32 unk_04;
-} UnkStruct_ov9_0224E4E8;
+typedef struct DistWorldEventCmdSetMapObjectAnimationParams {
+    u32 mapObjLocalID;
+    enum MovementAction movementAction;
+} DistWorldEventCmdSetMapObjectAnimationParams;
 
 typedef struct DistWorldEventCmd {
     int kind;
@@ -867,20 +884,20 @@ typedef struct DistWorldElevatorPlatform {
     SysTask *passengerAnimTask;
 } DistWorldElevatorPlatform;
 
-typedef struct {
-    int unk_00;
-} UnkStruct_ov9_0224E4D8;
+typedef struct DistWorldEventCmdSetMapObjectAnimationRunData {
+    int dummy00;
+} DistWorldEventCmdSetMapObjectAnimationRunData;
 
-typedef struct {
-    VecFx32 unk_00;
-    VecFx32 unk_0C;
-    VecFx32 unk_18;
-    DistWorldMovingPlatformPropAnimator *unk_24;
-    fx32 unk_28;
-    fx32 unk_2C;
-    fx32 unk_30;
-    u32 unk_34;
-} UnkStruct_ov9_0224E5EC;
+typedef struct DistWorldEventCmdMovePlatformRunData {
+    VecFx32 currPosOffset;
+    VecFx32 finalPosOffset;
+    VecFx32 posDelta;
+    DistWorldMovingPlatformPropAnimator *animator;
+    fx32 initialPlayerY;
+    fx32 initialPlatformY;
+    fx32 vibrationYDelta;
+    u32 vibrationAnimStep;
+} DistWorldEventCmdMovePlatformRunData;
 
 typedef struct DistWorldEventCmdAddMapObjWithLocalIDParams {
     u16 mapHeaderID;
@@ -6249,244 +6266,235 @@ static BOOL CallEventHandler(FieldTask *task)
     return CallEventHandlerEx(system, task) == TRUE;
 }
 
-static int ov9_0224E4D8(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdSetMapObjectAnimation_Init(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    UnkStruct_ov9_0224E4D8 *v0 = ResetRunningEventDataBuffer(param0, sizeof(UnkStruct_ov9_0224E4D8));
+    DistWorldEventCmdSetMapObjectAnimationRunData *runData = ResetRunningEventDataBuffer(system, sizeof(DistWorldEventCmdSetMapObjectAnimationRunData));
 
-    *param2 = 1;
-    return 1;
+    *cmdState = EVENT_CMD_SET_MAP_OBJECT_ANIMATION_STATE_START;
+    return EVENT_CMD_HANDLER_RES_LOOP;
 }
 
-static int ov9_0224E4E8(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdSetMapObjectAnimation_Start(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    MapObject *v0;
-    const UnkStruct_ov9_0224E4E8 *v1 = param3;
-    UnkStruct_ov9_0224E4D8 *v2 = GetRunningEventDataBuffer(param0);
+    const DistWorldEventCmdSetMapObjectAnimationParams *cmdParams = params;
+    DistWorldEventCmdSetMapObjectAnimationRunData *runData = GetRunningEventDataBuffer(system);
 
-    v0 = MapObjMan_LocalMapObjByIndex(param0->fieldSystem->mapObjMan, v1->unk_00);
-    GF_ASSERT(v0 != NULL);
+    MapObject *mapObj = MapObjMan_LocalMapObjByIndex(system->fieldSystem->mapObjMan, cmdParams->mapObjLocalID);
+    GF_ASSERT(mapObj != NULL);
 
-    if (LocalMapObj_IsAnimationSet(v0) == 1) {
-        LocalMapObj_SetAnimationCode(v0, v1->unk_04);
-        *param2 = 2;
+    if (LocalMapObj_IsAnimationSet(mapObj) == TRUE) {
+        LocalMapObj_SetAnimationCode(mapObj, cmdParams->movementAction);
+        *cmdState = EVENT_CMD_SET_MAP_OBJECT_ANIMATION_STATE_FINISH;
     }
 
-    return 0;
+    return EVENT_CMD_HANDLER_RES_CONTINUE;
 }
 
-static int ov9_0224E520(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdSetMapObjectAnimation_Finish(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    MapObject *v0;
-    const UnkStruct_ov9_0224E4E8 *v1 = param3;
-    UnkStruct_ov9_0224E4D8 *v2 = GetRunningEventDataBuffer(param0);
+    const DistWorldEventCmdSetMapObjectAnimationParams *cmdParams = params;
+    DistWorldEventCmdSetMapObjectAnimationRunData *runData = GetRunningEventDataBuffer(system);
 
-    v0 = MapObjMan_LocalMapObjByIndex(param0->fieldSystem->mapObjMan, v1->unk_00);
-    GF_ASSERT(v0 != NULL);
+    MapObject *mapObj = MapObjMan_LocalMapObjByIndex(system->fieldSystem->mapObjMan, cmdParams->mapObjLocalID);
+    GF_ASSERT(mapObj != NULL);
 
-    if (sub_020656AC(v0) == 1) {
-        return 2;
+    if (sub_020656AC(mapObj) == TRUE) {
+        return EVENT_CMD_HANDLER_RES_FINISH;
     }
 
-    return 0;
+    return EVENT_CMD_HANDLER_RES_CONTINUE;
 }
 
-static const DistWorldEventCmdHandler Unk_ov9_02251360[3] = {
-    ov9_0224E4D8,
-    ov9_0224E4E8,
-    ov9_0224E520
+static const DistWorldEventCmdHandler sEventCmdSetMapObjectAnimationHandlers[EVENT_CMD_SET_MAP_OBJECT_ANIMATION_STATE_COUNT] = {
+    [EVENT_CMD_SET_MAP_OBJECT_ANIMATION_STATE_INIT] = EventCmdSetMapObjectAnimation_Init,
+    [EVENT_CMD_SET_MAP_OBJECT_ANIMATION_STATE_START] = EventCmdSetMapObjectAnimation_Start,
+    [EVENT_CMD_SET_MAP_OBJECT_ANIMATION_STATE_FINISH] = EventCmdSetMapObjectAnimation_Finish
 };
 
-static int ov9_0224E550(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdMovePlatform_BeginMovement(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    const UnkStruct_ov9_0224E550 *v0 = param3;
-    UnkStruct_ov9_0224E5EC *v1 = ResetRunningEventDataBuffer(param0, sizeof(UnkStruct_ov9_0224E5EC));
+    const DistWorldEventCmdMovePlatformParams *cmdParams = params;
+    DistWorldEventCmdMovePlatformRunData *runData = ResetRunningEventDataBuffer(system, sizeof(DistWorldEventCmdMovePlatformRunData));
 
-    v1->unk_24 = GetAnimatorForMovingPlatform(param0, v0->unk_00, DistWorldSystem_GetMapHeaderID(param0));
-    GF_ASSERT(v1->unk_24 != NULL);
+    runData->animator = GetAnimatorForMovingPlatform(system, cmdParams->platformIndex, DistWorldSystem_GetMapHeaderID(system));
+    GF_ASSERT(runData->animator != NULL);
 
-    v1->unk_0C.x = (((v0->unk_06) << 4) * FX32_ONE);
-    v1->unk_0C.y = (((v0->unk_08) << 4) * FX32_ONE);
-    v1->unk_0C.z = (((v0->unk_0A) << 4) * FX32_ONE);
+    runData->finalPosOffset.x = (cmdParams->finalTileXOffset << 4) * FX32_ONE;
+    runData->finalPosOffset.y = (cmdParams->finalTileYOffset << 4) * FX32_ONE;
+    runData->finalPosOffset.z = (cmdParams->finalTileZOffset << 4) * FX32_ONE;
+    runData->posDelta = cmdParams->posDelta;
+    runData->vibrationYDelta = MOVING_PLATFORM_VIBRATION_Y_DELTA;
 
-    v1->unk_18 = v0->unk_0C;
-    v1->unk_30 = (FX32_ONE * 3);
+    VecFx32 *movingPlatformPos = GetMovingPlatformPropPos(runData->animator->animMan);
+    runData->initialPlatformY = movingPlatformPos->y;
 
-    {
-        VecFx32 *v2 = GetMovingPlatformPropPos(v1->unk_24->animMan);
+    if (cmdParams->movePlayer == TRUE) {
+        VecFx32 spritePosOffset;
+        MapObject *playerMapObj = Player_MapObject(system->fieldSystem->playerAvatar);
 
-        v1->unk_2C = v2->y;
-    }
+        MapObject_SetHeightCalculationDisabled(playerMapObj, TRUE);
+        MapObject_GetSpritePosOffset(playerMapObj, &spritePosOffset);
 
-    if (v0->unk_02 == 1) {
-        VecFx32 v3;
-        MapObject *v4 = Player_MapObject(param0->fieldSystem->playerAvatar);
-
-        MapObject_SetHeightCalculationDisabled(v4, TRUE);
-        MapObject_GetSpritePosOffset(v4, &v3);
-
-        v1->unk_28 = v3.y;
+        runData->initialPlayerY = spritePosOffset.y;
     }
 
     Sound_PlayEffect(SEQ_SE_PL_FW089B);
 
-    *param2 = 1;
-    return 0;
+    *cmdState = EVENT_CMD_MOVE_PLATFORM_STATE_VIBRATE;
+    return EVENT_CMD_HANDLER_RES_CONTINUE;
 }
 
-static int ov9_0224E5EC(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdMovePlatform_Vibrate(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    MapObject *v0 = NULL;
-    const UnkStruct_ov9_0224E550 *v1 = param3;
-    UnkStruct_ov9_0224E5EC *v2 = GetRunningEventDataBuffer(param0);
-    VecFx32 *v3 = GetMovingPlatformPropPos(v2->unk_24->animMan);
+    MapObject *playerMapObj = NULL;
+    const DistWorldEventCmdMovePlatformParams *cmdParams = params;
+    DistWorldEventCmdMovePlatformRunData *runData = GetRunningEventDataBuffer(system);
+    VecFx32 *movingPlatformPos = GetMovingPlatformPropPos(runData->animator->animMan);
 
-    if (v1->unk_02 == 1) {
-        v0 = Player_MapObject(param0->fieldSystem->playerAvatar);
+    if (cmdParams->movePlayer == TRUE) {
+        playerMapObj = Player_MapObject(system->fieldSystem->playerAvatar);
     }
 
-    v3->y = v2->unk_2C + v2->unk_30;
+    movingPlatformPos->y = runData->initialPlatformY + runData->vibrationYDelta;
 
-    if (v0 != NULL) {
-        VecFx32 v4;
+    if (playerMapObj != NULL) {
+        VecFx32 spritePosOffset;
 
-        MapObject_GetSpritePosOffset(v0, &v4);
-        v4.y = v2->unk_28 + v2->unk_30;
+        MapObject_GetSpritePosOffset(playerMapObj, &spritePosOffset);
+        spritePosOffset.y = runData->initialPlayerY + runData->vibrationYDelta;
 
-        MapObject_SetSpritePosOffset(v0, &v4);
-        MapObject_GetPosPtr(v0, &v4);
-        ov9_022511F4(v0, &v4);
+        MapObject_SetSpritePosOffset(playerMapObj, &spritePosOffset);
+        MapObject_GetPosPtr(playerMapObj, &spritePosOffset);
+        ov9_022511F4(playerMapObj, &spritePosOffset);
     }
 
-    v2->unk_30 = -v2->unk_30;
+    runData->vibrationYDelta = -runData->vibrationYDelta;
 
-    if (v2->unk_30 >= 0) {
-        if (v2->unk_30 > (FX32_ONE * 1)) {
-            v2->unk_30 -= (FX32_ONE * 1);
+    if (runData->vibrationYDelta >= 0) {
+        if (runData->vibrationYDelta > FX32_ONE * 1) {
+            runData->vibrationYDelta -= FX32_ONE * 1;
         } else {
-            v2->unk_34++;
+            runData->vibrationAnimStep++;
 
-            if (v2->unk_34 >= 4) {
-                v2->unk_30 = 0;
+            if (runData->vibrationAnimStep >= 4) {
+                runData->vibrationYDelta = 0;
             }
         }
 
-        if (v2->unk_30 == 0) {
-            v3->y = v2->unk_2C;
+        if (runData->vibrationYDelta == 0) {
+            movingPlatformPos->y = runData->initialPlatformY;
 
-            if (v0 != NULL) {
-                VecFx32 v5;
+            if (playerMapObj != NULL) {
+                VecFx32 playerPosOffset;
 
-                MapObject_GetSpritePosOffset(v0, &v5);
-                v5.y = v2->unk_28;
-                MapObject_SetSpritePosOffset(v0, &v5);
+                MapObject_GetSpritePosOffset(playerMapObj, &playerPosOffset);
+                playerPosOffset.y = runData->initialPlayerY;
+                MapObject_SetSpritePosOffset(playerMapObj, &playerPosOffset);
 
-                MapObject_GetPosPtr(v0, &v5);
-                ov9_022511F4(v0, &v5);
+                MapObject_GetPosPtr(playerMapObj, &playerPosOffset);
+                ov9_022511F4(playerMapObj, &playerPosOffset);
             }
 
-            *param2 = 2;
+            *cmdState = EVENT_CMD_MOVE_PLATFORM_STATE_MOVE;
         }
     }
 
-    return 0;
+    return EVENT_CMD_HANDLER_RES_CONTINUE;
 }
 
-static int ov9_0224E6B0(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdMovePlatform_Move(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    VecFx32 v0 = { 0, 0, 0 };
-    const UnkStruct_ov9_0224E550 *v1 = param3;
-    UnkStruct_ov9_0224E5EC *v2 = GetRunningEventDataBuffer(param0);
-    VecFx32 *v3 = GetMovingPlatformPropPos(v2->unk_24->animMan);
+    VecFx32 posDelta = { 0, 0, 0 };
+    const DistWorldEventCmdMovePlatformParams *cmdParams = params;
+    DistWorldEventCmdMovePlatformRunData *runData = GetRunningEventDataBuffer(system);
+    VecFx32 *movingPlatformPos = GetMovingPlatformPropPos(runData->animator->animMan);
 
-    if (v2->unk_00.x != v2->unk_0C.x) {
-        v2->unk_00.x += v2->unk_18.x;
-        v3->x += v2->unk_18.x;
+    if (runData->currPosOffset.x != runData->finalPosOffset.x) {
+        runData->currPosOffset.x += runData->posDelta.x;
+        movingPlatformPos->x += runData->posDelta.x;
 
-        if (v1->unk_02 == 1) {
-            v0.x += v2->unk_18.x;
+        if (cmdParams->movePlayer == TRUE) {
+            posDelta.x += runData->posDelta.x;
         }
     }
 
-    if (v2->unk_00.y != v2->unk_0C.y) {
-        v2->unk_00.y += v2->unk_18.y;
-        v3->y += v2->unk_18.y;
+    if (runData->currPosOffset.y != runData->finalPosOffset.y) {
+        runData->currPosOffset.y += runData->posDelta.y;
+        movingPlatformPos->y += runData->posDelta.y;
 
-        if (v1->unk_02 == 1) {
-            v0.y += v2->unk_18.y;
+        if (cmdParams->movePlayer == TRUE) {
+            posDelta.y += runData->posDelta.y;
         }
     }
 
-    if (v2->unk_00.z != v2->unk_0C.z) {
-        v2->unk_00.z += v2->unk_18.z;
-        v3->z += v2->unk_18.z;
+    if (runData->currPosOffset.z != runData->finalPosOffset.z) {
+        runData->currPosOffset.z += runData->posDelta.z;
+        movingPlatformPos->z += runData->posDelta.z;
 
-        if (v1->unk_02 == 1) {
-            v0.z += v2->unk_18.z;
+        if (cmdParams->movePlayer == TRUE) {
+            posDelta.z += runData->posDelta.z;
         }
     }
 
-    if (v1->unk_02 == 1) {
-        VecFx32 v4;
-        MapObject *v5 = Player_MapObject(param0->fieldSystem->playerAvatar);
+    if (cmdParams->movePlayer == TRUE) {
+        VecFx32 playerPos;
+        MapObject *playerMapObj = Player_MapObject(system->fieldSystem->playerAvatar);
 
-        MapObject_GetPosPtr(v5, &v4);
+        MapObject_GetPosPtr(playerMapObj, &playerPos);
 
-        v4.x += v0.x;
-        v4.y += v0.y;
-        v4.z += v0.z;
+        playerPos.x += posDelta.x;
+        playerPos.y += posDelta.y;
+        playerPos.z += posDelta.z;
 
-        ov9_022511F4(v5, &v4);
+        ov9_022511F4(playerMapObj, &playerPos);
     }
 
-    if ((v2->unk_00.x == v2->unk_0C.x) && (v2->unk_00.y == v2->unk_0C.y) && (v2->unk_00.z == v2->unk_0C.z)) {
-        *param2 = 3;
+    if (runData->currPosOffset.x == runData->finalPosOffset.x && runData->currPosOffset.y == runData->finalPosOffset.y && runData->currPosOffset.z == runData->finalPosOffset.z) {
+        *cmdState = EVENT_CMD_MOVE_PLATFORM_STATE_END;
     }
 
-    return 0;
+    return EVENT_CMD_HANDLER_RES_CONTINUE;
 }
 
-static int ov9_0224E798(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdMovePlatform_EndMovement(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    const UnkStruct_ov9_0224E550 *v0 = param3;
+    const DistWorldEventCmdMovePlatformParams *cmdParams = params;
 
-    if (v0->unk_02 == 1) {
-        MapObject *v1 = Player_MapObject(param0->fieldSystem->playerAvatar);
-        int v2 = MapObject_GetX(v1) + v0->unk_06;
-        int v3 = MapObject_GetY(v1) + ((v0->unk_08) * 2);
-        int v4 = MapObject_GetZ(v1) + v0->unk_0A;
+    if (cmdParams->movePlayer == TRUE) {
+        MapObject *playerMapObj = Player_MapObject(system->fieldSystem->playerAvatar);
+        int finalPlayerTileX = MapObject_GetX(playerMapObj) + cmdParams->finalTileXOffset;
+        int finalPlayerTileY = MapObject_GetY(playerMapObj) + cmdParams->finalTileYOffset * 2;
+        int finalPlayerTileZ = MapObject_GetZ(playerMapObj) + cmdParams->finalTileZOffset;
 
-        MapObject_SetX(v1, v2);
-        MapObject_SetY(v1, v3);
-        MapObject_SetZ(v1, v4);
-        MapObject_UpdateCoords(v1);
+        MapObject_SetX(playerMapObj, finalPlayerTileX);
+        MapObject_SetY(playerMapObj, finalPlayerTileY);
+        MapObject_SetZ(playerMapObj, finalPlayerTileZ);
+        MapObject_UpdateCoords(playerMapObj);
 
-        {
-            u32 v5;
-            PlayerAvatar *playerAvatar = param0->fieldSystem->playerAvatar;
+        PlayerAvatar *playerAvatar = system->fieldSystem->playerAvatar;
+        finalPlayerTileY = finalPlayerTileY / 2;
 
-            v3 = ((v3) / 2);
-            FindAndPrepareNewCurrentFloatingPlatform(param0, v2, v3, v4, 4);
-            v5 = GetCurrentFloatingPlatformKindSafely(param0, v2, v3, v4);
-            v5 = GetAvatarDistortionStateForFloatingPlatformKind(v5);
-            PlayerAvatar_SetDistortionState(playerAvatar, v5);
+        FindAndPrepareNewCurrentFloatingPlatform(system, finalPlayerTileX, finalPlayerTileY, finalPlayerTileZ, FLOATING_PLATFORM_KIND_INVALID);
+        u32 currentFloatingPlatformKind = GetCurrentFloatingPlatformKindSafely(system, finalPlayerTileX, finalPlayerTileY, finalPlayerTileZ);
+        enum AvatarDistortionState avatarDistortionState = GetAvatarDistortionStateForFloatingPlatformKind(currentFloatingPlatformKind);
+        PlayerAvatar_SetDistortionState(playerAvatar, avatarDistortionState);
 
-            if (v5 == 1) {
-                MapObject_SetHeightCalculationDisabled(v1, FALSE);
-            } else {
-                MapObject_SetHeightCalculationDisabled(v1, TRUE);
-            }
+        if (avatarDistortionState == AVATAR_DISTORTION_STATE_ACTIVE) {
+            MapObject_SetHeightCalculationDisabled(playerMapObj, FALSE);
+        } else {
+            MapObject_SetHeightCalculationDisabled(playerMapObj, TRUE);
         }
     }
 
     Sound_StopEffect(SEQ_SE_PL_FW089B, 0);
-    return 2;
+    return EVENT_CMD_HANDLER_RES_FINISH;
 }
 
-static const DistWorldEventCmdHandler Unk_ov9_022513E8[4] = {
-    ov9_0224E550,
-    ov9_0224E5EC,
-    ov9_0224E6B0,
-    ov9_0224E798
+static const DistWorldEventCmdHandler sEventCmdMovePlatformHandlers[EVENT_CMD_MOVE_PLATFORM_STATE_COUNT] = {
+    [EVENT_CMD_MOVE_PLATFORM_STATE_INIT] = EventCmdMovePlatform_BeginMovement,
+    [EVENT_CMD_MOVE_PLATFORM_STATE_VIBRATE] = EventCmdMovePlatform_Vibrate,
+    [EVENT_CMD_MOVE_PLATFORM_STATE_MOVE] = EventCmdMovePlatform_Move,
+    [EVENT_CMD_MOVE_PLATFORM_STATE_END] = EventCmdMovePlatform_EndMovement
 };
 
 static int EventCmdAddMapObjWithLocalID_Handle(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
@@ -10804,8 +10812,8 @@ static const DistWorldElevatorPlatformPath sElevatorPlatformPaths[ELEVATOR_PLATF
 };
 
 static const DistWorldEventCmdHandler *sEventCmdHandlers[EVENT_CMD_KIND_COUNT] = {
-    [EVENT_CMD_KIND_00] = Unk_ov9_02251360,
-    [EVENT_CMD_KIND_01] = Unk_ov9_022513E8,
+    [EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION] = sEventCmdSetMapObjectAnimationHandlers,
+    [EVENT_CMD_KIND_MOVE_PLATFORM] = sEventCmdMovePlatformHandlers,
     [EVENT_CMD_KIND_ADD_MAP_OBJECT_WITH_LOCAL_ID] = sEventCmdAddMapObjWithLocalID,
     [EVENT_CMD_KIND_DELETE_MAP_OBJECT_WITH_LOCAL_ID] = sEventCmdDeleteMapObjWithLocalID,
     [EVENT_CMD_KIND_04] = Unk_ov9_0225151C,
@@ -10897,985 +10905,985 @@ static const DistWorldEvent sMapEventsB1F[] = {
     { 0x0, 0x0, 0x0, FLAG_COND_NONE, 0x0, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_1_1 = {
-    0x1,
-    0x1,
-    0x1,
-    0x0,
-    0x0,
-    -8,
-    { 0x0, 0x0, (FX32_ONE * -4) }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_1_1 = {
+    .platformIndex = 0x1,
+    .movePlayer = TRUE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = -0x8,
+    .posDelta = { 0x0, 0x0, FX32_ONE * -4 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_1_2 = {
-    0xff,
-    0x75
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_1_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_NORTH
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_1_3 = {
-    0x1,
-    0x0,
-    0x0,
-    0x0,
-    0x0,
-    0x8,
-    { 0x0, 0x0, (FX32_ONE * 4) }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_1_3 = {
+    .platformIndex = 0x1,
+    .movePlayer = FALSE,
+    .dummy04 = 0x0,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x8,
+    .posDelta = { 0x0, 0x0, FX32_ONE * 4 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_1[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_1_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_1_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_1_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_2_1 = {
-    0x1,
-    0x0,
-    0x0,
-    0x0,
-    0x0,
-    -8,
-    { 0x0, 0x0, (FX32_ONE * -4) }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_2_1 = {
+    .platformIndex = 0x1,
+    .movePlayer = FALSE,
+    .dummy04 = 0x0,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = -0x8,
+    .posDelta = { 0x0, 0x0, FX32_ONE * -4 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_2_2 = {
-    0xff,
-    0x76
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_2_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_SOUTH
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_2_3 = {
-    0x1,
-    0x1,
-    0x1,
-    0x0,
-    0x0,
-    0x8,
-    { 0x0, 0x0, (FX32_ONE * 4) }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_2_3 = {
+    .platformIndex = 0x1,
+    .movePlayer = TRUE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x8,
+    .posDelta = { 0x0, 0x0, FX32_ONE * 4 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_2[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_2_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_2_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_2_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_3_1 = {
-    0x2,
-    0x1,
-    0x1,
-    0x0,
-    0x0,
-    -8,
-    { 0x0, 0x0, (FX32_ONE * -4) }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_3_1 = {
+    .platformIndex = 0x2,
+    .movePlayer = TRUE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = -0x8,
+    .posDelta = { 0x0, 0x0, FX32_ONE * -4 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_3_2 = {
-    0xff,
-    0x75
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_3_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_NORTH
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_3_3 = {
-    0x2,
-    0x0,
-    0x0,
-    0x0,
-    0x0,
-    0x8,
-    { 0x0, 0x0, (FX32_ONE * 4) }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_3_3 = {
+    .platformIndex = 0x2,
+    .movePlayer = FALSE,
+    .dummy04 = 0x0,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x8,
+    .posDelta = { 0x0, 0x0, FX32_ONE * 4 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_3[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_3_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_3_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_3_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_4_1 = {
-    0x2,
-    0x0,
-    0x0,
-    0x0,
-    0x0,
-    -8,
-    { 0x0, 0x0, (FX32_ONE * -4) }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_4_1 = {
+    .platformIndex = 0x2,
+    .movePlayer = FALSE,
+    .dummy04 = 0x0,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = -0x8,
+    .posDelta = { 0x0, 0x0, FX32_ONE * -4 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_4_2 = {
-    0xff,
-    0x76
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_4_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_SOUTH
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_4_3 = {
-    0x2,
-    0x1,
-    0x1,
-    0x0,
-    0x0,
-    0x8,
-    { 0x0, 0x0, (FX32_ONE * 4) }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_4_3 = {
+    .platformIndex = 0x2,
+    .movePlayer = TRUE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x8,
+    .posDelta = { 0x0, 0x0, FX32_ONE * 4 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_4[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_4_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_4_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_4_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_5_1 = {
-    0x3,
-    0x1,
-    0x1,
-    0x9,
-    0x0,
-    0x0,
-    { (FX32_ONE * 4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_5_1 = {
+    .platformIndex = 0x3,
+    .movePlayer = TRUE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = 0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * 4, 0x0, 0x0 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_5_2 = {
-    0xff,
-    0x78
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_5_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_EAST
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_5_3 = {
-    0x3,
-    0x0,
-    0x0,
-    -9,
-    0x0,
-    0x0,
-    { (FX32_ONE * -4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_5_3 = {
+    .platformIndex = 0x3,
+    .movePlayer = FALSE,
+    .dummy04 = 0x0,
+    .finalTileXOffset = -0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * -4, 0x0, 0x0 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_5[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_5_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_5_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_5_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_6_1 = {
-    0x3,
-    0x0,
-    0x0,
-    0x9,
-    0x0,
-    0x0,
-    { (FX32_ONE * 4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_6_1 = {
+    .platformIndex = 0x3,
+    .movePlayer = FALSE,
+    .dummy04 = 0x0,
+    .finalTileXOffset = 0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * 4, 0x0, 0x0 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_6_2 = {
-    0xff,
-    0x77
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_6_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_WEST
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_6_3 = {
-    0x3,
-    0x1,
-    0x1,
-    -9,
-    0x0,
-    0x0,
-    { (FX32_ONE * -4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_6_3 = {
+    .platformIndex = 0x3,
+    .movePlayer = TRUE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = -0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * -4, 0x0, 0x0 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_6[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_6_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_6_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_6_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_7_1 = {
-    0x5,
-    0x1,
-    0x1,
-    0x0,
-    0x0,
-    0x25,
-    { 0x0, 0x0, (FX32_ONE * 4) }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_7_1 = {
+    .platformIndex = 0x5,
+    .movePlayer = TRUE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x25,
+    .posDelta = { 0x0, 0x0, FX32_ONE * 4 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_7_2 = {
-    0xff,
-    0x76
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_7_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_SOUTH
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_7_3 = {
-    0x5,
-    0x0,
-    0x0,
-    0x0,
-    0x0,
-    -37,
-    { 0x0, 0x0, (FX32_ONE * -4) }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_7_3 = {
+    .platformIndex = 0x5,
+    .movePlayer = FALSE,
+    .dummy04 = 0x0,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = -0x25,
+    .posDelta = { 0x0, 0x0, FX32_ONE * -4 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_7[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_7_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_7_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_7_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_8_1 = {
-    0x5,
-    0x0,
-    0x0,
-    0x0,
-    0x0,
-    0x25,
-    { 0x0, 0x0, (FX32_ONE * 4) }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_8_1 = {
+    .platformIndex = 0x5,
+    .movePlayer = FALSE,
+    .dummy04 = 0x0,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x25,
+    .posDelta = { 0x0, 0x0, FX32_ONE * 4 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_8_2 = {
-    0xff,
-    0x75
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_8_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_NORTH
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_8_3 = {
-    0x5,
-    0x1,
-    0x1,
-    0x0,
-    0x0,
-    -37,
-    { 0x0, 0x0, (FX32_ONE * -4) }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_8_3 = {
+    .platformIndex = 0x5,
+    .movePlayer = TRUE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = -0x25,
+    .posDelta = { 0x0, 0x0, FX32_ONE * -4 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_8[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_8_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_8_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_8_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_9_1 = {
-    0x6,
-    0x1,
-    0x1,
-    0x9,
-    0x0,
-    0x0,
-    { (FX32_ONE * 4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_9_1 = {
+    .platformIndex = 0x6,
+    .movePlayer = TRUE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = 0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * 4, 0x0, 0x0 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_9_2 = {
-    0xff,
-    0x78
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_9_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_EAST
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_9_3 = {
-    0x6,
-    0x0,
-    0x0,
-    -9,
-    0x0,
-    0x0,
-    { (FX32_ONE * -4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_9_3 = {
+    .platformIndex = 0x6,
+    .movePlayer = FALSE,
+    .dummy04 = 0x0,
+    .finalTileXOffset = -0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * -4, 0x0, 0x0 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_9[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_9_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_9_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_9_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_10_1 = {
-    0x6,
-    0x0,
-    0x0,
-    0x9,
-    0x0,
-    0x0,
-    { (FX32_ONE * 4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_10_1 = {
+    .platformIndex = 0x6,
+    .movePlayer = FALSE,
+    .dummy04 = 0x0,
+    .finalTileXOffset = 0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * 4, 0x0, 0x0 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_10_2 = {
-    0xff,
-    0x77
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_10_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_WEST
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_10_3 = {
-    0x6,
-    0x1,
-    0x1,
-    -9,
-    0x0,
-    0x0,
-    { (FX32_ONE * -4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_10_3 = {
+    .platformIndex = 0x6,
+    .movePlayer = TRUE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = -0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * -4, 0x0, 0x0 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_10[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_10_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_10_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_10_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_11_1 = {
-    0x9,
-    0x1,
-    0x2,
-    0x9,
-    0x0,
-    0x0,
-    { (FX32_ONE * 4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_11_1 = {
+    .platformIndex = 0x9,
+    .movePlayer = TRUE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = 0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * 4, 0x0, 0x0 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_11_2 = {
-    0xff,
-    0x78
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_11_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_EAST
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_11_3 = {
-    0x9,
-    0x0,
-    0x2,
-    -9,
-    0x0,
-    0x0,
-    { (FX32_ONE * -4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_11_3 = {
+    .platformIndex = 0x9,
+    .movePlayer = FALSE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = -0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * -4, 0x0, 0x0 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_11[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_11_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_11_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_11_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_12_1 = {
-    0x9,
-    0x0,
-    0x2,
-    0x9,
-    0x0,
-    0x0,
-    { (FX32_ONE * 4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_12_1 = {
+    .platformIndex = 0x9,
+    .movePlayer = FALSE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = 0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * 4, 0x0, 0x0 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_12_2 = {
-    0xff,
-    0x77
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_12_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_WEST
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_12_3 = {
-    0x9,
-    0x1,
-    0x2,
-    -9,
-    0x0,
-    0x0,
-    { (FX32_ONE * -4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_12_3 = {
+    .platformIndex = 0x9,
+    .movePlayer = TRUE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = -0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * -4, 0x0, 0x0 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_12[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_12_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_12_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_12_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_13_1 = {
-    0xA,
-    0x1,
-    0x2,
-    0x9,
-    0x0,
-    0x0,
-    { (FX32_ONE * 4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_13_1 = {
+    .platformIndex = 0xA,
+    .movePlayer = TRUE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = 0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * 4, 0x0, 0x0 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_13_2 = {
-    0xff,
-    0x78
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_13_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_EAST
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_13_3 = {
-    0xA,
-    0x0,
-    0x2,
-    -9,
-    0x0,
-    0x0,
-    { (FX32_ONE * -4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_13_3 = {
+    .platformIndex = 0xA,
+    .movePlayer = FALSE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = -0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * -4, 0x0, 0x0 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_13[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_13_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_13_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_13_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_14_1 = {
-    0xA,
-    0x0,
-    0x2,
-    0x9,
-    0x0,
-    0x0,
-    { (FX32_ONE * 4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_14_1 = {
+    .platformIndex = 0xA,
+    .movePlayer = FALSE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = 0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * 4, 0x0, 0x0 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_14_2 = {
-    0xff,
-    0x77
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_14_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_WEST
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_14_3 = {
-    0xA,
-    0x1,
-    0x2,
-    -9,
-    0x0,
-    0x0,
-    { (FX32_ONE * -4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_14_3 = {
+    .platformIndex = 0xA,
+    .movePlayer = TRUE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = -0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * -4, 0x0, 0x0 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_14[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_14_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_14_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_14_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_15_1 = {
-    0xB,
-    0x1,
-    0x2,
-    0x0,
-    0x0,
-    0x17,
-    { 0x0, 0x0, (FX32_ONE * 4) }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_15_1 = {
+    .platformIndex = 0xB,
+    .movePlayer = TRUE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x17,
+    .posDelta = { 0x0, 0x0, FX32_ONE * 4 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_15_2 = {
-    0xff,
-    0x76
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_15_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_SOUTH
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_15_3 = {
-    0xB,
-    0x0,
-    0x2,
-    0x0,
-    0x0,
-    -23,
-    { 0x0, 0x0, (FX32_ONE * -4) }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_15_3 = {
+    .platformIndex = 0xB,
+    .movePlayer = FALSE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = -0x17,
+    .posDelta = { 0x0, 0x0, FX32_ONE * -4 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_15[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_15_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_15_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_15_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_16_1 = {
-    0xB,
-    0x0,
-    0x2,
-    0x0,
-    0x0,
-    0x17,
-    { 0x0, 0x0, (FX32_ONE * 4) }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_16_1 = {
+    .platformIndex = 0xB,
+    .movePlayer = FALSE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x17,
+    .posDelta = { 0x0, 0x0, FX32_ONE * 4 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_16_2 = {
-    0xff,
-    0x75
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_16_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_NORTH
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_16_3 = {
-    0xB,
-    0x1,
-    0x2,
-    0x0,
-    0x0,
-    -23,
-    { 0x0, 0x0, (FX32_ONE * -4) }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_16_3 = {
+    .platformIndex = 0xB,
+    .movePlayer = TRUE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = -0x17,
+    .posDelta = { 0x0, 0x0, FX32_ONE * -4 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_16[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_16_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_16_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_16_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_17_1 = {
-    0xC,
-    0x1,
-    0x2,
-    -9,
-    0x0,
-    0x0,
-    { (FX32_ONE * -4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_17_1 = {
+    .platformIndex = 0xC,
+    .movePlayer = TRUE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = -0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * -4, 0x0, 0x0 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_17_2 = {
-    0xff,
-    0x77
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_17_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_WEST
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_17_3 = {
-    0xC,
-    0x0,
-    0x2,
-    0x9,
-    0x0,
-    0x0,
-    { (FX32_ONE * 4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_17_3 = {
+    .platformIndex = 0xC,
+    .movePlayer = FALSE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = 0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * 4, 0x0, 0x0 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_17[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_17_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_17_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_17_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_18_1 = {
-    0xC,
-    0x0,
-    0x2,
-    -9,
-    0x0,
-    0x0,
-    { (FX32_ONE * -4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_18_1 = {
+    .platformIndex = 0xC,
+    .movePlayer = FALSE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = -0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * -4, 0x0, 0x0 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_18_2 = {
-    0xff,
-    0x78
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_18_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_EAST
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_18_3 = {
-    0xC,
-    0x1,
-    0x2,
-    0x9,
-    0x0,
-    0x0,
-    { (FX32_ONE * 4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_18_3 = {
+    .platformIndex = 0xC,
+    .movePlayer = TRUE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = 0x9,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * 4, 0x0, 0x0 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_18[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_18_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_18_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_18_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_19_1 = {
-    0xD,
-    0x1,
-    0x2,
-    -17,
-    0x0,
-    0x0,
-    { (FX32_ONE * -4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_19_1 = {
+    .platformIndex = 0xD,
+    .movePlayer = TRUE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = -0x11,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * -4, 0x0, 0x0 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_19_2 = {
-    0xff,
-    0x77
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_19_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_WEST
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_19_3 = {
-    0xD,
-    0x0,
-    0x2,
-    0x11,
-    0x0,
-    0x0,
-    { (FX32_ONE * 4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_19_3 = {
+    .platformIndex = 0xD,
+    .movePlayer = FALSE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = 0x11,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * 4, 0x0, 0x0 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_19[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_19_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_19_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_19_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_20_1 = {
-    0xD,
-    0x0,
-    0x2,
-    -17,
-    0x0,
-    0x0,
-    { (FX32_ONE * -4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_20_1 = {
+    .platformIndex = 0xD,
+    .movePlayer = FALSE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = -0x11,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * -4, 0x0, 0x0 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_20_2 = {
-    0xff,
-    0x78
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_20_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_EAST
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_20_3 = {
-    0xD,
-    0x1,
-    0x2,
-    0x11,
-    0x0,
-    0x0,
-    { (FX32_ONE * 4), 0x0, 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_20_3 = {
+    .platformIndex = 0xD,
+    .movePlayer = TRUE,
+    .dummy04 = 0x2,
+    .finalTileXOffset = 0x11,
+    .finalTileYOffset = 0x0,
+    .finalTileZOffset = 0x0,
+    .posDelta = { FX32_ONE * 4, 0x0, 0x0 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_20[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_20_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_20_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_20_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_21_1 = {
-    0x11,
-    0x1,
-    0x1,
-    0x0,
-    -8,
-    0x0,
-    { 0x0, (FX32_ONE * -2), 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_21_1 = {
+    .platformIndex = 0x11,
+    .movePlayer = TRUE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = -0x8,
+    .finalTileZOffset = 0x0,
+    .posDelta = { 0x0, FX32_ONE * -2, 0x0 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_21_2 = {
-    0xff,
-    0x75
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_21_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_NORTH
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_21_3 = {
-    0x11,
-    0x0,
-    0x1,
-    0x0,
-    0x8,
-    0x0,
-    { 0x0, (FX32_ONE * 2), 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_21_3 = {
+    .platformIndex = 0x11,
+    .movePlayer = FALSE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x8,
+    .finalTileZOffset = 0x0,
+    .posDelta = { 0x0, FX32_ONE * 2, 0x0 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_21[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_21_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_21_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_21_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_22_1 = {
-    0x11,
-    0x0,
-    0x1,
-    0x0,
-    -8,
-    0x0,
-    { 0x0, (FX32_ONE * -2), 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_22_1 = {
+    .platformIndex = 0x11,
+    .movePlayer = FALSE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = -0x8,
+    .finalTileZOffset = 0x0,
+    .posDelta = { 0x0, FX32_ONE * -2, 0x0 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_22_2 = {
-    0xff,
-    0x76
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_22_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_SOUTH
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_22_3 = {
-    0x11,
-    0x1,
-    0x1,
-    0x0,
-    0x8,
-    0x0,
-    { 0x0, (FX32_ONE * 2), 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_22_3 = {
+    .platformIndex = 0x11,
+    .movePlayer = TRUE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x8,
+    .finalTileZOffset = 0x0,
+    .posDelta = { 0x0, FX32_ONE * 2, 0x0 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_22[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_22_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_22_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_22_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_23_1 = {
-    0x10,
-    0x1,
-    0x1,
-    0x0,
-    -8,
-    0x0,
-    { 0x0, (FX32_ONE * -2), 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_23_1 = {
+    .platformIndex = 0x10,
+    .movePlayer = TRUE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = -0x8,
+    .finalTileZOffset = 0x0,
+    .posDelta = { 0x0, FX32_ONE * -2, 0x0 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_23_2 = {
-    0xff,
-    0x78
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_23_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_EAST
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_23_3 = {
-    0x10,
-    0x0,
-    0x1,
-    0x0,
-    0x8,
-    0x0,
-    { 0x0, (FX32_ONE * 2), 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_23_3 = {
+    .platformIndex = 0x10,
+    .movePlayer = FALSE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x8,
+    .finalTileZOffset = 0x0,
+    .posDelta = { 0x0, FX32_ONE * 2, 0x0 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_23[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_23_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_23_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_23_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_24_1 = {
-    0x10,
-    0x0,
-    0x1,
-    0x0,
-    -8,
-    0x0,
-    { 0x0, (FX32_ONE * -2), 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_24_1 = {
+    .platformIndex = 0x10,
+    .movePlayer = FALSE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = -0x8,
+    .finalTileZOffset = 0x0,
+    .posDelta = { 0x0, FX32_ONE * -2, 0x0 }
 };
 
-static const UnkStruct_ov9_0224E4E8 sMapEventCmdParamsB2F_24_2 = {
-    0xff,
-    0x77
+static const DistWorldEventCmdSetMapObjectAnimationParams sMapEventCmdParamsB2F_24_2 = {
+    .mapObjLocalID = LOCALID_PLAYER,
+    .movementAction = MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_WEST
 };
 
-static const UnkStruct_ov9_0224E550 sMapEventCmdParamsB2F_24_3 = {
-    0x10,
-    0x1,
-    0x1,
-    0x0,
-    0x8,
-    0x0,
-    { 0x0, (FX32_ONE * 2), 0x0 }
+static const DistWorldEventCmdMovePlatformParams sMapEventCmdParamsB2F_24_3 = {
+    .platformIndex = 0x10,
+    .movePlayer = TRUE,
+    .dummy04 = 0x1,
+    .finalTileXOffset = 0x0,
+    .finalTileYOffset = 0x8,
+    .finalTileZOffset = 0x0,
+    .posDelta = { 0x0, FX32_ONE * 2, 0x0 }
 };
 
 static const DistWorldEventCmd sMapEventB2F_24[] = {
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_24_1,
     },
     {
-        .kind = EVENT_CMD_KIND_00,
+        .kind = EVENT_CMD_KIND_SET_MAP_OBJECT_ANIMATION,
         .params = &sMapEventCmdParamsB2F_24_2,
     },
     {
-        .kind = EVENT_CMD_KIND_01,
+        .kind = EVENT_CMD_KIND_MOVE_PLATFORM,
         .params = &sMapEventCmdParamsB2F_24_3,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
