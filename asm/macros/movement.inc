@@ -586,22 +586,22 @@
     .endm
 
     .macro MoveAction_117 length=1
-    .short MOVEMENT_ACTION_117
+    .short MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_NORTH
     .short \length
     .endm
 
     .macro MoveAction_118 length=1
-    .short MOVEMENT_ACTION_118
+    .short MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_SOUTH
     .short \length
     .endm
 
     .macro MoveAction_119 length=1
-    .short MOVEMENT_ACTION_119
+    .short MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_WEST
     .short \length
     .endm
 
     .macro MoveAction_120 length=1
-    .short MOVEMENT_ACTION_120
+    .short MOVEMENT_ACTION_JUMP_DISTORTION_WORLD_EAST
     .short \length
     .endm
 
