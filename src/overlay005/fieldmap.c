@@ -727,7 +727,7 @@ static void ov5_021D15F4(FieldSystem *fieldSystem)
     sub_02020C08();
 
     if (FieldMap_InDistortionWorld(fieldSystem) == TRUE) {
-        ov9_02250780(fieldSystem);
+        DistWorld_ApplyGiratinaSpritePalette(fieldSystem);
     }
 
     {

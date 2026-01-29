@@ -141,6 +141,31 @@
 #define MESPRIT_BOULDER_TUTO_DESCEND_Y_DELTA_INCREMENT 0x200
 #define MESPRIT_BOULDER_TUTO_DESCEND_Y_DELTA_TARGET    (FX32_ONE * 2)
 
+#define GIRATINA_ROOM_PLATFORMS_FIRST_GHOST_PROP_GROUP 1
+#define GIRATINA_ROOM_PLATFORMS_LAST_GHOST_PROP_GROUP  3
+
+#define GIRATINA_ROOM_SHOW_PLATFORMS_INITIAL_DELAY 36
+#define GIRATINA_ROOM_SHOW_PLATFORMS_DELAY         48
+
+#define GIRATINA_ROOM_HIDE_PLATFORMS_INITIAL_DELAY 16
+#define GIRATINA_ROOM_HIDE_PLATFORMS_DELAY         48
+#define GIRATINA_ROOM_HIDE_PLATFORMS_WAIT_DELAY    8
+
+#define SKYBOX_MIN_DARKNESS 0
+#define SKYBOX_MAX_DARKNESS 12
+
+#define SPRITE_PALETTE_MAX_TINT_LEVEL 16
+
+#define GIRATINA_ROOM_PLAY_APPEARANCE_INITIAL_Y_OFFSET          ((10 << 4) * FX32_ONE)
+#define GIRATINA_ROOM_PLAY_APPEARANCE_INITIAL_SPRITE_DARKNESS   (FX32_ONE * SPRITE_PALETTE_MAX_TINT_LEVEL)
+#define GIRATINA_ROOM_PLAY_APPEARANCE_SKYBOX_DARKNESS_DELTA     ((FX32_ONE * 8) / (3 * 30))
+#define GIRATINA_ROOM_PLAY_APPEARANCE_SKYBOX_DARKNESS_TARGET    (FX32_ONE * SKYBOX_MAX_DARKNESS)
+#define GIRATINA_ROOM_PLAY_APPEARANCE_DESCEND_Y_SLOW_THRESHOLD  ((1 << 4) * FX32_ONE)
+#define GIRATINA_ROOM_PLAY_APPEARANCE_DESCEND_Y_SLOW_DECREMENT  0x800
+#define GIRATINA_ROOM_PLAY_APPEARANCE_DESCEND_Y_FAST_DECREMENT  0x1000
+#define GIRATINA_ROOM_PLAY_APPEARANCE_SPRITE_DARKNESS_DECREMENT ((FX32_ONE * 16) / (3 * 30))
+#define GIRATINA_ROOM_PLAY_APPEARANCE_WAIT_DELAY                30
+
 enum FloatingPlatformKind {
     FLOATING_PLATFORM_KIND_FLOOR = 0,
     FLOATING_PLATFORM_KIND_WEST_WALL,
@@ -270,15 +295,15 @@ enum EventCmdKind {
     EVENT_CMD_KIND_SET_DISTORTION_WORLD_PROGRESS,
     EVENT_CMD_KIND_SHOW_GIRATINA_SHADOW,
     EVENT_CMD_KIND_SET_GIRATINA_ANIMATION_FLAG,
-    EVENT_CMD_KIND_09,
+    EVENT_CMD_KIND_SET_PERSISTED_BOULDER_PUZZLE_FLAG,
     EVENT_CMD_KIND_0A,
-    EVENT_CMD_KIND_0B,
+    EVENT_CMD_KIND_PLAY_GIRATINA_ROOM_APPEARANCE,
     EVENT_CMD_KIND_SHOW_UXIE_BOULDER_TUTO,
     EVENT_CMD_KIND_SHOW_AZELF_BOULDER_TUTO,
     EVENT_CMD_KIND_SHOW_MESPRIT_BOULDER_TUTO,
-    EVENT_CMD_KIND_0F,
-    EVENT_CMD_KIND_10,
-    EVENT_CMD_KIND_11,
+    EVENT_CMD_KIND_SHOW_GIRATINA_ROOM_PLATFORMS,
+    EVENT_CMD_KIND_HIDE_GIRATINA_ROOM_PLATFORMS,
+    EVENT_CMD_KIND_CLEAR_PERSISTED_BOULDER_PUZZLE_FLAG,
     EVENT_CMD_KIND_COUNT,
     EVENT_CMD_KIND_INVALID = EVENT_CMD_KIND_COUNT,
 };
@@ -336,6 +361,28 @@ enum EventCmdShowMespritBoulderTutoState {
     EVENT_CMD_SHOW_MESPRIT_BOULDER_TUTO_STATE_COUNT,
 };
 
+enum EventCmdShowGiratinaRoomPlatformsState {
+    EVENT_CMD_SHOW_GIRATINA_ROOM_PLATFORMS_STATE_DO_CAMERA_TRANSITION = 0,
+    EVENT_CMD_SHOW_GIRATINA_ROOM_PLATFORMS_STATE_SHOW_PLATFORMS,
+    EVENT_CMD_SHOW_GIRATINA_ROOM_PLATFORMS_COUNT,
+};
+
+enum EventCmdHideGiratinaRoomPlatformsState {
+    EVENT_CMD_HIDE_GIRATINA_ROOM_PLATFORMS_STATE_INIT = 0,
+    EVENT_CMD_HIDE_GIRATINA_ROOM_PLATFORMS_STATE_HIDE_PLATFORMS,
+    EVENT_CMD_HIDE_GIRATINA_ROOM_PLATFORMS_STATE_WAIT,
+    EVENT_CMD_HIDE_GIRATINA_ROOM_PLATFORMS_COUNT,
+};
+
+enum EventCmdPlayGiratinaRoomAppearanceState {
+    EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_INIT_MAP_OBJECT = 0,
+    EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_INIT_SPRITE_AND_SKYBOX,
+    EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_DESCEND,
+    EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_BRIGHTEN_SPRITE,
+    EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_WAIT,
+    EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_COUNT,
+};
+
 typedef struct DistWorldSystem DistWorldSystem;
 
 typedef struct DistWorldBounds {
@@ -368,18 +415,17 @@ typedef struct {
     SysTask *unk_1F8;
 } UnkStruct_ov9_0224B064;
 
-typedef struct {
-    u16 unk_00_0 : 5;
-    u16 unk_00_5 : 5;
-    u16 unk_00_10 : 5;
-    u16 unk_00_15 : 1;
-} UnkStruct_ov9_0224F86C;
+typedef struct DistWorldRGB555 {
+    u16 r : 5;
+    u16 g : 5;
+    u16 b : 5;
+} DistWorldRGB555;
 
 typedef struct {
-    s16 unk_00;
+    s16 darknessLevel;
     s16 unk_02;
     u16 unk_04;
-    u16 unk_06;
+    u16 darknessCalculationDisabled;
     u16 unk_08[16];
     u16 unk_28[16];
     u16 unk_48[80];
@@ -880,7 +926,7 @@ struct DistWorldSystem {
     UnkStruct_ov9_0224C8E8 unk_1E88;
     DistWorldGiratinaShadowPropRenderer giratinaShadowPropRenderer;
     GXRgb unk_1EB0[8];
-    u16 unk_1EC0;
+    u16 playingGiratinaRoomAppearance;
     u16 unk_1EC2;
     SysTask *unk_1EC4;
 };
@@ -1087,18 +1133,18 @@ typedef struct DistWorldEventCmdSetGiratinaAnimationFlagParams {
     enum GiratinaShadowAnimation anim;
 } DistWorldEventCmdSetGiratinaAnimationFlagParams;
 
-typedef struct {
-    u32 unk_00;
-} UnkStruct_ov9_02250704;
+typedef struct DistWorldEventCmdPersistedBoulderPuzzleFlagParams {
+    u32 flagIndex;
+} DistWorldEventCmdPersistedBoulderPuzzleFlagParams;
 
-typedef struct {
-    fx32 unk_00;
-    fx32 unk_04;
-    VecFx32 unk_08;
-    int unk_14;
-    MapObject *unk_18;
-    u16 unk_1C[16];
-} UnkStruct_ov9_0225074C;
+typedef struct DistWorldEventCmdPlayGiratinaRoomAppearanceRunData {
+    fx32 spriteDarkness;
+    fx32 skyboxDarkness;
+    VecFx32 giratinaSpritePosOffset;
+    int delay;
+    MapObject *giratinaMapObj;
+    GXRgb giratinaSpritePalette[PALETTE_SIZE];
+} DistWorldEventCmdPlayGiratinaRoomAppearanceRunData;
 
 typedef struct DistWorldEventCmdShowUxieBoulderTutoRunData {
     int hoverStep;
@@ -1125,15 +1171,15 @@ typedef struct DistWorldEventCmdShowMespritBoulderTutoRunData {
     MapObject *mespritMapObj;
 } DistWorldEventCmdShowMespritBoulderTutoRunData;
 
-typedef struct {
-    s16 unk_00;
-    s16 unk_02;
-} UnkStruct_ov9_02250D78;
+typedef struct DistWorldEventCmdShowGiratinaRoomPlatformsRunData {
+    s16 ghostPropGroup;
+    s16 delay;
+} DistWorldEventCmdShowGiratinaRoomPlatformsRunData;
 
-typedef struct {
-    s16 unk_00;
-    s16 unk_02;
-} UnkStruct_ov9_02250DE8;
+typedef struct DistWorldEventCmdHideGiratinaRoomPlatformsRunData {
+    s16 ghostPropGroup;
+    s16 delay;
+} DistWorldEventCmdHideGiratinaRoomPlatformsRunData;
 
 typedef void (*FloatingPlatformJumpPointHandler)(DistWorldSystem *, const DistWorldFloatingPlatformJumpPointTemplate *);
 typedef int (*ElevatorPlatformHandler)(DistWorldSystem *, DistWorldElevatorPlatform *);
@@ -1397,9 +1443,9 @@ static void ov9_0224F724(DistWorldSystem *param0);
 static void ov9_0224F760(DistWorldSystem *param0);
 static void ov9_0224F764(DistWorldSystem *param0);
 static void ov9_0224F804(DistWorldSystem *param0);
-static void ov9_0224F854(DistWorldSystem *param0, u32 param1);
-static void ov9_0224F860(DistWorldSystem *param0, s16 param1);
-static void ov9_0224F86C(u16 param0, u16 param1, u16 param2, u16 *param3);
+static void SetSkyboxDarknessCalculationDisabled(DistWorldSystem *param0, BOOL param1);
+static void SetSkyboxDarknessLevel(DistWorldSystem *param0, s16 param1);
+static void CalculateTintedColor(GXRgb param0, GXRgb param1, u16 param2, GXRgb *param3);
 static BOOL DistWorldBounds_AreCoordinatesInBounds(int tileX, int tileY, int tileZ, const DistWorldBounds *bounds);
 static int CalculateCameraAngleDelta(u16 currentAngleComponent, u16 targetAngleComponent);
 static void ov9_02250EE8(s16 *param0, s16 param1);
@@ -7725,8 +7771,8 @@ static void ov9_0224F724(DistWorldSystem *param0)
         VarsFlags *v2 = SaveData_GetVarsFlags(param0->fieldSystem->saveData);
 
         if (SystemVars_GetDistortionWorldProgress(v2) == 13) {
-            v0->unk_06 = 1;
-            v0->unk_00 = 12;
+            v0->darknessCalculationDisabled = TRUE;
+            v0->darknessLevel = 12;
         }
     }
 
@@ -7744,35 +7790,35 @@ static void ov9_0224F764(DistWorldSystem *param0)
     PlayerAvatar *playerAvatar = param0->fieldSystem->playerAvatar;
     const VecFx32 *v2 = PlayerAvatar_PosVector(playerAvatar);
 
-    if (v0->unk_06 == 0) {
-        v0->unk_00 = (v2->y - ((65 << 4) * FX32_ONE)) / ((((289 - 65) << 4) * FX32_ONE) / 12);
+    if (v0->darknessCalculationDisabled == FALSE) {
+        v0->darknessLevel = (v2->y - ((65 << 4) * FX32_ONE)) / ((((289 - 65) << 4) * FX32_ONE) / 12);
     }
 
-    if (v0->unk_00 < 0) {
-        v0->unk_00 = 0;
-    } else if (v0->unk_00 > 12) {
-        v0->unk_00 = 12;
+    if (v0->darknessLevel < 0) {
+        v0->darknessLevel = 0;
+    } else if (v0->darknessLevel > 12) {
+        v0->darknessLevel = 12;
     }
 
-    if (v0->unk_00 != v0->unk_02) {
+    if (v0->darknessLevel != v0->unk_02) {
         int v3 = 0;
 
         do {
-            ov9_0224F86C(
-                v0->unk_08[v3], (4 | (4 << 5) | (8 << 10)), v0->unk_00, &v0->unk_28[v3]);
+            CalculateTintedColor(
+                v0->unk_08[v3], (4 | (4 << 5) | (8 << 10)), v0->darknessLevel, &v0->unk_28[v3]);
             v3++;
         } while (v3 < 16);
 
         v3 = 0;
 
         do {
-            ov9_0224F86C(
-                v0->unk_48[v3], (6 | (6 << 5) | (8 << 10)), v0->unk_00, &v0->unk_E8[v3]);
+            CalculateTintedColor(
+                v0->unk_48[v3], (6 | (6 << 5) | (8 << 10)), v0->darknessLevel, &v0->unk_E8[v3]);
             v3++;
         } while (v3 < (16 * 5));
 
         v0->unk_04 = 1;
-        v0->unk_02 = v0->unk_00;
+        v0->unk_02 = v0->darknessLevel;
     }
 }
 
@@ -7805,28 +7851,31 @@ static void ov9_0224F804(DistWorldSystem *param0)
     }
 }
 
-static void ov9_0224F854(DistWorldSystem *param0, u32 param1)
+static void SetSkyboxDarknessCalculationDisabled(DistWorldSystem *system, BOOL darknessCalculationDisabled)
 {
-    UnkStruct_ov9_0224ADC0 *v0 = &param0->unk_1D00;
-    v0->unk_06 = param1;
+    UnkStruct_ov9_0224ADC0 *v0 = &system->unk_1D00;
+    v0->darknessCalculationDisabled = darknessCalculationDisabled;
 }
 
-static void ov9_0224F860(DistWorldSystem *param0, s16 param1)
+static void SetSkyboxDarknessLevel(DistWorldSystem *system, s16 darknessLevel)
 {
-    UnkStruct_ov9_0224ADC0 *v0 = &param0->unk_1D00;
-    v0->unk_00 = param1;
+    UnkStruct_ov9_0224ADC0 *v0 = &system->unk_1D00;
+    v0->darknessLevel = darknessLevel;
 }
 
-static void ov9_0224F86C(u16 param0, u16 param1, u16 param2, u16 *param3)
+static void CalculateTintedColor(GXRgb baseRawColor, GXRgb tintRawColor, u16 tintLevel, GXRgb *outColor)
 {
-    const UnkStruct_ov9_0224F86C *v0 = (UnkStruct_ov9_0224F86C *)&param0;
-    const UnkStruct_ov9_0224F86C *v1 = (UnkStruct_ov9_0224F86C *)&param1;
+    const DistWorldRGB555 *base = (DistWorldRGB555 *)&baseRawColor;
+    const DistWorldRGB555 *tint = (DistWorldRGB555 *)&tintRawColor;
 
-    if (param2 > 16) {
-        param2 = 16;
+    if (tintLevel > SPRITE_PALETTE_MAX_TINT_LEVEL) {
+        tintLevel = SPRITE_PALETTE_MAX_TINT_LEVEL;
     }
 
-    (*param3) = (v0->unk_00_0 + ((v1->unk_00_0 - v0->unk_00_0) * param2 >> 4)) | ((v0->unk_00_5 + ((v1->unk_00_5 - v0->unk_00_5) * param2 >> 4)) << 5) | ((v0->unk_00_10 + ((v1->unk_00_10 - v0->unk_00_10) * param2 >> 4)) << 10);
+    *outColor = GX_RGB(
+        base->r + ((tint->r - base->r) * tintLevel >> 4),
+        base->g + ((tint->g - base->g) * tintLevel >> 4),
+        base->b + ((tint->b - base->b) * tintLevel >> 4));
 }
 
 static void ov9_0224F8C4(DistWorldSystem *param0, UnkStruct_ov9_0224F930 *param1, const UnkStruct_ov9_0224F8C4 *param2, const VecFx32 *param3)
@@ -8660,28 +8709,28 @@ static const DistWorldEventCmdHandler sEventCmdSetGiratinaAnimationFlagHandlers[
     EventCmdSetGiratinaAnimationFlag_Handle
 };
 
-static int ov9_02250704(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdSetPersistedBoulderPuzzleFlag_Handle(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    const UnkStruct_ov9_02250704 *v0 = param3;
+    const DistWorldEventCmdPersistedBoulderPuzzleFlagParams *cmdParams = params;
+    SetPersistedBoulderPuzzleFlag(system, cmdParams->flagIndex);
 
-    SetPersistedBoulderPuzzleFlag(param0, v0->unk_00);
-    return 2;
+    return EVENT_CMD_HANDLER_RES_FINISH;
 }
 
-static const DistWorldEventCmdHandler Unk_ov9_02251270[1] = {
-    ov9_02250704
+static const DistWorldEventCmdHandler sEventCmdSetPersistedBoulderPuzzleFlagHandlers[1] = {
+    EventCmdSetPersistedBoulderPuzzleFlag_Handle
 };
 
-static int ov9_02250710(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdClearPersistedBoulderPuzzleFlag_Handle(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    const UnkStruct_ov9_02250704 *v0 = param3;
+    const DistWorldEventCmdPersistedBoulderPuzzleFlagParams *cmdParams = params;
+    ClearPersistedBoulderPuzzleFlag(system, cmdParams->flagIndex);
 
-    ClearPersistedBoulderPuzzleFlag(param0, v0->unk_00);
-    return 2;
+    return EVENT_CMD_HANDLER_RES_FINISH;
 }
 
-static const DistWorldEventCmdHandler Unk_ov9_02251254[1] = {
-    ov9_02250710
+static const DistWorldEventCmdHandler sEventCmdClearPersistedBoulderPuzzleFlagHandlers[1] = {
+    EventCmdClearPersistedBoulderPuzzleFlag_Handle
 };
 
 static int EventCmdShowGiratinaShadow_Load(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
@@ -8708,148 +8757,147 @@ static const DistWorldEventCmdHandler sEventCmdShowGiratinaShadow[EVENT_CMD_SHOW
     [EVENT_CMD_SHOW_GIRATINA_SHADOW_STATE_FINISH] = EventCmdShowGiratinaShadow_Finish
 };
 
-static const u16 Unk_ov9_02252284[16] = {
-    0x32C9,
-    0x20D5,
-    0x104f,
-    0x3DAD,
-    0x4A10,
-    0x2929,
-    0x5672,
-    0x62D5,
-    0x6bff,
-    0xf5d,
-    0x92A,
-    0xA55,
-    0x215E,
-    0x18C6,
-    0x0,
-    0x7fff
+static const GXRgb sGiratinaSpriteBasePalette[PALETTE_SIZE] = {
+    GX_RGB(9, 22, 12),
+    GX_RGB(21, 6, 8),
+    GX_RGB(15, 2, 4),
+    GX_RGB(13, 13, 15),
+    GX_RGB(16, 16, 18),
+    GX_RGB(9, 9, 10),
+    GX_RGB(18, 19, 21),
+    GX_RGB(21, 22, 24),
+    GX_RGB(31, 31, 26),
+    GX_RGB(29, 26, 3),
+    GX_RGB(10, 9, 2),
+    GX_RGB(21, 18, 2),
+    GX_RGB(30, 10, 8),
+    GX_RGB(6, 6, 6),
+    GX_RGB(0, 0, 0),
+    GX_RGB(31, 31, 31)
 };
 
-static void ov9_0225074C(UnkStruct_ov9_0225074C *param0)
+static void EventCmdPlayGiratinaRoomAppearanceRunData_UpdateSpritePalette(DistWorldEventCmdPlayGiratinaRoomAppearanceRunData *runData)
 {
-    u32 v0, v1 = ((param0->unk_00) / FX32_ONE);
+    u32 spriteDarkness = runData->spriteDarkness / FX32_ONE;
 
-    for (v0 = 0; v0 < 16; v0++) {
-        ov9_0224F86C(Unk_ov9_02252284[v0], 0, v1, &param0->unk_1C[v0]);
+    for (u32 i = 0; i < PALETTE_SIZE; i++) {
+        CalculateTintedColor(sGiratinaSpriteBasePalette[i], GX_RGB(0, 0, 0), spriteDarkness, &runData->giratinaSpritePalette[i]);
     }
 }
 
-void ov9_02250780(FieldSystem *fieldSystem)
+void DistWorld_ApplyGiratinaSpritePalette(FieldSystem *fieldSystem)
 {
-    DistWorldSystem *v0 = fieldSystem->unk_04->dynamicMapFeaturesData;
+    DistWorldSystem *dwSystem = fieldSystem->unk_04->dynamicMapFeaturesData;
 
-    if (v0->unk_1EC0 == 1) {
-        UnkStruct_ov9_0225074C *v1 = GetRunningEventDataBuffer(v0);
-        UnkStruct_ov5_021ED0A4 *v2 = sub_0206285C(v0->fieldSystem->mapObjMan);
-        TextureResourceManager *v3 = ov5_021EDCB0(v2);
-        TextureResource *v4 = TextureResourceManager_FindTextureResource(v3, 0xe6);
-        NNSGfdPlttKey v5 = TextureResource_GetPaletteKey(v4);
-        u32 v6 = NNS_GfdGetPlttKeyAddr(v5);
+    if (dwSystem->playingGiratinaRoomAppearance == TRUE) {
+        DistWorldEventCmdPlayGiratinaRoomAppearanceRunData *runData = GetRunningEventDataBuffer(dwSystem);
+        UnkStruct_ov5_021ED0A4 *v2 = sub_0206285C(dwSystem->fieldSystem->mapObjMan);
+        TextureResourceManager *texMgr = ov5_021EDCB0(v2);
+        TextureResource *texResource = TextureResourceManager_FindTextureResource(texMgr, 0xe6);
+        NNSGfdPlttKey paletteKey = TextureResource_GetPaletteKey(texResource);
+        u32 paletteKeyAddr = NNS_GfdGetPlttKeyAddr(paletteKey);
 
-        VramTransfer_Request(NNS_GFD_DST_3D_TEX_PLTT, v6, v1->unk_1C, 32);
+        VramTransfer_Request(NNS_GFD_DST_3D_TEX_PLTT, paletteKeyAddr, runData->giratinaSpritePalette, PALETTE_SIZE_BYTES);
     }
 }
 
-static int ov9_022507C4(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdPlayGiratinaRoomAppearance_InitMapObject(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    UnkStruct_ov9_0225074C *v0 = ResetRunningEventDataBuffer(param0, sizeof(UnkStruct_ov9_0225074C));
-    v0->unk_18 = AddMapObjectWithLocalID(param0, 582, (0x80 + 0));
-    v0->unk_08.y = ((10 << 4) * FX32_ONE);
+    DistWorldEventCmdPlayGiratinaRoomAppearanceRunData *runData = ResetRunningEventDataBuffer(system, sizeof(DistWorldEventCmdPlayGiratinaRoomAppearanceRunData));
+    runData->giratinaMapObj = AddMapObjectWithLocalID(system, MAP_HEADER_DISTORTION_WORLD_GIRATINA_ROOM, 0x80 + 0);
+    runData->giratinaSpritePosOffset.y = GIRATINA_ROOM_PLAY_APPEARANCE_INITIAL_Y_OFFSET;
 
-    MapObject_SetSpritePosOffset(v0->unk_18, &v0->unk_08);
+    MapObject_SetSpritePosOffset(runData->giratinaMapObj, &runData->giratinaSpritePosOffset);
 
-    *param2 = 1;
-    return 0;
+    *cmdState = EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_INIT_SPRITE_AND_SKYBOX;
+    return EVENT_CMD_HANDLER_RES_CONTINUE;
 }
 
-static int ov9_022507FC(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdPlayGiratinaRoomAppearance_InitSpriteAndSkybox(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    UnkStruct_ov9_0225074C *v1 = GetRunningEventDataBuffer(param0);
-    UnkStruct_020216E0 *v0 = ov5_021EB1A0(v1->unk_18);
+    DistWorldEventCmdPlayGiratinaRoomAppearanceRunData *runData = GetRunningEventDataBuffer(system);
+    UnkStruct_020216E0 *v0 = ov5_021EB1A0(runData->giratinaMapObj);
 
     if (v0 != NULL) {
-        v1->unk_00 = (FX32_ONE * 16);
-        ov9_0225074C(v1);
-        param0->unk_1EC0 = 1;
+        runData->spriteDarkness = GIRATINA_ROOM_PLAY_APPEARANCE_INITIAL_SPRITE_DARKNESS;
+        EventCmdPlayGiratinaRoomAppearanceRunData_UpdateSpritePalette(runData);
+        system->playingGiratinaRoomAppearance = TRUE;
 
-        v1->unk_04 = (FX32_ONE * 0);
-        ov9_0224F854(param0, 1);
+        runData->skyboxDarkness = SKYBOX_MIN_DARKNESS;
+        SetSkyboxDarknessCalculationDisabled(system, TRUE);
 
-        param0->unk_1EC2 = 2;
+        system->unk_1EC2 = 2;
         Sound_PlayEffect(SEQ_SE_PL_GIRA);
-        *param2 = 2;
-        return 1;
+
+        *cmdState = EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_DESCEND;
+        return EVENT_CMD_HANDLER_RES_LOOP;
     }
 
-    return 0;
+    return EVENT_CMD_HANDLER_RES_CONTINUE;
 }
 
-static int ov9_02250854(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdPlayGiratinaRoomAppearance_Descend(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    UnkStruct_ov9_0225074C *v0 = GetRunningEventDataBuffer(param0);
-    v0->unk_04 += (FX32_ONE * 8) / (3 * 30);
+    DistWorldEventCmdPlayGiratinaRoomAppearanceRunData *runData = GetRunningEventDataBuffer(system);
+    runData->skyboxDarkness += GIRATINA_ROOM_PLAY_APPEARANCE_SKYBOX_DARKNESS_DELTA;
 
-    if (v0->unk_04 >= (FX32_ONE * 12)) {
-        v0->unk_04 = (FX32_ONE * 12);
+    if (runData->skyboxDarkness >= GIRATINA_ROOM_PLAY_APPEARANCE_SKYBOX_DARKNESS_TARGET) {
+        runData->skyboxDarkness = GIRATINA_ROOM_PLAY_APPEARANCE_SKYBOX_DARKNESS_TARGET;
     }
 
-    ov9_0224F860(param0, ((v0->unk_04) / FX32_ONE));
+    SetSkyboxDarknessLevel(system, runData->skyboxDarkness / FX32_ONE);
 
-    if (v0->unk_08.y >= ((1 << 4) * FX32_ONE)) {
-        v0->unk_08.y -= 0x1000;
+    if (runData->giratinaSpritePosOffset.y >= GIRATINA_ROOM_PLAY_APPEARANCE_DESCEND_Y_SLOW_THRESHOLD) {
+        runData->giratinaSpritePosOffset.y -= GIRATINA_ROOM_PLAY_APPEARANCE_DESCEND_Y_FAST_DECREMENT;
     } else {
-        v0->unk_08.y -= 0x800;
+        runData->giratinaSpritePosOffset.y -= GIRATINA_ROOM_PLAY_APPEARANCE_DESCEND_Y_SLOW_DECREMENT;
     }
 
-    if ((v0->unk_08.y < 0) && (v0->unk_04 >= (FX32_ONE * 12))) {
-        v0->unk_08.y = 0;
-        *param2 = 3;
+    if (runData->giratinaSpritePosOffset.y < 0 && runData->skyboxDarkness >= GIRATINA_ROOM_PLAY_APPEARANCE_SKYBOX_DARKNESS_TARGET) {
+        runData->giratinaSpritePosOffset.y = 0;
+        *cmdState = EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_BRIGHTEN_SPRITE;
     }
 
-    MapObject_SetSpritePosOffset(v0->unk_18, &v0->unk_08);
-    return 0;
+    MapObject_SetSpritePosOffset(runData->giratinaMapObj, &runData->giratinaSpritePosOffset);
+    return EVENT_CMD_HANDLER_RES_CONTINUE;
 }
 
-static int ov9_022508C0(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdPlayGiratinaRoomAppearance_BrightenSprite(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    UnkStruct_020216E0 *v0;
-    NNSG3dResMdl *v1;
-    UnkStruct_ov9_0225074C *v2 = GetRunningEventDataBuffer(param0);
-    v0 = ov5_021EB1A0(v2->unk_18);
-    v1 = sub_02021430(v0);
+    DistWorldEventCmdPlayGiratinaRoomAppearanceRunData *runData = GetRunningEventDataBuffer(system);
+    UnkStruct_020216E0 *v0 = ov5_021EB1A0(runData->giratinaMapObj);
+    NNSG3dResMdl *model = sub_02021430(v0);
 
-    v2->unk_00 -= (FX32_ONE * 16) / (3 * 30);
+    runData->spriteDarkness -= GIRATINA_ROOM_PLAY_APPEARANCE_SPRITE_DARKNESS_DECREMENT;
 
-    if (v2->unk_00 < 0) {
-        v2->unk_00 = 0;
-        *param2 = 4;
+    if (runData->spriteDarkness < 0) {
+        runData->spriteDarkness = 0;
+        *cmdState = EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_WAIT;
     }
 
-    ov9_0225074C(v2);
-    return 0;
+    EventCmdPlayGiratinaRoomAppearanceRunData_UpdateSpritePalette(runData);
+    return EVENT_CMD_HANDLER_RES_CONTINUE;
 }
 
-static int ov9_022508F4(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdPlayGiratinaRoomAppearance_Wait(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    UnkStruct_ov9_0225074C *v0 = GetRunningEventDataBuffer(param0);
-    v0->unk_14++;
+    DistWorldEventCmdPlayGiratinaRoomAppearanceRunData *runData = GetRunningEventDataBuffer(system);
+    runData->delay++;
 
-    if (v0->unk_14 >= 30) {
-        param0->unk_1EC0 = 0;
-        return 2;
+    if (runData->delay >= GIRATINA_ROOM_PLAY_APPEARANCE_WAIT_DELAY) {
+        system->playingGiratinaRoomAppearance = FALSE;
+        return EVENT_CMD_HANDLER_RES_FINISH;
     }
 
-    return 0;
+    return EVENT_CMD_HANDLER_RES_CONTINUE;
 }
 
-static const DistWorldEventCmdHandler Unk_ov9_02251490[5] = {
-    ov9_022507C4,
-    ov9_022507FC,
-    ov9_02250854,
-    ov9_022508C0,
-    ov9_022508F4
+static const DistWorldEventCmdHandler sEventCmdPlayGiratinaRoomAppearanceHandlers[EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_COUNT] = {
+    [EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_INIT_MAP_OBJECT] = EventCmdPlayGiratinaRoomAppearance_InitMapObject,
+    [EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_INIT_SPRITE_AND_SKYBOX] = EventCmdPlayGiratinaRoomAppearance_InitSpriteAndSkybox,
+    [EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_DESCEND] = EventCmdPlayGiratinaRoomAppearance_Descend,
+    [EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_BRIGHTEN_SPRITE] = EventCmdPlayGiratinaRoomAppearance_BrightenSprite,
+    [EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_WAIT] = EventCmdPlayGiratinaRoomAppearance_Wait
 };
 
 static int EventCmdShowUxieBoulderTuto_Init(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
@@ -9241,101 +9289,108 @@ static const DistWorldEventCmdHandler sEventCmdShowMespritBoulderTutoHandlers[EV
     [EVENT_CMD_SHOW_MESPRIT_BOULDER_TUTO_STATE_DESCEND] = EventCmdShowMespritBoulderTuto_Descend
 };
 
-const DistWorldCameraAngleTemplate Unk_ov9_02251D68 = {
-    { 0x0, 0x0, 0x0, 0x0 },
-    0x10,
-    0x0,
-    0x0,
-    0x0,
-    0x14
+const DistWorldCameraAngleTemplate sGiratinaRoomPlatformsShownCameraAngle = {
+    .bounds = {
+        .startTileX = 0x0,
+        .startTileY = 0x0,
+        .startTileZ = 0x0,
+        .sizeX = 0x0,
+        .sizeY = 0x0,
+        .sizeZ = 0x0,
+    },
+    .angleX = 0x10,
+    .angleY = 0x0,
+    .angleZ = 0x0,
+    .playerDir = FACE_UP,
+    .transitionSteps = 0x14
 };
 
-static int ov9_02250D78(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdShowGiratinaRoomPlatforms_DoCameraTransition(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    UnkStruct_ov9_02250D78 *v0 = ResetRunningEventDataBuffer(param0, sizeof(UnkStruct_ov9_02250D78));
+    DistWorldEventCmdShowGiratinaRoomPlatformsRunData *runData = ResetRunningEventDataBuffer(system, sizeof(DistWorldEventCmdShowGiratinaRoomPlatformsRunData));
 
-    DoCameraTransition(param0, &Unk_ov9_02251D68);
+    DoCameraTransition(system, &sGiratinaRoomPlatformsShownCameraAngle);
 
-    v0->unk_02 = 20 + 16;
-    v0->unk_00 = 1;
-    *param2 = 1;
+    runData->delay = GIRATINA_ROOM_SHOW_PLATFORMS_INITIAL_DELAY;
+    runData->ghostPropGroup = GIRATINA_ROOM_PLATFORMS_FIRST_GHOST_PROP_GROUP;
+    *cmdState = EVENT_CMD_SHOW_GIRATINA_ROOM_PLATFORMS_STATE_SHOW_PLATFORMS;
 
-    return 1;
+    return EVENT_CMD_HANDLER_RES_LOOP;
 }
 
-static int ov9_02250DA0(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdShowGiratinaRoomPlatforms_ShowPlatforms(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    UnkStruct_ov9_02250D78 *v0 = GetRunningEventDataBuffer(param0);
+    DistWorldEventCmdShowGiratinaRoomPlatformsRunData *runData = GetRunningEventDataBuffer(system);
 
-    v0->unk_02--;
+    runData->delay--;
 
-    if (v0->unk_02 <= 0) {
-        v0->unk_02 = 48;
-        Sound_StopEffect(1484, 0);
-        ShowGhostPropGroup(param0, v0->unk_00);
-        v0->unk_00++;
+    if (runData->delay <= 0) {
+        runData->delay = GIRATINA_ROOM_SHOW_PLATFORMS_DELAY;
+        Sound_StopEffect(SEQ_SE_PL_SYUWA3, 0);
+        ShowGhostPropGroup(system, runData->ghostPropGroup);
+        runData->ghostPropGroup++;
 
-        if (v0->unk_00 >= 4) {
-            return 2;
+        if (runData->ghostPropGroup >= GIRATINA_ROOM_PLATFORMS_LAST_GHOST_PROP_GROUP + 1) {
+            return EVENT_CMD_HANDLER_RES_FINISH;
         }
     }
 
-    return 0;
+    return EVENT_CMD_HANDLER_RES_CONTINUE;
 }
 
-static const DistWorldEventCmdHandler Unk_ov9_02251340[2] = {
-    ov9_02250D78,
-    ov9_02250DA0
+static const DistWorldEventCmdHandler sEventCmdShowGiratinaRoomPlatformsHandlers[EVENT_CMD_SHOW_GIRATINA_ROOM_PLATFORMS_COUNT] = {
+    [EVENT_CMD_SHOW_GIRATINA_ROOM_PLATFORMS_STATE_DO_CAMERA_TRANSITION] = EventCmdShowGiratinaRoomPlatforms_DoCameraTransition,
+    [EVENT_CMD_SHOW_GIRATINA_ROOM_PLATFORMS_STATE_SHOW_PLATFORMS] = EventCmdShowGiratinaRoomPlatforms_ShowPlatforms
 };
 
-static int ov9_02250DE8(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdHideGiratinaRoomPlatforms_Init(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    UnkStruct_ov9_02250DE8 *v0 = ResetRunningEventDataBuffer(param0, sizeof(UnkStruct_ov9_02250DE8));
-    v0->unk_02 = 16;
-    v0->unk_00 = 3;
+    DistWorldEventCmdHideGiratinaRoomPlatformsRunData *runData = ResetRunningEventDataBuffer(system, sizeof(DistWorldEventCmdHideGiratinaRoomPlatformsRunData));
+    runData->delay = GIRATINA_ROOM_HIDE_PLATFORMS_INITIAL_DELAY;
+    runData->ghostPropGroup = GIRATINA_ROOM_PLATFORMS_LAST_GHOST_PROP_GROUP;
 
-    *param2 = 1;
-    return 1;
+    *cmdState = EVENT_CMD_HIDE_GIRATINA_ROOM_PLATFORMS_STATE_HIDE_PLATFORMS;
+    return EVENT_CMD_HANDLER_RES_LOOP;
 }
 
-static int ov9_02250E00(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdHideGiratinaRoomPlatforms_HidePlatforms(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    UnkStruct_ov9_02250DE8 *v0 = GetRunningEventDataBuffer(param0);
+    DistWorldEventCmdHideGiratinaRoomPlatformsRunData *runData = GetRunningEventDataBuffer(system);
 
-    v0->unk_02--;
+    runData->delay--;
 
-    if (v0->unk_02 <= 0) {
-        if (v0->unk_00 >= 1) {
-            v0->unk_02 = 48;
-            Sound_StopEffect(1484, 0);
-            HideGhostPropGroup(param0, v0->unk_00);
-            v0->unk_00--;
+    if (runData->delay <= 0) {
+        if (runData->ghostPropGroup >= GIRATINA_ROOM_PLATFORMS_FIRST_GHOST_PROP_GROUP) {
+            runData->delay = GIRATINA_ROOM_HIDE_PLATFORMS_DELAY;
+            Sound_StopEffect(SEQ_SE_PL_SYUWA3, 0);
+            HideGhostPropGroup(system, runData->ghostPropGroup);
+            runData->ghostPropGroup--;
         } else {
-            v0->unk_02 = 8;
-            *param2 = 2;
+            runData->delay = GIRATINA_ROOM_HIDE_PLATFORMS_WAIT_DELAY;
+            *cmdState = EVENT_CMD_HIDE_GIRATINA_ROOM_PLATFORMS_STATE_WAIT;
         }
     }
 
-    return 0;
+    return EVENT_CMD_HANDLER_RES_CONTINUE;
 }
 
-static int ov9_02250E50(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdHideGiratinaRoomPlatforms_Wait(DistWorldSystem *system, FieldTask *task, u16 *cmdState, const void *params)
 {
-    UnkStruct_ov9_02250DE8 *v0 = GetRunningEventDataBuffer(param0);
+    DistWorldEventCmdHideGiratinaRoomPlatformsRunData *runData = GetRunningEventDataBuffer(system);
 
-    v0->unk_02--;
+    runData->delay--;
 
-    if (v0->unk_02 <= 0) {
-        return 2;
+    if (runData->delay <= 0) {
+        return EVENT_CMD_HANDLER_RES_FINISH;
     }
 
-    return 0;
+    return EVENT_CMD_HANDLER_RES_CONTINUE;
 }
 
-static const DistWorldEventCmdHandler Unk_ov9_0225139C[3] = {
-    ov9_02250DE8,
-    ov9_02250E00,
-    ov9_02250E50
+static const DistWorldEventCmdHandler sEventCmdHideGiratinaRoomPlatformsHandlers[EVENT_CMD_HIDE_GIRATINA_ROOM_PLATFORMS_COUNT] = {
+    [EVENT_CMD_HIDE_GIRATINA_ROOM_PLATFORMS_STATE_INIT] = EventCmdHideGiratinaRoomPlatforms_Init,
+    [EVENT_CMD_HIDE_GIRATINA_ROOM_PLATFORMS_STATE_HIDE_PLATFORMS] = EventCmdHideGiratinaRoomPlatforms_HidePlatforms,
+    [EVENT_CMD_HIDE_GIRATINA_ROOM_PLATFORMS_STATE_WAIT] = EventCmdHideGiratinaRoomPlatforms_Wait
 };
 
 static BOOL DistWorldBounds_AreCoordinatesInBounds(int tileX, int tileY, int tileZ, const DistWorldBounds *bounds)
@@ -10890,15 +10945,15 @@ static const DistWorldEventCmdHandler *sEventCmdHandlers[EVENT_CMD_KIND_COUNT] =
     [EVENT_CMD_KIND_SET_DISTORTION_WORLD_PROGRESS] = sEventCmdSetDistortionWorldProgressHandlers,
     [EVENT_CMD_KIND_SHOW_GIRATINA_SHADOW] = sEventCmdShowGiratinaShadow,
     [EVENT_CMD_KIND_SET_GIRATINA_ANIMATION_FLAG] = sEventCmdSetGiratinaAnimationFlagHandlers,
-    [EVENT_CMD_KIND_09] = Unk_ov9_02251270,
+    [EVENT_CMD_KIND_SET_PERSISTED_BOULDER_PUZZLE_FLAG] = sEventCmdSetPersistedBoulderPuzzleFlagHandlers,
     [EVENT_CMD_KIND_0A] = Unk_ov9_02251544,
-    [EVENT_CMD_KIND_0B] = Unk_ov9_02251490,
+    [EVENT_CMD_KIND_PLAY_GIRATINA_ROOM_APPEARANCE] = sEventCmdPlayGiratinaRoomAppearanceHandlers,
     [EVENT_CMD_KIND_SHOW_UXIE_BOULDER_TUTO] = sEventCmdShowUxieBoulderTutoHandlers,
     [EVENT_CMD_KIND_SHOW_AZELF_BOULDER_TUTO] = sEventCmdShowAzelfBoulderTutoHandlers,
     [EVENT_CMD_KIND_SHOW_MESPRIT_BOULDER_TUTO] = sEventCmdShowMespritBoulderTutoHandlers,
-    [EVENT_CMD_KIND_0F] = Unk_ov9_02251340,
-    [EVENT_CMD_KIND_10] = Unk_ov9_0225139C,
-    [EVENT_CMD_KIND_11] = Unk_ov9_02251254
+    [EVENT_CMD_KIND_SHOW_GIRATINA_ROOM_PLATFORMS] = sEventCmdShowGiratinaRoomPlatformsHandlers,
+    [EVENT_CMD_KIND_HIDE_GIRATINA_ROOM_PLATFORMS] = sEventCmdHideGiratinaRoomPlatformsHandlers,
+    [EVENT_CMD_KIND_CLEAR_PERSISTED_BOULDER_PUZZLE_FLAG] = sEventCmdClearPersistedBoulderPuzzleFlagHandlers
 };
 
 static const DistWorldEventCmdStartScriptParams sMapEventCmdParams1F_1_1 = {
@@ -12450,33 +12505,33 @@ static const DistWorldEvent sMapEventsB7F[] = {
     { 0x0, 0x0, 0x0, FLAG_COND_NONE, 0x0, NULL }
 };
 
-static const UnkStruct_ov9_02250704 sMapEventCmdParamsGiratinaRoom_1_1 = {
-    0x10
+static const DistWorldEventCmdPersistedBoulderPuzzleFlagParams sMapEventCmdParamsGiratinaRoom_1_1 = {
+    .flagIndex = DIST_WORLD_PERSISTED_BOULDER_PUZZLE_FLAG_GIRATINA_ROOM_PLATFORMS_VISIBLE
 };
 
 static const DistWorldEventCmd sMapEventsGiratinaRoom_1[] = {
     {
-        .kind = EVENT_CMD_KIND_0F,
+        .kind = EVENT_CMD_KIND_SHOW_GIRATINA_ROOM_PLATFORMS,
         .params = NULL,
     },
     {
-        .kind = EVENT_CMD_KIND_09,
+        .kind = EVENT_CMD_KIND_SET_PERSISTED_BOULDER_PUZZLE_FLAG,
         .params = &sMapEventCmdParamsGiratinaRoom_1_1,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
-static const UnkStruct_ov9_02250704 sMapEventCmdParamsGiratinaRoom_2_1 = {
-    0x10
+static const DistWorldEventCmdPersistedBoulderPuzzleFlagParams sMapEventCmdParamsGiratinaRoom_2_1 = {
+    .flagIndex = DIST_WORLD_PERSISTED_BOULDER_PUZZLE_FLAG_GIRATINA_ROOM_PLATFORMS_VISIBLE
 };
 
 static const DistWorldEventCmd sMapEventsGiratinaRoom_2[] = {
     {
-        .kind = EVENT_CMD_KIND_10,
+        .kind = EVENT_CMD_KIND_HIDE_GIRATINA_ROOM_PLATFORMS,
         .params = NULL,
     },
     {
-        .kind = EVENT_CMD_KIND_11,
+        .kind = EVENT_CMD_KIND_CLEAR_PERSISTED_BOULDER_PUZZLE_FLAG,
         .params = &sMapEventCmdParamsGiratinaRoom_2_1,
     },
     { EVENT_CMD_KIND_INVALID, NULL }
@@ -12558,7 +12613,7 @@ static const DistWorldEventCmd sMapEventsGiratinaRoom_5[] = {
         .params = &sMapEventCmdParamsGiratinaRoom_5_1,
     },
     {
-        .kind = EVENT_CMD_KIND_0B,
+        .kind = EVENT_CMD_KIND_PLAY_GIRATINA_ROOM_APPEARANCE,
         .params = NULL,
     },
     {
