@@ -305,7 +305,7 @@ enum EventCommandKind {
     EVENT_CMD_KIND_SHOW_GIRATINA_SHADOW,
     EVENT_CMD_KIND_SET_GIRATINA_ANIMATION_FLAG,
     EVENT_CMD_KIND_SET_PERSISTED_BOULDER_PUZZLE_FLAG,
-    EVENT_CMD_KIND_0A,
+    EVENT_CMD_KIND_CASCADE_DOWN,
     EVENT_CMD_KIND_PLAY_GIRATINA_ROOM_APPEARANCE,
     EVENT_CMD_KIND_SHOW_UXIE_BOULDER_TUTO,
     EVENT_CMD_KIND_SHOW_AZELF_BOULDER_TUTO,
@@ -1075,31 +1075,31 @@ typedef struct {
     VecFx32 unk_18;
 } UnkStruct_ov9_0224F8C4;
 
-typedef struct {
+typedef struct DistWorldEventCommandCascadeBaseRunData {
     u32 unk_00_0 : 1;
     u32 unk_00_1 : 1;
     u32 unk_00_2 : 1;
     u32 unk_00_3 : 2;
     u32 unk_00_5 : 27;
-    VecFx32 unk_04;
-    VecFx32 unk_10;
-    VecFx32 unk_1C;
+    VecFx32 posDelta;
+    VecFx32 currPosOffset;
+    VecFx32 finalPosOffset;
     VecFx32 unk_28;
-    VecFx32 unk_34;
+    VecFx32 playerPos;
     VecFx32 unk_40;
     fx32 *unk_4C;
     fx32 unk_50;
     fx32 unk_54;
-} UnkStruct_ov9_0224F930;
+} DistWorldEventCommandCascadeBaseRunData;
 
-typedef struct {
+typedef struct DistWorldEventCommandCascadeDownParams {
     UnkStruct_ov9_0224F8C4 unk_00;
-} UnkStruct_ov9_02252384;
+} DistWorldEventCommandCascadeDownParams;
 
-typedef struct {
-    s16 unk_00;
+typedef struct DistWorldEventCommandCascadeDownRunData {
+    s16 spriteRotationAnimSteps;
     u16 unk_02;
-    u16 unk_04;
+    u16 cameraAngleState;
     s16 unk_06;
     s16 unk_08;
     s16 unk_0A;
@@ -1110,8 +1110,8 @@ typedef struct {
     fx32 unk_34;
     fx32 unk_38;
     fx32 unk_3C;
-    UnkStruct_ov9_0224F930 unk_40;
-} UnkStruct_ov9_0224FA94;
+    DistWorldEventCommandCascadeBaseRunData base;
+} DistWorldEventCommandCascadeDownRunData;
 
 typedef struct {
     UnkStruct_ov9_0224F8C4 unk_00;
@@ -1127,7 +1127,7 @@ typedef struct {
     VecFx32 unk_20;
     fx32 unk_2C;
     fx32 unk_30;
-    UnkStruct_ov9_0224F930 unk_34;
+    DistWorldEventCommandCascadeBaseRunData unk_34;
 } UnkStruct_ov9_02250138;
 
 typedef struct DistWorldEventCommandStartScriptParams {
@@ -1457,8 +1457,8 @@ static void SetSkyboxDarkness(DistWorldSystem *param0, s16 param1);
 static void CalculateTintedColor(GXRgb param0, GXRgb param1, u16 param2, GXRgb *param3);
 static BOOL DistWorldBounds_AreCoordinatesInBounds(int tileX, int tileY, int tileZ, const DistWorldBounds *bounds);
 static int CalculateCameraAngleDelta(u16 currentAngleComponent, u16 targetAngleComponent);
-static void ov9_02250EE8(s16 *param0, s16 param1);
-static void ov9_02250F1C(fx32 *param0, fx32 param1);
+static void ApplyRotationToTarget(s16 *param0, s16 param1);
+static void ApplyRotationToTargetFx32(fx32 *param0, fx32 param1);
 static void GetPlayerPos(DistWorldSystem *system, int *playerX, int *playerY, int *playerZ);
 static u32 DistWorldSystem_GetMapHeaderID(DistWorldSystem *system);
 static enum AvatarDistortionState GetAvatarDistortionStateForFloatingPlatformKind(u32 platformKind);
@@ -1490,8 +1490,8 @@ static const DistWorldMovingPlatformMapTemplates sMovingPlatformsMapTemplates[MO
 static const DistWorldElevatorPlatformPath sElevatorPlatformPaths[ELEVATOR_PLATFORM_PATH_COUNT];
 static const DistWorldEventCommandHandler *sEventCmdHandlers[EVENT_CMD_KIND_COUNT];
 const DistWorldMapEvents sMapEvents[];
-const DistWorldEventCommand Unk_ov9_02251438[];
-const DistWorldEventCommand Unk_ov9_022513D8[];
+const DistWorldEventCommand sMapEventB4F_Waterfall[];
+const DistWorldEventCommand sMapEventB5F_Waterfall[];
 const DistWorldSimplePropMapTemplates sSimplePropsMapTemplates[];
 const DistWorldMapObjectEvents sMapObjectEvents[];
 
@@ -2261,7 +2261,7 @@ static void ov9_0224A438(DistWorldSystem *param0, UnkStruct_ov9_0224A228 *param1
 
     if (param2->unk_02) {
         param2->unk_02--;
-        ov9_02250F1C(&param2->unk_04, param2->unk_08);
+        ApplyRotationToTargetFx32(&param2->unk_04, param2->unk_08);
 
         if (param2->unk_02 == 0) {
             param2->unk_04 = (FX32_ONE * (param2->unk_00));
@@ -2299,7 +2299,7 @@ static void ov9_0224A4D0(DistWorldSystem *param0, MapObject *param1, int param2,
             v2->unk_04 = (FX32_ONE * (v2->unk_00));
             v2->unk_08 = (FX32_ONE * (param2)) / param3;
             v2->unk_02 = param3;
-            ov9_02250EE8(&v2->unk_00, param2);
+            ApplyRotationToTarget(&v2->unk_00, param2);
             return;
         }
 
@@ -2393,12 +2393,12 @@ BOOL DistWorld_HandlePlayerMoved(FieldSystem *fieldSystem, enum FaceDirection pl
 
         if (mapHeaderID == MAP_HEADER_DISTORTION_WORLD_B4F) {
             if (playerDir == FACE_RIGHT && playerX == WATERFALL_B4F_X && playerY == WATERFALL_B4F_Y && playerZ >= WATERFALL_B4F_START_Z && playerZ <= WATERFALL_B4F_END_Z) {
-                CreateEventHandlerTask(dwSystem, Unk_ov9_02251438);
+                CreateEventHandlerTask(dwSystem, sMapEventB4F_Waterfall);
                 return TRUE;
             }
         } else if (mapHeaderID == MAP_HEADER_DISTORTION_WORLD_B5F) {
             if (playerDir == FACE_RIGHT && playerX == WATERFALL_B5F_X && playerY == WATERFALL_B5F_Y && playerZ >= WATERFALL_B5F_START_Z && playerZ <= WATERFALL_B5F_END_Z) {
-                CreateEventHandlerTask(dwSystem, Unk_ov9_022513D8);
+                CreateEventHandlerTask(dwSystem, sMapEventB5F_Waterfall);
                 return TRUE;
             }
         }
@@ -3169,10 +3169,10 @@ static void ov9_0224B2CC(OverworldAnimManager *param0, void *param1)
     }
 
     v1 = v4->unk_08.unk_04.unk_14 + v4->unk_04;
-    ov9_02250F1C(&v4->unk_00, v1);
+    ApplyRotationToTargetFx32(&v4->unk_00, v1);
 
     v0 = v4->unk_00;
-    ov9_02250F1C(&v0, v4->unk_08.unk_04.unk_0C);
+    ApplyRotationToTargetFx32(&v0, v4->unk_08.unk_04.unk_0C);
 
     v3 = v4->unk_08.unk_04.unk_18;
 
@@ -7885,21 +7885,21 @@ static void CalculateTintedColor(GXRgb baseRawColor, GXRgb tintRawColor, u16 tin
         base->b + ((tint->b - base->b) * tintLevel >> 4));
 }
 
-static void ov9_0224F8C4(DistWorldSystem *param0, UnkStruct_ov9_0224F930 *param1, const UnkStruct_ov9_0224F8C4 *param2, const VecFx32 *param3)
+static void ov9_0224F8C4(DistWorldSystem *system, DistWorldEventCommandCascadeBaseRunData *param1, const UnkStruct_ov9_0224F8C4 *param2, const VecFx32 *playerPos)
 {
     param1->unk_00_3 = param2->unk_00;
     param1->unk_00_1 = param2->unk_04;
-    param1->unk_1C.x = (FX32_ONE * (param2->unk_0C));
-    param1->unk_1C.y = (FX32_ONE * (param2->unk_0E));
-    param1->unk_1C.z = (FX32_ONE * (param2->unk_10));
+    param1->finalPosOffset.x = (FX32_ONE * (param2->unk_0C));
+    param1->finalPosOffset.y = (FX32_ONE * (param2->unk_0E));
+    param1->finalPosOffset.z = (FX32_ONE * (param2->unk_10));
     param1->unk_28.x = (((param2->unk_12) << 4) * FX32_ONE);
     param1->unk_28.y = (((param2->unk_14) << 4) * FX32_ONE);
     param1->unk_28.z = (((param2->unk_16) << 4) * FX32_ONE);
-    param1->unk_04 = param2->unk_18;
-    param1->unk_34 = *param3;
+    param1->posDelta = param2->unk_18;
+    param1->playerPos = *playerPos;
 }
 
-static void ov9_0224F930(UnkStruct_ov9_0224F930 *param0, int param1, fx32 param2, fx32 param3)
+static void ov9_0224F930(DistWorldEventCommandCascadeBaseRunData *param0, int param1, fx32 param2, fx32 param3)
 {
     switch (param1) {
     case 0:
@@ -7920,21 +7920,21 @@ static void ov9_0224F930(UnkStruct_ov9_0224F930 *param0, int param1, fx32 param2
     param0->unk_00_2 = 1;
 }
 
-static BOOL ov9_0224F970(DistWorldSystem *param0, UnkStruct_ov9_0224F930 *param1)
+static BOOL ov9_0224F970(DistWorldSystem *param0, DistWorldEventCommandCascadeBaseRunData *param1)
 {
-    if (param1->unk_10.x != param1->unk_1C.x) {
-        param1->unk_10.x += param1->unk_04.x;
-        param1->unk_34.x += param1->unk_04.x;
+    if (param1->currPosOffset.x != param1->finalPosOffset.x) {
+        param1->currPosOffset.x += param1->posDelta.x;
+        param1->playerPos.x += param1->posDelta.x;
     }
 
-    if (param1->unk_10.y != param1->unk_1C.y) {
-        param1->unk_10.y += param1->unk_04.y;
-        param1->unk_34.y += param1->unk_04.y;
+    if (param1->currPosOffset.y != param1->finalPosOffset.y) {
+        param1->currPosOffset.y += param1->posDelta.y;
+        param1->playerPos.y += param1->posDelta.y;
     }
 
-    if (param1->unk_10.z != param1->unk_1C.z) {
-        param1->unk_10.z += param1->unk_04.z;
-        param1->unk_34.z += param1->unk_04.z;
+    if (param1->currPosOffset.z != param1->finalPosOffset.z) {
+        param1->currPosOffset.z += param1->posDelta.z;
+        param1->playerPos.z += param1->posDelta.z;
     }
 
     if (param1->unk_00_2) {
@@ -7950,7 +7950,7 @@ static BOOL ov9_0224F970(DistWorldSystem *param0, UnkStruct_ov9_0224F930 *param1
     }
 
     if (param1->unk_00_0 == 0) {
-        if ((param1->unk_10.x == param1->unk_28.x) && (param1->unk_10.y == param1->unk_28.y) && (param1->unk_10.z == param1->unk_28.z)) {
+        if ((param1->currPosOffset.x == param1->unk_28.x) && (param1->currPosOffset.y == param1->unk_28.y) && (param1->currPosOffset.z == param1->unk_28.z)) {
             if (param1->unk_00_1 == 0) {
                 ov9_0224CC50(param0, NULL, 1);
             } else {
@@ -7963,7 +7963,7 @@ static BOOL ov9_0224F970(DistWorldSystem *param0, UnkStruct_ov9_0224F930 *param1
         return 1;
     }
 
-    if ((param1->unk_10.x == param1->unk_1C.x) && (param1->unk_10.y == param1->unk_1C.y) && (param1->unk_10.z == param1->unk_1C.z)) {
+    if ((param1->currPosOffset.x == param1->finalPosOffset.x) && (param1->currPosOffset.y == param1->finalPosOffset.y) && (param1->currPosOffset.z == param1->finalPosOffset.z)) {
         return 3;
     }
 
@@ -7972,13 +7972,13 @@ static BOOL ov9_0224F970(DistWorldSystem *param0, UnkStruct_ov9_0224F930 *param1
 
         switch (param1->unk_00_3) {
         case 0:
-            v0 = param1->unk_1C.x - param1->unk_10.x;
+            v0 = param1->finalPosOffset.x - param1->currPosOffset.x;
             break;
         case 1:
-            v0 = param1->unk_1C.y - param1->unk_10.y;
+            v0 = param1->finalPosOffset.y - param1->currPosOffset.y;
             break;
         case 2:
-            v0 = param1->unk_1C.z - param1->unk_10.z;
+            v0 = param1->finalPosOffset.z - param1->currPosOffset.z;
             break;
         }
 
@@ -7994,201 +7994,194 @@ static BOOL ov9_0224F970(DistWorldSystem *param0, UnkStruct_ov9_0224F930 *param1
     return 0;
 }
 
-static const DistWorldCameraAngleTemplate Unk_ov9_02251E40 = {
-    { 0x0, 0x0, 0x0, 0x0 },
-    0xF5,
-    0xEF,
-    0x0,
-    0x0,
-    0x48
+static const DistWorldCameraAngleTemplate sCascadeDownFirstCameraAngle = {
+    .bounds = {
+        .startTileX = 0x0,
+        .startTileY = 0x0,
+        .startTileZ = 0x0,
+        .sizeX = 0x0,
+        .sizeY = 0x0,
+        .sizeZ = 0x0 },
+    .angleX = 0xF5,
+    .angleY = 0xEF,
+    .angleZ = 0x0,
+    .playerDir = FACE_UP,
+    .transitionSteps = 0x48
 };
 
-static const DistWorldCameraAngleTemplate Unk_ov9_02251888 = {
-    { 0x0, 0x0, 0x0, 0x0 },
-    0x0,
-    0x0,
-    0x0,
-    0x0,
-    0x20
+static const DistWorldCameraAngleTemplate sCascadeDownSecondCameraAngle = {
+    .bounds = {
+        .startTileX = 0x0,
+        .startTileY = 0x0,
+        .startTileZ = 0x0,
+        .sizeX = 0x0,
+        .sizeY = 0x0,
+        .sizeZ = 0x0 },
+    .angleX = 0x0,
+    .angleY = 0x0,
+    .angleZ = 0x0,
+    .playerDir = FACE_UP,
+    .transitionSteps = 0x20
 };
 
-static void ov9_0224FA94(DistWorldSystem *param0, UnkStruct_ov9_0224FA94 *param1)
+static void ov9_0224FA94(DistWorldSystem *system, DistWorldEventCommandCascadeDownRunData *runData)
 {
-    MapObject *v0 = Player_MapObject(param0->fieldSystem->playerAvatar);
-    int v1 = (((param1->unk_40.unk_10.y) >> 4) / FX32_ONE);
+    MapObject *playerMapObj = Player_MapObject(system->fieldSystem->playerAvatar);
+    int yOffset = (runData->base.currPosOffset.y >> 4) / FX32_ONE;
 
-    if ((param1->unk_04 == 0) && (v1 == -20)) {
-        DoCameraTransition(param0, &Unk_ov9_02251E40);
-        ov9_0224A4D0(param0, v0, -32, 72);
-        param1->unk_04++;
-    } else if ((param1->unk_04 == 1) && (v1 == -36)) {
-        MapObject_TryFace(v0, 2);
-        DoCameraTransition(param0, &Unk_ov9_02251888);
-        ov9_0224A4D0(param0, v0, 32, 31);
-        param1->unk_04++;
+    if ((runData->cameraAngleState == 0) && (yOffset == -20)) {
+        DoCameraTransition(system, &sCascadeDownFirstCameraAngle);
+        ov9_0224A4D0(system, playerMapObj, -32, 72);
+        runData->cameraAngleState++;
+    } else if ((runData->cameraAngleState == 1) && (yOffset == -36)) {
+        MapObject_TryFace(playerMapObj, 2);
+        DoCameraTransition(system, &sCascadeDownSecondCameraAngle);
+        ov9_0224A4D0(system, playerMapObj, 32, 31);
+        runData->cameraAngleState++;
     }
 
-    if ((param1->unk_04 == 1) && (param1->unk_06 >= 0)) {
-        param1->unk_06++;
+    if ((runData->cameraAngleState == 1) && (runData->unk_06 >= 0)) {
+        runData->unk_06++;
 
-        if (param1->unk_06 >= 32) {
-            MapObject_TryFace(v0, 0);
-            param1->unk_06 = -1;
+        if (runData->unk_06 >= 32) {
+            MapObject_TryFace(playerMapObj, 0);
+            runData->unk_06 = -1;
         }
     }
 }
 
-static int ov9_0224FB3C(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdCascadeDown_Init(DistWorldSystem *system, FieldTask *task, u16 *currCmdState, const void *params)
 {
-    VecFx32 v0;
-    UnkStruct_ov9_0224F930 *v1;
-    MapObject *v2;
-    PlayerAvatar *playerAvatar;
-    UnkStruct_ov9_0224FA94 *v4;
-    const UnkStruct_ov9_02252384 *v5 = param3;
-    v4 = ResetRunningEventDataBuffer(param0, sizeof(UnkStruct_ov9_0224FA94));
-    v1 = &v4->unk_40;
-    playerAvatar = param0->fieldSystem->playerAvatar;
-    v2 = Player_MapObject(playerAvatar);
+    DistWorldEventCommandCascadeDownRunData *runData = ResetRunningEventDataBuffer(system, sizeof(DistWorldEventCommandCascadeDownRunData));
+    const DistWorldEventCommandCascadeDownParams *cmdParams = params;
+    DistWorldEventCommandCascadeBaseRunData *baseRunData = &runData->base;
+    PlayerAvatar *playerAvatar = system->fieldSystem->playerAvatar;
+    MapObject *playerMapObj = Player_MapObject(playerAvatar);
 
-    MapObject_GetPosPtr(v2, &v0);
-    MapObject_TryFace(v2, 2);
-    ov9_0224F8C4(param0, v1, &v5->unk_00, &v0);
+    VecFx32 playerPos;
+    MapObject_GetPosPtr(playerMapObj, &playerPos);
+    MapObject_TryFace(playerMapObj, FACE_LEFT);
+    ov9_0224F8C4(system, baseRunData, &cmdParams->unk_00, &playerPos);
 
-    v1->unk_04.x >>= 1;
-    v1->unk_04.y >>= 1;
-    v1->unk_04.z >>= 1;
-    v4->unk_00 = 32;
+    baseRunData->posDelta.x >>= 1;
+    baseRunData->posDelta.y >>= 1;
+    baseRunData->posDelta.z >>= 1;
+    runData->spriteRotationAnimSteps = 32;
 
-    ov9_0224A4D0(param0, v2, 90, v4->unk_00);
+    ov9_0224A4D0(system, playerMapObj, 90, runData->spriteRotationAnimSteps);
 
-    {
-        VecFx32 v6 = { 0, 0, 0 };
-        sub_020630AC(v2, &v6);
-    }
+    VecFx32 playerPosOffset = { 0, 0, 0 };
+    sub_020630AC(playerMapObj, &playerPosOffset);
 
-    {
-        VecFx32 *v7;
-        OverworldAnimManager *v8 = sub_0205EC04(playerAvatar);
-        Simple3DRotationAngles *v9 = ov5_021F88A8(v8);
+    OverworldAnimManager *playerAnimMan = sub_0205EC04(playerAvatar);
+    Simple3DRotationAngles *playerRotAngles = ov5_021F88A8(playerAnimMan);
 
-        ov5_021F88B4(v8, 2, 5);
-        ov5_021F88CC(v8, 1 << 2 | 1 << 4 | 1 << 6 | 1 << 5);
+    ov5_021F88B4(playerAnimMan, 2, 5);
+    ov5_021F88CC(playerAnimMan, 1 << 2 | 1 << 4 | 1 << 6 | 1 << 5);
 
-        v4->unk_0C.x = (FX32_ONE * (v9->alpha));
-        v4->unk_0C.y = (FX32_ONE * (v9->beta));
-        v4->unk_0C.z = (FX32_ONE * (v9->gamma));
-        v4->unk_18.x = (FX32_ONE * -90) / 32;
-        v4->unk_18.y = (FX32_ONE * 180) / 32;
-        v4->unk_18.z = 0;
-        v4->unk_30 = (FX32_ONE * 90);
-        v4->unk_34 = (FX32_ONE * -70) / 32;
+    runData->unk_0C.x = FX32_ONE * playerRotAngles->alpha;
+    runData->unk_0C.y = FX32_ONE * playerRotAngles->beta;
+    runData->unk_0C.z = FX32_ONE * playerRotAngles->gamma;
+    runData->unk_18.x = (FX32_ONE * -90) / 32;
+    runData->unk_18.y = (FX32_ONE * 180) / 32;
+    runData->unk_18.z = 0;
+    runData->unk_30 = (FX32_ONE * 90);
+    runData->unk_34 = (FX32_ONE * -70) / 32;
 
-        v7 = ov5_021F88FC(v8);
-        v7->x = 0;
-        v7->y = 0;
-        v7->z = (FX32_ONE * 6);
-        v4->unk_24.x = 0;
-        v4->unk_24.y = 0;
-        v4->unk_24.z = (FX32_ONE * 4) / 32;
-    }
+    VecFx32 *v7 = ov5_021F88FC(playerAnimMan);
+    v7->x = 0;
+    v7->y = 0;
+    v7->z = (FX32_ONE * 6);
+    runData->unk_24.x = 0;
+    runData->unk_24.y = 0;
+    runData->unk_24.z = (FX32_ONE * 4) / 32;
 
     Sound_PlayEffect(SEQ_SE_PL_FW463);
 
-    *param2 = 1;
-    return 0;
+    *currCmdState = 1;
+    return EVENT_CMD_HANDLER_RES_CONTINUE;
 }
 
-static int ov9_0224FC2C(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdCascadeDown_RotatePlayer(DistWorldSystem *system, FieldTask *task, u16 *currCmdState, const void *params)
 {
-    MapObject *v0 = Player_MapObject(param0->fieldSystem->playerAvatar);
-    UnkStruct_ov9_0224FA94 *v1 = GetRunningEventDataBuffer(param0);
-    UnkStruct_ov9_0224F930 *v2 = &v1->unk_40;
+    MapObject *playerMapObj = Player_MapObject(system->fieldSystem->playerAvatar);
+    DistWorldEventCommandCascadeDownRunData *runData = GetRunningEventDataBuffer(system);
+    DistWorldEventCommandCascadeBaseRunData *baseRunData = &runData->base;
 
-    ov9_0224F970(param0, v2);
-    MapObject_SetPos(v0, &v2->unk_34);
-    ov9_0224FA94(param0, v1);
+    ov9_0224F970(system, baseRunData);
+    MapObject_SetPos(playerMapObj, &baseRunData->playerPos);
+    ov9_0224FA94(system, runData);
 
-    {
-        OverworldAnimManager *v3 = sub_0205EC04(param0->fieldSystem->playerAvatar);
+    OverworldAnimManager *playerAnimMan = sub_0205EC04(system->fieldSystem->playerAvatar);
+    Simple3DRotationAngles *playerRotAngles = ov5_021F88A8(playerAnimMan);
 
-        {
-            Simple3DRotationAngles *v4 = ov5_021F88A8(v3);
+    ApplyRotationToTargetFx32(&runData->unk_0C.x, runData->unk_18.x);
+    ApplyRotationToTargetFx32(&runData->unk_0C.y, runData->unk_18.y);
+    ApplyRotationToTargetFx32(&runData->unk_0C.z, runData->unk_18.z);
 
-            ov9_02250F1C(&v1->unk_0C.x, v1->unk_18.x);
-            ov9_02250F1C(&v1->unk_0C.y, v1->unk_18.y);
-            ov9_02250F1C(&v1->unk_0C.z, v1->unk_18.z);
+    playerRotAngles->alpha = runData->unk_0C.x / FX32_ONE;
+    playerRotAngles->beta = runData->unk_0C.y / FX32_ONE;
+    playerRotAngles->gamma = runData->unk_0C.z / FX32_ONE;
 
-            v4->alpha = ((v1->unk_0C.x) / FX32_ONE);
-            v4->beta = ((v1->unk_0C.y) / FX32_ONE);
-            v4->gamma = ((v1->unk_0C.z) / FX32_ONE);
-        }
+    ApplyRotationToTargetFx32(&runData->unk_30, runData->unk_34);
+    ov5_021F8908(playerAnimMan, ((runData->unk_30) / FX32_ONE));
 
-        {
-            ov9_02250F1C(&v1->unk_30, v1->unk_34);
-            ov5_021F8908(v3, ((v1->unk_30) / FX32_ONE));
-        }
+    VecFx32 *v5 = ov5_021F88FC(playerAnimMan);
+    v5->x += runData->unk_24.x;
+    v5->y += runData->unk_24.y;
+    v5->z += runData->unk_24.z;
 
-        {
-            VecFx32 *v5 = ov5_021F88FC(v3);
+    runData->spriteRotationAnimSteps--;
 
-            v5->x += v1->unk_24.x;
-            v5->y += v1->unk_24.y;
-            v5->z += v1->unk_24.z;
-        }
-    }
+    if (runData->spriteRotationAnimSteps == 0) {
+        baseRunData->posDelta.x <<= 1;
+        baseRunData->posDelta.y <<= 1;
+        baseRunData->posDelta.z <<= 1;
 
-    v1->unk_00--;
-
-    if (v1->unk_00 == 0) {
-        v2->unk_04.x <<= 1;
-        v2->unk_04.y <<= 1;
-        v2->unk_04.z <<= 1;
-
-        ov9_0224F930(v2, 0, 0x400, (FX32_ONE * 4));
+        ov9_0224F930(baseRunData, 0, 0x400, (FX32_ONE * 4));
 
         {
-            OverworldAnimManager *v6 = sub_0205EC04(param0->fieldSystem->playerAvatar);
+            OverworldAnimManager *v6 = sub_0205EC04(system->fieldSystem->playerAvatar);
             VecFx32 *v7;
 
             v7 = ov5_021F88FC(v6);
             v7->x = 0;
             v7->y = 0;
             v7->z = (FX32_ONE * 10);
-            v1->unk_08 = 70;
-            v1->unk_0A = -1;
-            v1->unk_24.x = 0;
-            v1->unk_24.y = 0;
-            v1->unk_24.z = (FX32_ONE * -16) / v1->unk_08;
-            v1->unk_3C = (FX32_ONE * -4) / v1->unk_08;
+            runData->unk_08 = 70;
+            runData->unk_0A = -1;
+            runData->unk_24.x = 0;
+            runData->unk_24.y = 0;
+            runData->unk_24.z = (FX32_ONE * -16) / runData->unk_08;
+            runData->unk_3C = (FX32_ONE * -4) / runData->unk_08;
         }
 
-        *param2 = 2;
-        return 0;
+        *currCmdState = 2;
+        return EVENT_CMD_HANDLER_RES_CONTINUE;
     }
 
-    return 0;
+    return EVENT_CMD_HANDLER_RES_CONTINUE;
 }
 
-static int ov9_0224FD74(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdCascadeDown_CascadeDown(DistWorldSystem *system, FieldTask *param1, u16 *param2, const void *param3)
 {
     int v0;
-    OverworldAnimManager *v1 = sub_0205EC04(param0->fieldSystem->playerAvatar);
-    MapObject *v2 = Player_MapObject(param0->fieldSystem->playerAvatar);
-    UnkStruct_ov9_0224FA94 *v3 = GetRunningEventDataBuffer(param0);
-    UnkStruct_ov9_0224F930 *v4 = &v3->unk_40;
+    OverworldAnimManager *v1 = sub_0205EC04(system->fieldSystem->playerAvatar);
+    MapObject *v2 = Player_MapObject(system->fieldSystem->playerAvatar);
+    DistWorldEventCommandCascadeDownRunData *runData = GetRunningEventDataBuffer(system);
+    DistWorldEventCommandCascadeBaseRunData *v4 = &runData->base;
 
-    v0 = ov9_0224F970(param0, v4);
-    MapObject_SetPos(v2, &v4->unk_34);
+    v0 = ov9_0224F970(system, v4);
+    MapObject_SetPos(v2, &v4->playerPos);
 
     {
         VecFx32 v5 = v4->unk_40;
 
-        v5.x += v3->unk_38;
+        v5.x += runData->unk_38;
         MapObject_SetSpriteJumpOffset(v2, &v5);
     }
 
-    ov9_0224FA94(param0, v3);
+    ov9_0224FA94(system, runData);
 
     {
         VecFx32 *v6 = ov5_021F88FC(v1);
@@ -8196,45 +8189,45 @@ static int ov9_0224FD74(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
 
         *v7 = v4->unk_40;
 
-        if (v3->unk_04 == 1) {
-            if (v3->unk_08 > 0) {
-                v3->unk_08--;
-                v6->x += v3->unk_24.x;
-                v6->y += v3->unk_24.y;
-                v6->z += v3->unk_24.z;
-                v3->unk_38 += v3->unk_3C;
+        if (runData->cameraAngleState == 1) {
+            if (runData->unk_08 > 0) {
+                runData->unk_08--;
+                v6->x += runData->unk_24.x;
+                v6->y += runData->unk_24.y;
+                v6->z += runData->unk_24.z;
+                runData->unk_38 += runData->unk_3C;
             }
-        } else if (v3->unk_04 == 2) {
-            if (v3->unk_0A < 0) {
-                v3->unk_0A = 30;
-                v3->unk_24.x = 0;
-                v3->unk_24.y = 0;
-                v3->unk_24.z = (FX32_ONE * 6) / v3->unk_0A;
-                v3->unk_3C = (FX32_ONE * 4) / v3->unk_0A;
+        } else if (runData->cameraAngleState == 2) {
+            if (runData->unk_0A < 0) {
+                runData->unk_0A = 30;
+                runData->unk_24.x = 0;
+                runData->unk_24.y = 0;
+                runData->unk_24.z = (FX32_ONE * 6) / runData->unk_0A;
+                runData->unk_3C = (FX32_ONE * 4) / runData->unk_0A;
             }
 
-            if (v3->unk_0A > 0) {
-                v3->unk_0A--;
-                v6->x += v3->unk_24.x;
-                v6->y += v3->unk_24.y;
-                v6->z += v3->unk_24.z;
-                v3->unk_38 += v3->unk_3C;
+            if (runData->unk_0A > 0) {
+                runData->unk_0A--;
+                v6->x += runData->unk_24.x;
+                v6->y += runData->unk_24.y;
+                v6->z += runData->unk_24.z;
+                runData->unk_38 += runData->unk_3C;
             }
         }
     }
 
     if (v0 == 2) {
-        v3->unk_00 = 16;
-        ov9_0224A4D0(param0, v2, 90, v3->unk_00);
+        runData->spriteRotationAnimSteps = 16;
+        ov9_0224A4D0(system, v2, 90, runData->spriteRotationAnimSteps);
 
         {
-            v3->unk_18.x = (FX32_ONE * -90) / 16;
-            v3->unk_18.y = 0;
-            v3->unk_18.z = 0;
-            v3->unk_24.x = 0;
-            v3->unk_24.y = 0;
-            v3->unk_24.z = (FX32_ONE * -7) / 16;
-            v3->unk_34 = (FX32_ONE * -110) / 16;
+            runData->unk_18.x = (FX32_ONE * -90) / 16;
+            runData->unk_18.y = 0;
+            runData->unk_18.z = 0;
+            runData->unk_24.x = 0;
+            runData->unk_24.y = 0;
+            runData->unk_24.z = (FX32_ONE * -7) / 16;
+            runData->unk_34 = (FX32_ONE * -110) / 16;
 
             ov5_021F88DC(v1, 1 << 5);
         }
@@ -8246,17 +8239,17 @@ static int ov9_0224FD74(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
     return 0;
 }
 
-static int ov9_0224FEDC(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdCascadeDown_FinishCascading(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
 {
     int v0;
     OverworldAnimManager *v1 = sub_0205EC04(param0->fieldSystem->playerAvatar);
     MapObject *v2 = Player_MapObject(param0->fieldSystem->playerAvatar);
-    UnkStruct_ov9_0224FA94 *v3 = GetRunningEventDataBuffer(param0);
-    UnkStruct_ov9_0224F930 *v4 = &v3->unk_40;
+    DistWorldEventCommandCascadeDownRunData *v3 = GetRunningEventDataBuffer(param0);
+    DistWorldEventCommandCascadeBaseRunData *v4 = &v3->base;
 
     v0 = ov9_0224F970(param0, v4);
 
-    MapObject_SetPos(v2, &v4->unk_34);
+    MapObject_SetPos(v2, &v4->playerPos);
     MapObject_SetSpriteJumpOffset(v2, &v4->unk_40);
 
     ov9_0224FA94(param0, v3);
@@ -8265,15 +8258,15 @@ static int ov9_0224FEDC(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
         VecFx32 *v5;
         Simple3DRotationAngles *v6 = ov5_021F88A8(v1);
 
-        ov9_02250F1C(&v3->unk_0C.x, v3->unk_18.x);
-        ov9_02250F1C(&v3->unk_0C.y, v3->unk_18.y);
-        ov9_02250F1C(&v3->unk_0C.z, v3->unk_18.z);
+        ApplyRotationToTargetFx32(&v3->unk_0C.x, v3->unk_18.x);
+        ApplyRotationToTargetFx32(&v3->unk_0C.y, v3->unk_18.y);
+        ApplyRotationToTargetFx32(&v3->unk_0C.z, v3->unk_18.z);
 
         v6->alpha = ((v3->unk_0C.x) / FX32_ONE);
         v6->beta = ((v3->unk_0C.y) / FX32_ONE);
         v6->gamma = ((v3->unk_0C.z) / FX32_ONE);
 
-        ov9_02250F1C(&v3->unk_30, v3->unk_34);
+        ApplyRotationToTargetFx32(&v3->unk_30, v3->unk_34);
         ov5_021F8908(v1, ((v3->unk_30) / FX32_ONE));
 
         {
@@ -8287,7 +8280,7 @@ static int ov9_0224FEDC(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
 
     if (v0 == 3) {
         int v8, v9, v10;
-        const UnkStruct_ov9_02252384 *v11 = param3;
+        const DistWorldEventCommandCascadeDownParams *v11 = param3;
         const UnkStruct_ov9_0224F8C4 *v12 = &v11->unk_00;
         VecFx32 v13 = { 0, 0, 0 };
 
@@ -8333,10 +8326,10 @@ static int ov9_0224FEDC(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
     return 0;
 }
 
-static int ov9_022500E0(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
+static int EventCmdCascadeDown_MoveAway(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
 {
     u32 v0[2] = { 0xa, 0x6 };
-    UnkStruct_ov9_0224FA94 *v1 = GetRunningEventDataBuffer(param0);
+    DistWorldEventCommandCascadeDownRunData *v1 = GetRunningEventDataBuffer(param0);
     MapObject *v2 = Player_MapObject(param0->fieldSystem->playerAvatar);
 
     if (LocalMapObj_IsAnimationSet(v2) == 0) {
@@ -8352,12 +8345,12 @@ static int ov9_022500E0(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
     return 0;
 }
 
-static const DistWorldEventCommandHandler Unk_ov9_02251544[5] = {
-    ov9_0224FB3C,
-    ov9_0224FC2C,
-    ov9_0224FD74,
-    ov9_0224FEDC,
-    ov9_022500E0
+static const DistWorldEventCommandHandler sEventCmdCascadeDownHandlers[5] = {
+    EventCmdCascadeDown_Init,
+    EventCmdCascadeDown_RotatePlayer,
+    EventCmdCascadeDown_CascadeDown,
+    EventCmdCascadeDown_FinishCascading,
+    EventCmdCascadeDown_MoveAway
 };
 
 static const DistWorldCameraAngleTemplate Unk_ov9_02251C48 = {
@@ -8372,7 +8365,7 @@ static const DistWorldCameraAngleTemplate Unk_ov9_02251C48 = {
 static void ov9_02250138(DistWorldSystem *param0, UnkStruct_ov9_02250138 *param1)
 {
     MapObject *v0 = Player_MapObject(param0->fieldSystem->playerAvatar);
-    int v1 = (((param1->unk_34.unk_10.y) >> 4) / FX32_ONE);
+    int v1 = (((param1->unk_34.currPosOffset.y) >> 4) / FX32_ONE);
 
     if ((param1->unk_04 == 0) && (v1 == 20)) {
         DoCameraTransition(param0, &Unk_ov9_02251C48);
@@ -8383,7 +8376,7 @@ static void ov9_02250138(DistWorldSystem *param0, UnkStruct_ov9_02250138 *param1
 static int ov9_02250170(DistWorldSystem *param0, FieldTask *param1, u16 *param2, const void *param3)
 {
     VecFx32 v0;
-    UnkStruct_ov9_0224F930 *v1;
+    DistWorldEventCommandCascadeBaseRunData *v1;
     MapObject *v2;
     PlayerAvatar *playerAvatar;
     UnkStruct_ov9_02250138 *v4;
@@ -8397,9 +8390,9 @@ static int ov9_02250170(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
     MapObject_TryFace(v2, 3);
     ov9_0224F8C4(param0, v1, &v5->unk_00, &v0);
 
-    v1->unk_04.x >>= 1;
-    v1->unk_04.y >>= 1;
-    v1->unk_04.z >>= 1;
+    v1->posDelta.x >>= 1;
+    v1->posDelta.y >>= 1;
+    v1->posDelta.z >>= 1;
     v4->unk_00 = 4;
 
     ov9_0224A4D0(param0, v2, -90, v4->unk_00);
@@ -8445,10 +8438,10 @@ static int ov9_02250260(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
 {
     MapObject *v0 = Player_MapObject(param0->fieldSystem->playerAvatar);
     UnkStruct_ov9_02250138 *v1 = GetRunningEventDataBuffer(param0);
-    UnkStruct_ov9_0224F930 *v2 = &v1->unk_34;
+    DistWorldEventCommandCascadeBaseRunData *v2 = &v1->unk_34;
 
     ov9_0224F970(param0, v2);
-    MapObject_SetPos(v0, &v2->unk_34);
+    MapObject_SetPos(v0, &v2->playerPos);
     ov9_02250138(param0, v1);
 
     {
@@ -8457,9 +8450,9 @@ static int ov9_02250260(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
         {
             Simple3DRotationAngles *v4 = ov5_021F88A8(v3);
 
-            ov9_02250F1C(&v1->unk_08.x, v1->unk_14.x);
-            ov9_02250F1C(&v1->unk_08.y, v1->unk_14.y);
-            ov9_02250F1C(&v1->unk_08.z, v1->unk_14.z);
+            ApplyRotationToTargetFx32(&v1->unk_08.x, v1->unk_14.x);
+            ApplyRotationToTargetFx32(&v1->unk_08.y, v1->unk_14.y);
+            ApplyRotationToTargetFx32(&v1->unk_08.z, v1->unk_14.z);
 
             v4->alpha = ((v1->unk_08.x) / FX32_ONE);
             v4->beta = ((v1->unk_08.y) / FX32_ONE);
@@ -8467,7 +8460,7 @@ static int ov9_02250260(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
         }
 
         {
-            ov9_02250F1C(&v1->unk_2C, v1->unk_30);
+            ApplyRotationToTargetFx32(&v1->unk_2C, v1->unk_30);
             ov5_021F8908(v3, ((v1->unk_2C) / FX32_ONE));
         }
 
@@ -8483,9 +8476,9 @@ static int ov9_02250260(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
     v1->unk_00--;
 
     if (v1->unk_00 == 0) {
-        v2->unk_04.x <<= 1;
-        v2->unk_04.y <<= 1;
-        v2->unk_04.z <<= 1;
+        v2->posDelta.x <<= 1;
+        v2->posDelta.y <<= 1;
+        v2->posDelta.z <<= 1;
 
         ov9_0224F930(v2, 0, 0x200, (FX32_ONE * 4));
 
@@ -8515,11 +8508,11 @@ static int ov9_02250388(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
     OverworldAnimManager *v1 = sub_0205EC04(param0->fieldSystem->playerAvatar);
     MapObject *v2 = Player_MapObject(param0->fieldSystem->playerAvatar);
     UnkStruct_ov9_02250138 *v3 = GetRunningEventDataBuffer(param0);
-    UnkStruct_ov9_0224F930 *v4 = &v3->unk_34;
+    DistWorldEventCommandCascadeBaseRunData *v4 = &v3->unk_34;
 
     v0 = ov9_0224F970(param0, v4);
 
-    MapObject_SetPos(v2, &v4->unk_34);
+    MapObject_SetPos(v2, &v4->playerPos);
     MapObject_SetSpriteJumpOffset(v2, &v4->unk_40);
     ov9_02250138(param0, v3);
 
@@ -8568,11 +8561,11 @@ static int ov9_02250468(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
     OverworldAnimManager *v1 = sub_0205EC04(param0->fieldSystem->playerAvatar);
     MapObject *v2 = Player_MapObject(param0->fieldSystem->playerAvatar);
     UnkStruct_ov9_02250138 *v3 = GetRunningEventDataBuffer(param0);
-    UnkStruct_ov9_0224F930 *v4 = &v3->unk_34;
+    DistWorldEventCommandCascadeBaseRunData *v4 = &v3->unk_34;
 
     v0 = ov9_0224F970(param0, v4);
 
-    MapObject_SetPos(v2, &v4->unk_34);
+    MapObject_SetPos(v2, &v4->playerPos);
     MapObject_SetSpriteJumpOffset(v2, &v4->unk_40);
 
     ov9_02250138(param0, v3);
@@ -8581,15 +8574,15 @@ static int ov9_02250468(DistWorldSystem *param0, FieldTask *param1, u16 *param2,
         VecFx32 *v5;
         Simple3DRotationAngles *v6 = ov5_021F88A8(v1);
 
-        ov9_02250F1C(&v3->unk_08.x, v3->unk_14.x);
-        ov9_02250F1C(&v3->unk_08.y, v3->unk_14.y);
-        ov9_02250F1C(&v3->unk_08.z, v3->unk_14.z);
+        ApplyRotationToTargetFx32(&v3->unk_08.x, v3->unk_14.x);
+        ApplyRotationToTargetFx32(&v3->unk_08.y, v3->unk_14.y);
+        ApplyRotationToTargetFx32(&v3->unk_08.z, v3->unk_14.z);
 
         v6->alpha = ((v3->unk_08.x) / FX32_ONE);
         v6->beta = ((v3->unk_08.y) / FX32_ONE);
         v6->gamma = ((v3->unk_08.z) / FX32_ONE);
 
-        ov9_02250F1C(&v3->unk_2C, v3->unk_30);
+        ApplyRotationToTargetFx32(&v3->unk_2C, v3->unk_30);
         ov5_021F8908(v1, ((v3->unk_2C) / FX32_ONE));
 
         {
@@ -9436,29 +9429,29 @@ static int CalculateCameraAngleDelta(u16 currentAngleComponent, u16 targetAngleC
     return angleComponentDelta;
 }
 
-static void ov9_02250EE8(s16 *param0, s16 param1)
+static void ApplyRotationToTarget(s16 *target, s16 angle)
 {
-    (*param0) += param1;
+    *target += angle;
 
-    if ((*param0) < 0) {
+    if (*target < 0) {
         do {
-            (*param0) += 360;
-        } while ((*param0) < 0);
+            *target += 360;
+        } while (*target < 0);
     } else {
-        (*param0) %= 360;
+        *target %= 360;
     }
 }
 
-static void ov9_02250F1C(fx32 *param0, fx32 param1)
+static void ApplyRotationToTargetFx32(fx32 *target, fx32 angle)
 {
-    (*param0) += param1;
+    *target += angle;
 
-    if ((*param0) < 0) {
+    if (*target < 0) {
         do {
-            (*param0) += (FX32_ONE * 360);
-        } while ((*param0) < 0);
+            *target += FX32_ONE * 360;
+        } while (*target < 0);
     } else {
-        (*param0) %= (FX32_ONE * 360);
+        *target %= FX32_ONE * 360;
     }
 }
 
@@ -10952,7 +10945,7 @@ static const DistWorldEventCommandHandler *sEventCmdHandlers[EVENT_CMD_KIND_COUN
     [EVENT_CMD_KIND_SHOW_GIRATINA_SHADOW] = sEventCmdShowGiratinaShadow,
     [EVENT_CMD_KIND_SET_GIRATINA_ANIMATION_FLAG] = sEventCmdSetGiratinaAnimationFlagHandlers,
     [EVENT_CMD_KIND_SET_PERSISTED_BOULDER_PUZZLE_FLAG] = sEventCmdSetPersistedBoulderPuzzleFlagHandlers,
-    [EVENT_CMD_KIND_0A] = Unk_ov9_02251544,
+    [EVENT_CMD_KIND_CASCADE_DOWN] = sEventCmdCascadeDownHandlers,
     [EVENT_CMD_KIND_PLAY_GIRATINA_ROOM_APPEARANCE] = sEventCmdPlayGiratinaRoomAppearanceHandlers,
     [EVENT_CMD_KIND_SHOW_UXIE_BOULDER_TUTO] = sEventCmdShowUxieBoulderTutoHandlers,
     [EVENT_CMD_KIND_SHOW_AZELF_BOULDER_TUTO] = sEventCmdShowAzelfBoulderTutoHandlers,
@@ -12041,7 +12034,7 @@ static const DistWorldEvent sMapEventsB3F[] = {
     { 0x0, 0x0, 0x0, FLAG_COND_NONE, 0x0, NULL }
 };
 
-static const UnkStruct_ov9_02252384 Unk_ov9_02252384 = {
+static const DistWorldEventCommandCascadeDownParams sMapEventCmdParamsB4F_Waterfall = {
     {
         0x1,
         0x1,
@@ -12058,9 +12051,9 @@ static const UnkStruct_ov9_02252384 Unk_ov9_02252384 = {
     },
 };
 
-static const DistWorldEventCommand Unk_ov9_02251438[] = {
-    { .kind = EVENT_CMD_KIND_0A,
-        .params = &Unk_ov9_02252384 },
+static const DistWorldEventCommand sMapEventB4F_Waterfall[] = {
+    { .kind = EVENT_CMD_KIND_CASCADE_DOWN,
+        .params = &sMapEventCmdParamsB4F_Waterfall },
     { EVENT_CMD_KIND_INVALID, NULL }
 };
 
@@ -12149,7 +12142,7 @@ static const UnkStruct_ov9_022523F0 Unk_ov9_022523F0 = {
     },
 };
 
-static const DistWorldEventCommand Unk_ov9_022513D8[] = {
+static const DistWorldEventCommand sMapEventB5F_Waterfall[] = {
     { .kind = EVENT_CMD_KIND_04,
         .params = &Unk_ov9_022523F0 },
     { EVENT_CMD_KIND_INVALID, NULL }
