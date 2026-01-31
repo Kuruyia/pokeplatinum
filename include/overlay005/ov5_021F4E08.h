@@ -43,7 +43,7 @@ enum FloorTextures {
     FLOOR_TEXTURE_COUNT,
 };
 
-void *ov5_021F4E08(UnkStruct_ov5_021DF47C *param0);
+void *ov5_021F4E08(FieldEffectManager *param0);
 void ov5_021F4E28(void *param0);
 OverworldAnimManager *ov5_DrawFloorTexture(FieldSystem *fieldSystem, int x, int z, int size, int textureIdx);
 OverworldAnimManager *ov5_DrawGrowingFloorTexture(FieldSystem *fieldSystem, int x, int z, int finalSize, int textureIdx);

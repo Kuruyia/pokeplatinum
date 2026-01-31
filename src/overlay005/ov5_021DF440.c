@@ -3,6 +3,8 @@
 #include <nitro.h>
 #include <string.h>
 
+#include "constants/field/field_effect_renderer.h"
+
 #include "struct_decls/struct_02020C44_decl.h"
 #include "struct_decls/struct_020216E0_decl.h"
 #include "struct_decls/struct_02061AB4_decl.h"
@@ -11,12 +13,11 @@
 
 #include "field/field_system.h"
 #include "overlay005/area_light.h"
-#include "overlay005/const_ov5_021FF85C.h"
+#include "overlay005/ov5_021FF6B8.h"
 #include "overlay005/resource_heap.h"
 #include "overlay005/struct_ov5_021DF7F8.h"
 #include "overlay005/struct_ov5_021DF84C.h"
 #include "overlay005/struct_ov5_021EDDAC.h"
-#include "overlay005/struct_ov5_021FF85C.h"
 
 #include "heap.h"
 #include "map_object.h"
@@ -29,26 +30,26 @@
 #include "unk_02020AEC.h"
 #include "unk_0202414C.h"
 
-typedef struct UnkStruct_ov5_021DF6AC_t UnkStruct_ov5_021DF6AC;
+typedef struct FieldEffectRenderer FieldEffectRenderer;
 typedef struct UnkStruct_ov5_021DF8FC_t UnkStruct_ov5_021DF8FC;
 typedef struct UnkStruct_ov5_021DF8C8_t UnkStruct_ov5_021DF8C8;
 
-typedef struct UnkStruct_ov5_021DF47C_t {
+typedef struct FieldEffectManager {
     enum HeapID heapID;
-    u32 unk_04;
-    u32 unk_08;
-    u32 unk_0C;
+    u32 rendererCount;
+    u32 animManCount;
+    u32 dummy0C;
     FieldSystem *fieldSystem;
-    UnkStruct_ov5_021DF6AC *unk_14;
-    NARC *unk_18;
-    OverworldAnimManagerList *unk_1C;
+    FieldEffectRenderer *renderers;
+    NARC *fldEffNARC;
+    OverworldAnimManagerList *animManList;
     UnkStruct_ov5_021DF8FC *unk_20;
-} UnkStruct_ov5_021DF47C;
+} FieldEffectManager;
 
-typedef struct UnkStruct_ov5_021DF6AC_t {
-    u32 unk_00;
-    void *unk_04;
-} UnkStruct_ov5_021DF6AC;
+typedef struct FieldEffectRenderer {
+    u32 id;
+    void *context;
+} FieldEffectRenderer;
 
 typedef struct UnkStruct_ov5_021DF8FC_t {
     enum HeapID heapID;
@@ -57,9 +58,9 @@ typedef struct UnkStruct_ov5_021DF8FC_t {
     u16 unk_08;
     u16 unk_0A;
     UnkStruct_02020C44 *unk_0C;
-    ResourceHeap *unk_10;
-    ResourceHeap *unk_14;
-    TextureResourceManager *unk_18;
+    ResourceHeap *modelResHeap;
+    ResourceHeap *metadataResHeap;
+    TextureResourceManager *texResMan;
     UnkStruct_ov5_021DF8C8 *unk_1C;
     UnkStruct_ov5_021DF84C *unk_20;
 } UnkStruct_ov5_021DF8FC;
@@ -69,350 +70,339 @@ typedef struct UnkStruct_ov5_021DF8C8_t {
     UnkStruct_ov5_021DF84C *unk_04;
 };
 
-typedef struct {
-    u32 unk_00;
-    u32 unk_04;
-    TextureResourceManager *unk_08;
-} UnkStruct_ov5_021DFA88;
+typedef struct FieldEffectTexture {
+    BOOL valid;
+    u32 texID;
+    TextureResourceManager *texResMan;
+} FieldEffectTexture;
 
-static u32 ov5_021DF584(const UnkStruct_ov5_021DF47C *renderManager);
-static void ov5_021DF588(UnkStruct_ov5_021DF47C *renderManager);
-static void ov5_021DF59C(UnkStruct_ov5_021DF47C *renderManager);
-static void ov5_021DF5E8(UnkStruct_ov5_021DF47C *renderManager);
-static void ov5_021DF600(UnkStruct_ov5_021DF47C *renderManager, u32 objectID);
-static void ov5_021DF628(UnkStruct_ov5_021DF47C *renderManager, UnkStruct_ov5_021DF6AC *param1);
-static void ov5_021DF644(UnkStruct_ov5_021DF47C *renderManager);
-static UnkStruct_ov5_021DF6AC *ov5_021DF66C(UnkStruct_ov5_021DF47C *renderManager);
-static UnkStruct_ov5_021DF6AC *ov5_021DF694(UnkStruct_ov5_021DF47C *renderManager, u32 objectID);
-static void ov5_021DF6AC(UnkStruct_ov5_021DF6AC *param0);
-static void ov5_021DF6B8(UnkStruct_ov5_021DF6AC *param0, u32 param1, void *param2);
-static int ov5_021DF6C0(const UnkStruct_ov5_021DF6AC *param0);
-static const UnkStruct_ov5_021FF85C *ov5_021DF6D0(u32 param0);
-static void ov5_021DF6F8(UnkStruct_ov5_021DF47C *renderManager);
-static void ov5_021DF708(UnkStruct_ov5_021DF47C *renderManager);
-static void ov5_021DF71C(UnkStruct_ov5_021DF47C *renderManager);
-static void ov5_021DF754(UnkStruct_ov5_021DF47C *param0, enum HeapID heapID, u32 param2, u32 param3, u32 param4, u32 param5, u32 param6, u32 param7, u32 param8);
-static void ov5_021DF7C4(UnkStruct_ov5_021DF47C *renderManager);
-static void ov5_021DF8C8(UnkStruct_ov5_021DF47C *renderManager, UnkStruct_ov5_021DF8FC *graphicsManager, u32 objectCount);
+static u32 GetHeapID(const FieldEffectManager *fieldEffMan);
+static void OpenArchive(FieldEffectManager *fieldEffMan);
+static void CloseArchive(FieldEffectManager *fieldEffMan);
+static void ResetAllRenderers(FieldEffectManager *fieldEffMan);
+static void InitRenderer(FieldEffectManager *fieldEffMan, u32 id);
+static void FieldEffectRenderer_Free(FieldEffectManager *fieldEffMan, FieldEffectRenderer *param1);
+static void FreeRenderers(FieldEffectManager *fieldEffMan);
+static FieldEffectRenderer *FindFreeRenderer(FieldEffectManager *fieldEffMan);
+static FieldEffectRenderer *GetRenderer(FieldEffectManager *fieldEffMan, u32 id);
+static void FieldEffectRenderer_Reset(FieldEffectRenderer *param0);
+static void FieldEffectRenderer_Init(FieldEffectRenderer *param0, u32 param1, void *param2);
+static int FieldEffectRenderer_IsInvalid(const FieldEffectRenderer *param0);
+static const FieldEffectRendererFuncs *GetRendererFuncs(u32 param0);
+static void InitAnimManagerList(FieldEffectManager *fieldEffMan);
+static void FinishAndFreeAnimations(FieldEffectManager *fieldEffMan);
+static void RenderFieldEffects(FieldEffectManager *fieldEffMan);
+static void ov5_021DF754(FieldEffectManager *param0, enum HeapID heapID, u32 param2, u32 param3, u32 param4, u32 param5, u32 param6, u32 param7, u32 param8);
+static void ov5_021DF7C4(FieldEffectManager *fieldEffMan);
+static void ov5_021DF8C8(FieldEffectManager *fieldEffMan, UnkStruct_ov5_021DF8FC *graphicsManager, u32 objectCount);
 static void ov5_021DF8FC(UnkStruct_ov5_021DF8FC *graphicsManager);
-static UnkStruct_ov5_021DF84C *ov5_021DF9B4(UnkStruct_ov5_021DF8FC *graphicsManager, u32 objectID);
-static void ov5_021DF910(UnkStruct_ov5_021DF8FC *graphicsManager, u32 objectID);
-static UnkStruct_ov5_021DF84C *ov5_021DF930(UnkStruct_ov5_021DF8FC *graphicsManager, u32 objectID, void *modelData, UnkStruct_02024184 *textureData, void *textureResource, TextureResource *texture, const UnkStruct_020217F4 *effectData);
-static void ov5_021DFA88(UnkStruct_ov5_021DF47C *renderManager, u32 slotID, TextureResourceManager *textureManager);
-static void ov5_021DFAC0(SysTask *param0, void *param1);
-static void ov5_021DFADC(SysTask *param0, void *param1);
+static UnkStruct_ov5_021DF84C *ov5_021DF9B4(UnkStruct_ov5_021DF8FC *graphicsManager, u32 id);
+static void ov5_021DF910(UnkStruct_ov5_021DF8FC *graphicsManager, u32 id);
+static UnkStruct_ov5_021DF84C *ov5_021DF930(UnkStruct_ov5_021DF8FC *graphicsManager, u32 id, void *modelData, UnkStruct_02024184 *textureData, void *textureResource, TextureResource *texture, const UnkStruct_020217F4 *effectData);
+static void UploadTextureResourceToVRamDuringVBlank(FieldEffectManager *fieldEffMan, u32 slotID, TextureResourceManager *textureManager);
+static void UploadTextureResourceToVRamTask(SysTask *param0, void *param1);
+static void DiscardTextureDataTask(SysTask *param0, void *param1);
 
-UnkStruct_ov5_021DF47C *ov5_021DF440(FieldSystem *fieldSystem, u32 param1, enum HeapID heapID)
+FieldEffectManager *FieldEffectManager_New(FieldSystem *fieldSystem, u32 rendererCount, enum HeapID heapID)
 {
-    UnkStruct_ov5_021DF47C *v0 = Heap_Alloc(heapID, (sizeof(UnkStruct_ov5_021DF47C)));
-    memset(v0, 0, (sizeof(UnkStruct_ov5_021DF47C)));
+    FieldEffectManager *fieldEffMan = Heap_Alloc(heapID, sizeof(FieldEffectManager));
+    memset(fieldEffMan, 0, sizeof(FieldEffectManager));
 
-    v0->heapID = heapID;
-    v0->unk_04 = param1;
-    v0->fieldSystem = fieldSystem;
-    v0->unk_14 = Heap_Alloc(heapID, (sizeof(UnkStruct_ov5_021DF6AC)) * param1);
+    fieldEffMan->heapID = heapID;
+    fieldEffMan->rendererCount = rendererCount;
+    fieldEffMan->fieldSystem = fieldSystem;
+    fieldEffMan->renderers = Heap_Alloc(heapID, sizeof(FieldEffectRenderer) * rendererCount);
 
-    ov5_021DF5E8(v0);
-    ov5_021DF588(v0);
+    ResetAllRenderers(fieldEffMan);
+    OpenArchive(fieldEffMan);
 
-    return v0;
+    return fieldEffMan;
 }
 
-void ov5_021DF47C(UnkStruct_ov5_021DF47C *param0, u32 param1)
+void FieldEffectManager_InitAnimManagerList(FieldEffectManager *fieldEffMan, u32 animManCount)
 {
-    param0->unk_08 = param1;
-    ov5_021DF6F8(param0);
+    fieldEffMan->animManCount = animManCount;
+    InitAnimManagerList(fieldEffMan);
 }
 
-void ov5_021DF488(UnkStruct_ov5_021DF47C *param0, enum HeapID heapID, u32 param2, u32 param3, u32 param4, u32 param5, u32 param6, u32 param7, u32 param8)
+void ov5_021DF488(FieldEffectManager *fieldEffMan, enum HeapID heapID, u32 param2, u32 param3, u32 param4, u32 param5, u32 param6, u32 param7, u32 param8)
 {
-    ov5_021DF754(param0, heapID, param2, param3, param4, param5, param6, param7, param8);
+    ov5_021DF754(fieldEffMan, heapID, param2, param3, param4, param5, param6, param7, param8);
 }
 
-void ov5_021DF4A8(UnkStruct_ov5_021DF47C *renderManager, u32 objectID)
+void FieldEffectManager_InitRenderer(FieldEffectManager *fieldEffMan, u32 id)
 {
-    if (ov5_021DF694(renderManager, objectID) != NULL) {
+    if (GetRenderer(fieldEffMan, id) != NULL) {
         GF_ASSERT(FALSE);
         return;
     }
 
-    ov5_021DF600(renderManager, objectID);
+    InitRenderer(fieldEffMan, id);
 }
 
-void ov5_021DF4C8(UnkStruct_ov5_021DF47C *renderManager, const u32 *param1)
+void FieldEffectManager_InitRenderers(FieldEffectManager *fieldEffMan, const u32 *idIter)
 {
-    while ((*param1) != 34) {
-        ov5_021DF4A8(renderManager, (*param1));
-        param1++;
+    while (*idIter != FIELD_EFFECT_RENDERER_INVALID) {
+        FieldEffectManager_InitRenderer(fieldEffMan, *idIter);
+        idIter++;
     }
 }
 
-int ov5_021DF4E4(UnkStruct_ov5_021DF47C *renderManager, u32 objectID)
+int FieldEffectManager_HasRenderer(FieldEffectManager *fieldEffMan, u32 id)
 {
-    if (ov5_021DF694(renderManager, objectID) == NULL) {
-        return 0;
-    }
-
-    return 1;
+    return GetRenderer(fieldEffMan, id) != NULL;
 }
 
-void ov5_021DF4F8(UnkStruct_ov5_021DF47C *param0)
+void FieldEffectManager_Render(FieldEffectManager *fieldEffMan)
 {
-    ov5_021DF71C(param0);
+    RenderFieldEffects(fieldEffMan);
 }
 
-void ov5_021DF500(UnkStruct_ov5_021DF47C *param0)
+void FieldEffectManager_Free(FieldEffectManager *fieldEffMan)
 {
-    ov5_021DF708(param0);
-    ov5_021DF644(param0);
-    ov5_021DF7C4(param0);
-    ov5_021DF59C(param0);
-    Heap_Free(param0->unk_14);
-    Heap_Free(param0);
+    FinishAndFreeAnimations(fieldEffMan);
+    FreeRenderers(fieldEffMan);
+    ov5_021DF7C4(fieldEffMan);
+    CloseArchive(fieldEffMan);
+    Heap_Free(fieldEffMan->renderers);
+    Heap_Free(fieldEffMan);
 }
 
-void *ov5_021DF528(const UnkStruct_ov5_021DF47C *param0, u32 param1, int param2)
+void *FieldEffectManager_HeapAlloc(const FieldEffectManager *fieldEffMan, u32 size, BOOL allocAtEnd)
 {
-    void *v0;
+    void *data;
 
-    if (param2 == 0) {
-        v0 = Heap_Alloc(param0->heapID, param1);
+    if (allocAtEnd == FALSE) {
+        data = Heap_Alloc(fieldEffMan->heapID, size);
     } else {
-        v0 = Heap_AllocAtEnd(param0->heapID, param1);
+        data = Heap_AllocAtEnd(fieldEffMan->heapID, size);
     }
 
-    return v0;
+    return data;
 }
 
-void *ov5_021DF53C(const UnkStruct_ov5_021DF47C *param0, u32 param1, int param2, u32 param3)
+void *FieldEffectManager_HeapAllocInit(const FieldEffectManager *fieldEffMan, u32 size, BOOL allocAtEnd, u32 initValue)
 {
-    void *v0 = ov5_021DF528(param0, param1, param2);
+    void *data = FieldEffectManager_HeapAlloc(fieldEffMan, size, allocAtEnd);
 
-    memset(v0, param3, param1);
-    return v0;
+    memset(data, initValue, size);
+    return data;
 }
 
-void ov5_021DF554(void *param0)
+void FieldEffectManager_HeapFree(void *data)
 {
-    Heap_Free(param0);
+    Heap_Free(data);
 }
 
-void *ov5_021DF55C(UnkStruct_ov5_021DF47C *renderManager, u32 objectID)
+void *FieldEffectManager_GetRendererContext(FieldEffectManager *fieldEffMan, u32 id)
 {
-    UnkStruct_ov5_021DF6AC *v0 = ov5_021DF694(renderManager, objectID);
+    FieldEffectRenderer *fieldEffRenderer = GetRenderer(fieldEffMan, id);
 
-    if (v0 == NULL) {
+    if (fieldEffRenderer == NULL) {
         GF_ASSERT(0);
         return NULL;
     }
 
-    return v0->unk_04;
+    return fieldEffRenderer->context;
 }
 
-FieldSystem *ov5_021DF574(const UnkStruct_ov5_021DF47C *param0)
+FieldSystem *FieldEffectManager_GetFieldSystem(const FieldEffectManager *fieldEffMan)
 {
-    return param0->fieldSystem;
+    return fieldEffMan->fieldSystem;
 }
 
-UnkStruct_ov5_021DF47C *ov5_021DF578(const MapObject *mapObject)
+FieldEffectManager *MapObject_GetFieldEffectManager(const MapObject *mapObject)
 {
     FieldSystem *fieldSystem = MapObject_FieldSystem(mapObject);
-    return (UnkStruct_ov5_021DF47C *)fieldSystem->unk_40;
+    return fieldSystem->fieldEffMan;
 }
 
-static u32 ov5_021DF584(const UnkStruct_ov5_021DF47C *param0)
+static u32 GetHeapID(const FieldEffectManager *fieldEffMan)
 {
-    return param0->heapID;
+    return fieldEffMan->heapID;
 }
 
-static void ov5_021DF588(UnkStruct_ov5_021DF47C *param0)
+static void OpenArchive(FieldEffectManager *fieldEffMan)
 {
-    param0->unk_18 = NARC_ctor(NARC_INDEX_DATA__MMODEL__FLDEFF, ov5_021DF584(param0));
+    fieldEffMan->fldEffNARC = NARC_ctor(NARC_INDEX_DATA__MMODEL__FLDEFF, GetHeapID(fieldEffMan));
 }
 
-static void ov5_021DF59C(UnkStruct_ov5_021DF47C *param0)
+static void CloseArchive(FieldEffectManager *fieldEffMan)
 {
-    NARC_dtor(param0->unk_18);
+    NARC_dtor(fieldEffMan->fldEffNARC);
 }
 
-u32 ov5_021DF5A8(UnkStruct_ov5_021DF47C *param0, u32 param1)
+u32 FieldEffectManager_GetNARCMemberSize(FieldEffectManager *fieldEffMan, u32 memberIndex)
 {
-    u32 v0 = NARC_GetMemberSize(param0->unk_18, param1);
-    return v0;
+    return NARC_GetMemberSize(fieldEffMan->fldEffNARC, memberIndex);
 }
 
-void ov5_021DF5B4(UnkStruct_ov5_021DF47C *param0, u32 param1, void *param2)
+void FieldEffectManager_ReadNARCWholeMember(FieldEffectManager *fieldEffMan, u32 memberIndex, void *dest)
 {
-    NARC_ReadWholeMember(param0->unk_18, param1, param2);
+    NARC_ReadWholeMember(fieldEffMan->fldEffNARC, memberIndex, dest);
 }
 
-void *ov5_021DF5C0(UnkStruct_ov5_021DF47C *param0, u32 param1, int param2)
+void *FieldEffectManager_AllocAndReadNARCWholeMember(FieldEffectManager *fieldEffMan, u32 memberIndex, BOOL allocAtEnd)
 {
-    u32 v0 = NARC_GetMemberSize(param0->unk_18, param1);
-    void *v1 = ov5_021DF528(param0, v0, param2);
+    u32 memberSize = NARC_GetMemberSize(fieldEffMan->fldEffNARC, memberIndex);
+    void *buffer = FieldEffectManager_HeapAlloc(fieldEffMan, memberSize, allocAtEnd);
 
-    NARC_ReadWholeMember(param0->unk_18, param1, v1);
-
-    return v1;
+    NARC_ReadWholeMember(fieldEffMan->fldEffNARC, memberIndex, buffer);
+    return buffer;
 }
 
-static void ov5_021DF5E8(UnkStruct_ov5_021DF47C *param0)
+static void ResetAllRenderers(FieldEffectManager *fieldEffMan)
 {
-    u32 v0 = param0->unk_04;
-    UnkStruct_ov5_021DF6AC *v1 = param0->unk_14;
+    u32 i = fieldEffMan->rendererCount;
+    FieldEffectRenderer *iter = fieldEffMan->renderers;
 
-    while (v0) {
-        ov5_021DF6AC(v1);
-        v1++;
-        v0--;
+    while (i) {
+        FieldEffectRenderer_Reset(iter);
+        iter++;
+        i--;
     }
 }
 
-static void ov5_021DF600(UnkStruct_ov5_021DF47C *renderManager, u32 objectID)
+static void InitRenderer(FieldEffectManager *fieldEffMan, u32 id)
 {
-    const UnkStruct_ov5_021FF85C *v0 = ov5_021DF6D0(objectID);
-    void *v1 = v0->unk_04(renderManager);
-    UnkStruct_ov5_021DF6AC *v2 = ov5_021DF66C(renderManager);
+    const FieldEffectRendererFuncs *funcs = GetRendererFuncs(id);
+    void *rendererData = funcs->newFunc(fieldEffMan);
+    FieldEffectRenderer *fieldEffRenderer = FindFreeRenderer(fieldEffMan);
 
-    ov5_021DF6B8(v2, objectID, v1);
+    FieldEffectRenderer_Init(fieldEffRenderer, id, rendererData);
 }
 
-static void ov5_021DF628(UnkStruct_ov5_021DF47C *param0, UnkStruct_ov5_021DF6AC *param1)
+static void FieldEffectRenderer_Free(FieldEffectManager *fieldEffMan, FieldEffectRenderer *fieldEffRenderer)
 {
-    const UnkStruct_ov5_021FF85C *v0 = ov5_021DF6D0(param1->unk_00);
+    const FieldEffectRendererFuncs *funcs = GetRendererFuncs(fieldEffRenderer->id);
+    funcs->freeFunc(fieldEffRenderer->context);
 
-    v0->unk_08(param1->unk_04);
-    ov5_021DF6AC(param1);
+    FieldEffectRenderer_Reset(fieldEffRenderer);
 }
 
-static void ov5_021DF644(UnkStruct_ov5_021DF47C *param0)
+static void FreeRenderers(FieldEffectManager *fieldEffMan)
 {
-    u32 v0 = param0->unk_04;
-    UnkStruct_ov5_021DF6AC *v1 = param0->unk_14;
+    u32 i = fieldEffMan->rendererCount;
+    FieldEffectRenderer *iter = fieldEffMan->renderers;
 
-    while (v0) {
-        if (ov5_021DF6C0(v1) == 0) {
-            ov5_021DF628(param0, v1);
+    while (i) {
+        if (!FieldEffectRenderer_IsInvalid(iter)) {
+            FieldEffectRenderer_Free(fieldEffMan, iter);
         }
 
-        v1++;
-        v0--;
+        iter++;
+        i--;
     }
 }
 
-static UnkStruct_ov5_021DF6AC *ov5_021DF66C(UnkStruct_ov5_021DF47C *param0)
+static FieldEffectRenderer *FindFreeRenderer(FieldEffectManager *fieldEffMan)
 {
-    u32 v0 = param0->unk_04;
-    UnkStruct_ov5_021DF6AC *v1 = param0->unk_14;
+    u32 i = fieldEffMan->rendererCount;
+    FieldEffectRenderer *iter = fieldEffMan->renderers;
 
-    while (v0) {
-        if (ov5_021DF6C0(v1) == 1) {
-            return v1;
+    while (i) {
+        if (FieldEffectRenderer_IsInvalid(iter) == TRUE) {
+            return iter;
         }
 
-        v1++;
-        v0--;
+        iter++;
+        i--;
     }
 
     GF_ASSERT(FALSE);
     return NULL;
 }
 
-static UnkStruct_ov5_021DF6AC *ov5_021DF694(UnkStruct_ov5_021DF47C *renderManager, u32 objectID)
+static FieldEffectRenderer *GetRenderer(FieldEffectManager *fieldEffMan, u32 id)
 {
-    u32 v0 = renderManager->unk_04;
-    UnkStruct_ov5_021DF6AC *v1 = renderManager->unk_14;
+    u32 i = fieldEffMan->rendererCount;
+    FieldEffectRenderer *iter = fieldEffMan->renderers;
 
-    while (v0) {
-        if (v1->unk_00 == objectID) {
-            return v1;
+    while (i) {
+        if (iter->id == id) {
+            return iter;
         }
 
-        v1++;
-        v0--;
+        iter++;
+        i--;
     }
 
     return NULL;
 }
 
-static void ov5_021DF6AC(UnkStruct_ov5_021DF6AC *param0)
+static void FieldEffectRenderer_Reset(FieldEffectRenderer *fieldEffRenderer)
 {
-    param0->unk_00 = 34;
-    param0->unk_04 = NULL;
+    fieldEffRenderer->id = FIELD_EFFECT_RENDERER_INVALID;
+    fieldEffRenderer->context = NULL;
 }
 
-static void ov5_021DF6B8(UnkStruct_ov5_021DF6AC *param0, u32 param1, void *param2)
+static void FieldEffectRenderer_Init(FieldEffectRenderer *fieldEffRenderer, u32 id, void *context)
 {
-    param0->unk_00 = param1;
-    param0->unk_04 = param2;
+    fieldEffRenderer->id = id;
+    fieldEffRenderer->context = context;
 }
 
-static int ov5_021DF6C0(const UnkStruct_ov5_021DF6AC *param0)
+static int FieldEffectRenderer_IsInvalid(const FieldEffectRenderer *fieldEffRenderer)
 {
-    if (param0->unk_00 == 34) {
-        return 1;
-    }
-
-    return 0;
+    return fieldEffRenderer->id == FIELD_EFFECT_RENDERER_INVALID;
 }
 
-static const UnkStruct_ov5_021FF85C *ov5_021DF6D0(u32 param0)
+static const FieldEffectRendererFuncs *GetRendererFuncs(u32 id)
 {
-    const UnkStruct_ov5_021FF85C *v0 = Unk_ov5_021FF85C;
+    const FieldEffectRendererFuncs *iter = sFieldEffectRendererHandlers;
 
-    while (v0->unk_00 != 34) {
-        if (v0->unk_00 == param0) {
-            return v0;
+    while (iter->id != FIELD_EFFECT_RENDERER_INVALID) {
+        if (iter->id == id) {
+            return iter;
         }
 
-        v0++;
+        iter++;
     }
 
     GF_ASSERT(FALSE);
     return NULL;
 }
 
-static void ov5_021DF6F8(UnkStruct_ov5_021DF47C *param0)
+static void InitAnimManagerList(FieldEffectManager *fieldEffMan)
 {
-    param0->unk_1C = OverworldAnimManagerList_New(param0->heapID, param0->unk_08);
+    fieldEffMan->animManList = OverworldAnimManagerList_New(fieldEffMan->heapID, fieldEffMan->animManCount);
 }
 
-static void ov5_021DF708(UnkStruct_ov5_021DF47C *param0)
+static void FinishAndFreeAnimations(FieldEffectManager *fieldEffMan)
 {
-    if (param0->unk_1C != NULL) {
-        OverworldAnimManagerList_FinishAndFree(param0->unk_1C);
-        param0->unk_1C = NULL;
+    if (fieldEffMan->animManList != NULL) {
+        OverworldAnimManagerList_FinishAndFree(fieldEffMan->animManList);
+        fieldEffMan->animManList = NULL;
     }
 }
 
-static void ov5_021DF71C(UnkStruct_ov5_021DF47C *param0)
+static void RenderFieldEffects(FieldEffectManager *fieldEffMan)
 {
-    if (param0->unk_1C != NULL) {
-        OverworldAnimManagerList_Render(param0->unk_1C);
+    if (fieldEffMan->animManList != NULL) {
+        OverworldAnimManagerList_Render(fieldEffMan->animManList);
     }
 }
 
-OverworldAnimManager *ov5_021DF72C(const UnkStruct_ov5_021DF47C *param0, const OverworldAnimManagerFuncs *param1, const VecFx32 *param2, int param3, const void *param4, int param5)
+OverworldAnimManager *FieldEffectManager_InitAnimManager(const FieldEffectManager *fieldEffMan, const OverworldAnimManagerFuncs *funcs, const VecFx32 *initialPos, int animId, const void *userData, int sysTaskPriority)
 {
-    OverworldAnimManagerList *v1 = param0->unk_1C;
-    OverworldAnimManager *v0 = OverworldAnimManagerList_InitManager(v1, param1, param2, param3, param4, param5);
+    OverworldAnimManagerList *animManList = fieldEffMan->animManList;
+    OverworldAnimManager *animMan = OverworldAnimManagerList_InitManager(animManList, funcs, initialPos, animId, userData, sysTaskPriority);
 
-    GF_ASSERT(v0 != NULL);
-
-    return v0;
+    GF_ASSERT(animMan != NULL);
+    return animMan;
 }
 
-void ov5_021DF74C(OverworldAnimManager *param0)
+void FieldEffectManager_FinishAnimManager(OverworldAnimManager *animMan)
 {
-    OverworldAnimManager_Finish(param0);
+    OverworldAnimManager_Finish(animMan);
 }
 
-static void ov5_021DF754(UnkStruct_ov5_021DF47C *param0, enum HeapID heapID, u32 param2, u32 param3, u32 param4, u32 param5, u32 param6, u32 param7, u32 param8)
+static void ov5_021DF754(FieldEffectManager *param0, enum HeapID heapID, u32 param2, u32 param3, u32 param4, u32 param5, u32 param6, u32 param7, u32 param8)
 {
     UnkStruct_ov5_021DF8FC *v0;
     UnkStruct_ov5_021EDDAC v1;
 
-    v0 = ov5_021DF53C(param0, (sizeof(UnkStruct_ov5_021DF8FC)), 0, 0);
+    v0 = FieldEffectManager_HeapAllocInit(param0, (sizeof(UnkStruct_ov5_021DF8FC)), 0, 0);
     param0->unk_20 = v0;
 
     v0->heapID = heapID;
@@ -420,34 +410,34 @@ static void ov5_021DF754(UnkStruct_ov5_021DF47C *param0, enum HeapID heapID, u32
     v0->unk_06 = param3;
     v0->unk_08 = param4;
     v0->unk_0A = param5;
-    v0->unk_10 = ResourceHeap_New(heapID, HEAP_ID_69, param6, param3);
-    v0->unk_14 = ResourceHeap_New(heapID, HEAP_ID_70, param7, param4);
-    v0->unk_18 = TextureResourceManager_New(param5, heapID);
+    v0->modelResHeap = ResourceHeap_New(heapID, HEAP_ID_69, param6, param3);
+    v0->metadataResHeap = ResourceHeap_New(heapID, HEAP_ID_70, param7, param4);
+    v0->texResMan = TextureResourceManager_New(param5, heapID);
 
     ov5_021DF8C8(param0, v0, param2);
 
     v1.unk_00 = param2;
-    v1.heapID = ov5_021DF584(param0);
+    v1.heapID = GetHeapID(param0);
     v0->unk_0C = sub_02020C44(&v1);
 }
 
-static void ov5_021DF7C4(UnkStruct_ov5_021DF47C *param0)
+static void ov5_021DF7C4(FieldEffectManager *fieldEffMan)
 {
-    UnkStruct_ov5_021DF8FC *v0 = param0->unk_20;
+    UnkStruct_ov5_021DF8FC *v0 = fieldEffMan->unk_20;
 
     if (v0 != NULL) {
         sub_02020CCC(v0->unk_0C);
         ov5_021DF8FC(v0);
-        ResourceHeap_Free(v0->unk_10);
-        ResourceHeap_Free(v0->unk_14);
-        TextureResourceManager_Delete(v0->unk_18);
-        ov5_021DF554(v0);
+        ResourceHeap_Free(v0->modelResHeap);
+        ResourceHeap_Free(v0->metadataResHeap);
+        TextureResourceManager_Delete(v0->texResMan);
+        FieldEffectManager_HeapFree(v0);
 
-        param0->unk_20 = NULL;
+        fieldEffMan->unk_20 = NULL;
     }
 }
 
-UnkStruct_020216E0 *ov5_021DF7F8(UnkStruct_ov5_021DF47C *param0, const UnkStruct_ov5_021DF84C *param1, const VecFx32 *param2)
+UnkStruct_020216E0 *ov5_021DF7F8(FieldEffectManager *param0, const UnkStruct_ov5_021DF84C *param1, const VecFx32 *param2)
 {
     UnkStruct_ov5_021DF7F8 v0;
     UnkStruct_020216E0 *v1;
@@ -472,25 +462,25 @@ UnkStruct_020216E0 *ov5_021DF7F8(UnkStruct_ov5_021DF47C *param0, const UnkStruct
     return v1;
 }
 
-UnkStruct_020216E0 *ov5_021DF84C(UnkStruct_ov5_021DF47C *param0, u32 param1, const VecFx32 *param2)
+UnkStruct_020216E0 *ov5_021DF84C(FieldEffectManager *param0, u32 param1, const VecFx32 *param2)
 {
     UnkStruct_ov5_021DF84C *v0 = ov5_021DF9B4(param0->unk_20, param1);
     return ov5_021DF7F8(param0, v0, param2);
 }
 
-UnkStruct_ov5_021DF84C *ov5_021DF864(UnkStruct_ov5_021DF47C *param0, u32 param1, u32 param2, u32 param3, u32 param4, int param5, const UnkStruct_020217F4 *param6)
+UnkStruct_ov5_021DF84C *ov5_021DF864(FieldEffectManager *param0, u32 param1, u32 param2, u32 param3, u32 param4, int param5, const UnkStruct_020217F4 *param6)
 {
     void *v0, *v1, *v2;
     UnkStruct_02024184 v3;
     TextureResource *v4;
     UnkStruct_ov5_021DF84C *v5;
     UnkStruct_ov5_021DF8FC *v6 = param0->unk_20;
-    v0 = ResourceHeap_GetItemData(v6->unk_10, param2);
-    v2 = ResourceHeap_GetItemData(v6->unk_14, param3);
+    v0 = ResourceHeap_GetItemData(v6->modelResHeap, param2);
+    v2 = ResourceHeap_GetItemData(v6->metadataResHeap, param3);
 
     sub_02024184(v2, &v3);
 
-    v4 = TextureResourceManager_FindTextureResource(v6->unk_18, param4);
+    v4 = TextureResourceManager_FindTextureResource(v6->texResMan, param4);
     GF_ASSERT(v4 != NULL);
     v1 = TextureResource_GetUnderlyingResource(v4);
 
@@ -504,15 +494,15 @@ UnkStruct_ov5_021DF84C *ov5_021DF864(UnkStruct_ov5_021DF47C *param0, u32 param1,
     return v5;
 }
 
-static void ov5_021DF8C8(UnkStruct_ov5_021DF47C *param0, UnkStruct_ov5_021DF8FC *param1, u32 param2)
+static void ov5_021DF8C8(FieldEffectManager *param0, UnkStruct_ov5_021DF8FC *param1, u32 param2)
 {
     UnkStruct_ov5_021DF84C *v0;
     UnkStruct_ov5_021DF8C8 *v1;
 
-    v0 = ov5_021DF528(param0, sizeof(UnkStruct_ov5_021DF84C) * param2, 0);
+    v0 = FieldEffectManager_HeapAlloc(param0, sizeof(UnkStruct_ov5_021DF84C) * param2, 0);
     param1->unk_20 = v0;
 
-    v1 = ov5_021DF528(param0, (sizeof(UnkStruct_ov5_021DF8C8)) * param2, 0);
+    v1 = FieldEffectManager_HeapAlloc(param0, (sizeof(UnkStruct_ov5_021DF8C8)) * param2, 0);
     param1->unk_1C = v1;
 
     do {
@@ -526,8 +516,8 @@ static void ov5_021DF8C8(UnkStruct_ov5_021DF47C *param0, UnkStruct_ov5_021DF8FC 
 
 static void ov5_021DF8FC(UnkStruct_ov5_021DF8FC *param0)
 {
-    ov5_021DF554(param0->unk_1C);
-    ov5_021DF554(param0->unk_20);
+    FieldEffectManager_HeapFree(param0->unk_1C);
+    FieldEffectManager_HeapFree(param0->unk_20);
 }
 
 static void ov5_021DF910(UnkStruct_ov5_021DF8FC *param0, u32 param1)
@@ -615,105 +605,105 @@ static UnkStruct_ov5_021DF84C *ov5_021DF9B4(UnkStruct_ov5_021DF8FC *param0, u32 
     return NULL;
 }
 
-void ov5_021DF9D4(UnkStruct_ov5_021DF47C *renderManager, u32 slotID)
+void ov5_021DF9D4(FieldEffectManager *fieldEffMan, u32 slotID)
 {
-    UnkStruct_ov5_021DF8FC *v0 = renderManager->unk_20;
+    UnkStruct_ov5_021DF8FC *v0 = fieldEffMan->unk_20;
     ov5_021DF910(v0, slotID);
 }
 
-void ov5_021DF9E0(UnkStruct_ov5_021DF47C *renderManager, u32 slotID, u32 resourceID)
+void ov5_021DF9E0(FieldEffectManager *fieldEffMan, u32 slotID, u32 resourceID)
 {
-    UnkStruct_ov5_021DF8FC *v0 = renderManager->unk_20;
+    UnkStruct_ov5_021DF8FC *v0 = fieldEffMan->unk_20;
 
-    ResourceHeap_LoadMemberFromNARC(v0->unk_10, slotID, renderManager->unk_18, resourceID, 0);
+    ResourceHeap_LoadMemberFromNARC(v0->modelResHeap, slotID, fieldEffMan->fldEffNARC, resourceID, FALSE);
 }
 
-void *ov5_021DF9FC(UnkStruct_ov5_021DF47C *renderManager, u32 slotID)
+void *ov5_021DF9FC(FieldEffectManager *fieldEffMan, u32 slotID)
 {
-    UnkStruct_ov5_021DF8FC *v0 = renderManager->unk_20;
-    void *v1 = ResourceHeap_GetItemData(v0->unk_10, slotID);
+    UnkStruct_ov5_021DF8FC *v0 = fieldEffMan->unk_20;
+    void *v1 = ResourceHeap_GetItemData(v0->modelResHeap, slotID);
 
     return v1;
 }
 
-void ov5_021DFA08(UnkStruct_ov5_021DF47C *renderManager, u32 slotID)
+void ov5_021DFA08(FieldEffectManager *fieldEffMan, u32 slotID)
 {
-    UnkStruct_ov5_021DF8FC *v0 = renderManager->unk_20;
-    ResourceHeap_FreeItem(v0->unk_10, slotID);
+    UnkStruct_ov5_021DF8FC *v0 = fieldEffMan->unk_20;
+    ResourceHeap_FreeItem(v0->modelResHeap, slotID);
 }
 
-void ov5_021DFA14(UnkStruct_ov5_021DF47C *renderManager, u32 slotID, u32 resourceID)
+void ov5_021DFA14(FieldEffectManager *fieldEffMan, u32 slotID, u32 resourceID)
 {
-    UnkStruct_ov5_021DF8FC *v0 = renderManager->unk_20;
-    ResourceHeap_LoadMemberFromNARC(v0->unk_14, slotID, renderManager->unk_18, resourceID, 0);
+    UnkStruct_ov5_021DF8FC *v0 = fieldEffMan->unk_20;
+    ResourceHeap_LoadMemberFromNARC(v0->metadataResHeap, slotID, fieldEffMan->fldEffNARC, resourceID, FALSE);
 }
 
-void ov5_021DFA30(UnkStruct_ov5_021DF47C *renderManager, u32 slotID)
+void ov5_021DFA30(FieldEffectManager *fieldEffMan, u32 slotID)
 {
-    UnkStruct_ov5_021DF8FC *v0 = renderManager->unk_20;
-    ResourceHeap_FreeItem(v0->unk_14, slotID);
+    UnkStruct_ov5_021DF8FC *v0 = fieldEffMan->unk_20;
+    ResourceHeap_FreeItem(v0->metadataResHeap, slotID);
 }
 
-void ov5_021DFA3C(UnkStruct_ov5_021DF47C *renderManager, u32 slotID, u32 param2, u32 param3)
+void ov5_021DFA3C(FieldEffectManager *fieldEffMan, u32 slotID, u32 param2, u32 param3)
 {
-    UnkStruct_ov5_021DF8FC *v0 = renderManager->unk_20;
-    void *v1 = ov5_021DF5C0(renderManager, param2, 1);
-    TextureResource *v2 = TextureResourceManager_AddTextureAndAllocVRam(v0->unk_18, v1, slotID, param3, ov5_021DF584(renderManager));
+    UnkStruct_ov5_021DF8FC *v0 = fieldEffMan->unk_20;
+    void *v1 = FieldEffectManager_AllocAndReadNARCWholeMember(fieldEffMan, param2, 1);
+    TextureResource *v2 = TextureResourceManager_AddTextureAndAllocVRam(v0->texResMan, v1, slotID, param3, GetHeapID(fieldEffMan));
 
     GF_ASSERT(v2 != NULL);
-    ov5_021DFA88(renderManager, slotID, v0->unk_18);
+    UploadTextureResourceToVRamDuringVBlank(fieldEffMan, slotID, v0->texResMan);
 }
 
-void ov5_021DFA7C(UnkStruct_ov5_021DF47C *renderManager, u32 slotID)
+void ov5_021DFA7C(FieldEffectManager *fieldEffMan, u32 slotID)
 {
-    UnkStruct_ov5_021DF8FC *v0 = renderManager->unk_20;
-    TextureResourceManager_RemoveTextureWithID(v0->unk_18, slotID);
+    UnkStruct_ov5_021DF8FC *v0 = fieldEffMan->unk_20;
+    TextureResourceManager_RemoveTextureWithID(v0->texResMan, slotID);
 }
 
-static void ov5_021DFA88(UnkStruct_ov5_021DF47C *param0, u32 param1, TextureResourceManager *param2)
+static void UploadTextureResourceToVRamDuringVBlank(FieldEffectManager *fieldEffMan, u32 texID, TextureResourceManager *texResMan)
 {
-    UnkStruct_ov5_021DFA88 *v0 = ov5_021DF528(param0, (sizeof(UnkStruct_ov5_021DFA88)), 1);
+    FieldEffectTexture *tex = FieldEffectManager_HeapAlloc(fieldEffMan, sizeof(FieldEffectTexture), TRUE);
 
-    v0->unk_00 = 1;
-    v0->unk_04 = param1;
-    v0->unk_08 = param2;
+    tex->valid = TRUE;
+    tex->texID = texID;
+    tex->texResMan = texResMan;
 
-    SysTask_ExecuteOnVBlank(ov5_021DFAC0, v0, 0xff);
-    SysTask_ExecuteAfterVBlank(ov5_021DFADC, v0, 0xff);
+    SysTask_ExecuteOnVBlank(UploadTextureResourceToVRamTask, tex, 0xFF);
+    SysTask_ExecuteAfterVBlank(DiscardTextureDataTask, tex, 0xFF);
 }
 
-static void ov5_021DFAC0(SysTask *param0, void *param1)
+static void UploadTextureResourceToVRamTask(SysTask *task, void *context)
 {
-    UnkStruct_ov5_021DFA88 *v0 = param1;
+    FieldEffectTexture *tex = context;
 
-    TextureResourceManager_UploadResourceToVRam(v0->unk_08, v0->unk_04);
-    v0->unk_00 = 1;
-    SysTask_Done(param0);
+    TextureResourceManager_UploadResourceToVRam(tex->texResMan, tex->texID);
+    tex->valid = TRUE;
+    SysTask_Done(task);
 }
 
-static void ov5_021DFADC(SysTask *param0, void *param1)
+static void DiscardTextureDataTask(SysTask *task, void *context)
 {
-    UnkStruct_ov5_021DFA88 *v0 = param1;
+    FieldEffectTexture *tex = context;
 
-    if (v0->unk_00 == 1) {
-        TextureResourceManager_DiscardTextureData(v0->unk_08, v0->unk_04);
-        ov5_021DF554(v0);
-        SysTask_Done(param0);
+    if (tex->valid == TRUE) {
+        TextureResourceManager_DiscardTextureData(tex->texResMan, tex->texID);
+        FieldEffectManager_HeapFree(tex);
+        SysTask_Done(task);
     }
 }
 
-void ov5_021DFB00(UnkStruct_ov5_021DF47C *param0, Simple3DModel *param1, u32 param2, u32 narcMemberIdx, BOOL allocAtEnd)
+void FieldEffectManager_LoadModel(FieldEffectManager *fieldEffMan, Simple3DModel *model, u32 modelIndex, u32 memberIdx, BOOL allocAtEnd)
 {
-    Simple3D_LoadModelFromSet(param1, param2, param0->unk_18, narcMemberIdx, param0->heapID, allocAtEnd);
-    Simple3D_ScheduleBindModelTexture(param1);
+    Simple3D_LoadModelFromSet(model, modelIndex, fieldEffMan->fldEffNARC, memberIdx, fieldEffMan->heapID, allocAtEnd);
+    Simple3D_ScheduleBindModelTexture(model);
 }
 
-void ov5_021DFB24(UnkStruct_ov5_021DF47C *param0, Simple3DAnimation *param1, u32 param2, u32 param3, u32 param4)
+void FieldEffectManager_LoadAnimation(FieldEffectManager *fieldEffMan, Simple3DAnimation *anim, u32 unused, u32 memberIndex, BOOL allocAtEnd)
 {
-    Simple3D_LoadAnimFromOpenNARC(param1, param2, param0->unk_18, param3, param0->heapID, param4);
+    Simple3D_LoadAnimFromOpenNARC(anim, unused, fieldEffMan->fldEffNARC, memberIndex, fieldEffMan->heapID, allocAtEnd);
 }
 
-void ov5_021DFB40(UnkStruct_ov5_021DF47C *param0, Simple3DAnimation *param1, const Simple3DModel *param2, Simple3DAnimation *param3, u32 param4)
+void FieldEffectManager_ApplyAnimCopyToModel(FieldEffectManager *fieldEffMan, Simple3DAnimation *destAnim, const Simple3DModel *model, Simple3DAnimation *srcAnim, u32 unused)
 {
-    Simple3D_ApplyAnimCopyToModel(param1, param2, param3, param4, param0->heapID);
+    Simple3D_ApplyAnimCopyToModel(destAnim, model, srcAnim, unused, fieldEffMan->heapID);
 }

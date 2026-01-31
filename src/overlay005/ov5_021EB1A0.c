@@ -1575,7 +1575,7 @@ void ov5_021EC760(MapObject *mapObj)
     UnkStruct_ov5_021EC760 *v0 = sub_02062AF0(mapObj);
 
     if (v0->unk_00 != NULL) {
-        ov5_021DF74C(v0->unk_00);
+        FieldEffectManager_FinishAnimManager(v0->unk_00);
         v0->unk_00 = NULL;
     }
 }
@@ -1585,7 +1585,7 @@ void ov5_021EC778(MapObject *mapObj)
     UnkStruct_ov5_021EC760 *v0 = sub_02062AF0(mapObj);
 
     if (v0->unk_00 != NULL) {
-        ov5_021DF74C(v0->unk_00);
+        FieldEffectManager_FinishAnimManager(v0->unk_00);
         v0->unk_00 = NULL;
     }
 }

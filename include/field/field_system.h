@@ -83,7 +83,7 @@ typedef struct FieldSystem_t {
     UnkStruct_ov5_021D1A68 *unk_34;
     MapObjectManager *mapObjMan;
     PlayerAvatar *playerAvatar;
-    UnkStruct_ov5_021DF47C *unk_40;
+    FieldEffectManager *fieldEffMan;
     ModelAttributes *areaModelAttrs;
     UnkStruct_ov5_021D57D8 *unk_48;
     AreaLightManager *areaLightMan;

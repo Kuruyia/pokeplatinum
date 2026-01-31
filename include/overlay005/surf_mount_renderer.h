@@ -7,7 +7,7 @@
 
 #include "overworld_anim_manager.h"
 
-void *SurfMountRenderer_New(UnkStruct_ov5_021DF47C *renderMan);
+void *SurfMountRenderer_New(FieldEffectManager *renderMan);
 void SurfMountRenderer_Free(void *context);
 OverworldAnimManager *SurfMountRenderer_HandleSurfBegin(MapObject *surfMountMapObj, int tileX, int tileZ, int dir, int reuseMapObjPos);
 void SurfMountRenderer_Reset(OverworldAnimManager *animMan, int animID);

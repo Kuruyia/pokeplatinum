@@ -121,18 +121,18 @@ void BerryPatches_ElapseTime(FieldSystem *fieldSystem, int minutes)
 
 static void BerryPatchManager_Init3DRendering(FieldSystem *fieldSystem, BerryPatchManager *manager)
 {
-    UnkStruct_ov5_021DF47C *renderManager = fieldSystem->unk_40;
-    u32 resourceSize = ov5_021DF5A8(renderManager, 17);
+    FieldEffectManager *fieldEffMan = fieldSystem->fieldEffMan;
+    u32 resourceSize = FieldEffectManager_GetNARCMemberSize(fieldEffMan, 17);
 
     manager->resource = Heap_Alloc(manager->heapID, resourceSize);
 
-    ov5_021DF5B4(renderManager, 17, manager->resource);
+    FieldEffectManager_ReadNARCWholeMember(fieldEffMan, 17, manager->resource);
     Easy3D_InitRenderObjFromResource(&manager->renderObj, &manager->model, &manager->resource);
 }
 
 static void BerryPatchManager_Cleanup3DRendering(BerryPatchManager *manager)
 {
-    ov5_021DF554(manager->resource);
+    FieldEffectManager_HeapFree(manager->resource);
 }
 
 static BOOL BerryPatches_IsInView(FieldSystem *fieldSystem, const VecFx32 *position)

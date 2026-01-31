@@ -7,7 +7,7 @@
 
 #include "overworld_anim_manager.h"
 
-void *ov5_021F5284(UnkStruct_ov5_021DF47C *param0);
+void *ov5_021F5284(FieldEffectManager *param0);
 void ov5_021F52A0(void *param0);
 OverworldAnimManager *ov5_021F52E4(MapObject *param0);
 

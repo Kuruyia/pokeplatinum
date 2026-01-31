@@ -1,11 +1,11 @@
+#include "overlay005/ov5_021FF6B8.h"
+
 #include <nitro.h>
 #include <string.h>
 
+#include "constants/field/field_effect_renderer.h"
+
 #include "overlay005/berry_patch_effects.h"
-#include "overlay005/const_ov5_021FF6B8.h"
-#include "overlay005/const_ov5_021FF744.h"
-#include "overlay005/const_ov5_021FF7D0.h"
-#include "overlay005/const_ov5_021FF85C.h"
 #include "overlay005/ov5_021F10E8.h"
 #include "overlay005/ov5_021F134C.h"
 #include "overlay005/ov5_021F17B8.h"
@@ -37,93 +37,93 @@
 #include "overlay005/ov5_021F600C.h"
 #include "overlay005/ov5_021F61BC.h"
 #include "overlay005/ov5_021F8560.h"
-#include "overlay005/struct_ov5_021FF85C.h"
+#include "overlay005/ov5_021FF6B8.h"
 #include "overlay005/surf_mount_renderer.h"
 
-const UnkStruct_ov5_021FF85C Unk_ov5_021FF85C[35] = {
-    { 0x0, ov5_021F134C, ov5_021F1370 },
-    { 0x1, ov5_021F17B8, ov5_021F17D4 },
-    { 0x2, ov5_021F4DAC, ov5_021F4DC8 },
-    { 0x3, ov5_021F4E08, ov5_021F4E28 },
-    { 0x4, ov5_021F5060, ov5_021F507C },
-    { 0x5, ov5_021F50BC, ov5_021F50D8 },
-    { 0x6, ov5_021F5284, ov5_021F52A0 },
-    { 0x7, ov5_021F5428, ov5_021F5444 },
-    { 0x8, ov5_021F55CC, ov5_021F55E8 },
-    { 0x9, ov5_021F575C, ov5_021F5778 },
-    { 0xA, ov5_021F5894, ov5_021F58B0 },
-    { 0xB, ov5_021F1CC8, ov5_021F1CE8 },
-    { 0xC, BerryPatchGraphicsManager_New, BerryPatchGraphicsManager_Free },
-    { 0xD, ov5_021F23D0, ov5_021F23EC },
-    { 0xE, ov5_021F61BC, ov5_021F61D8 },
-    { 0xF, SurfMountRenderer_New, SurfMountRenderer_Free },
-    { 0x10, ov5_021F2850, ov5_021F2864 },
-    { 0x11, ov5_021F2A7C, ov5_021F2A98 },
-    { 0x12, ov5_021F2BD0, ov5_021F2BEC },
-    { 0x13, ov5_021F2D20, ov5_021F2D3C },
-    { 0x14, ov5_021F5A10, ov5_021F5A24 },
-    { 0x15, ov5_021F3284, ov5_021F32A0 },
-    { 0x16, ov5_021F600C, ov5_021F6028 },
-    { 0x17, ov5_021F348C, ov5_021F34A8 },
-    { 0x18, ov5_021F37A8, ov5_021F37C4 },
-    { 0x19, ov5_021F3A50, ov5_021F3A6C },
-    { 0x1A, ov5_021F3D00, ov5_021F3D1C },
-    { 0x1B, ov5_021F3E74, ov5_021F3E90 },
-    { 0x1C, BerryPatchGraphicsManager_NewEffectCounter, BerryPatchGraphicsManager_FreeEffectCounter },
-    { 0x1D, ov5_021F10E8, ov5_021F10FC },
-    { 0x1E, ov5_021F4018, ov5_021F4034 },
-    { 0x1F, ov5_021F428C, ov5_021F42A8 },
-    { 0x20, ov5_021F47B0, ov5_021F47CC },
-    { 0x21, ov5_021F8560, ov5_021F857C },
-    { 0x22, NULL, NULL }
+const FieldEffectRendererFuncs sFieldEffectRendererHandlers[FIELD_EFFECT_RENDERER_COUNT + 1] = {
+    { FIELD_EFFECT_RENDERER_00, ov5_021F134C, ov5_021F1370 },
+    { FIELD_EFFECT_RENDERER_01, ov5_021F17B8, ov5_021F17D4 },
+    { FIELD_EFFECT_RENDERER_02, ov5_021F4DAC, ov5_021F4DC8 },
+    { FIELD_EFFECT_RENDERER_03, ov5_021F4E08, ov5_021F4E28 },
+    { FIELD_EFFECT_RENDERER_04, ov5_021F5060, ov5_021F507C },
+    { FIELD_EFFECT_RENDERER_05, ov5_021F50BC, ov5_021F50D8 },
+    { FIELD_EFFECT_RENDERER_06, ov5_021F5284, ov5_021F52A0 },
+    { FIELD_EFFECT_RENDERER_07, ov5_021F5428, ov5_021F5444 },
+    { FIELD_EFFECT_RENDERER_08, ov5_021F55CC, ov5_021F55E8 },
+    { FIELD_EFFECT_RENDERER_09, ov5_021F575C, ov5_021F5778 },
+    { FIELD_EFFECT_RENDERER_0A, ov5_021F5894, ov5_021F58B0 },
+    { FIELD_EFFECT_RENDERER_0B, ov5_021F1CC8, ov5_021F1CE8 },
+    { FIELD_EFFECT_RENDERER_BERRY_PATCH, BerryPatchGraphicsManager_New, BerryPatchGraphicsManager_Free },
+    { FIELD_EFFECT_RENDERER_0D, ov5_021F23D0, ov5_021F23EC },
+    { FIELD_EFFECT_RENDERER_0E, ov5_021F61BC, ov5_021F61D8 },
+    { FIELD_EFFECT_RENDERER_SURF_MOUNT, SurfMountRenderer_New, SurfMountRenderer_Free },
+    { FIELD_EFFECT_RENDERER_10, ov5_021F2850, ov5_021F2864 },
+    { FIELD_EFFECT_RENDERER_11, ov5_021F2A7C, ov5_021F2A98 },
+    { FIELD_EFFECT_RENDERER_12, ov5_021F2BD0, ov5_021F2BEC },
+    { FIELD_EFFECT_RENDERER_13, ov5_021F2D20, ov5_021F2D3C },
+    { FIELD_EFFECT_RENDERER_14, ov5_021F5A10, ov5_021F5A24 },
+    { FIELD_EFFECT_RENDERER_15, ov5_021F3284, ov5_021F32A0 },
+    { FIELD_EFFECT_RENDERER_16, ov5_021F600C, ov5_021F6028 },
+    { FIELD_EFFECT_RENDERER_17, ov5_021F348C, ov5_021F34A8 },
+    { FIELD_EFFECT_RENDERER_18, ov5_021F37A8, ov5_021F37C4 },
+    { FIELD_EFFECT_RENDERER_19, ov5_021F3A50, ov5_021F3A6C },
+    { FIELD_EFFECT_RENDERER_1A, ov5_021F3D00, ov5_021F3D1C },
+    { FIELD_EFFECT_RENDERER_1B, ov5_021F3E74, ov5_021F3E90 },
+    { FIELD_EFFECT_RENDERER_BERRY_PATCH_EFFECT_COUNTER, BerryPatchGraphicsManager_NewEffectCounter, BerryPatchGraphicsManager_FreeEffectCounter },
+    { FIELD_EFFECT_RENDERER_1D, ov5_021F10E8, ov5_021F10FC },
+    { FIELD_EFFECT_RENDERER_1E, ov5_021F4018, ov5_021F4034 },
+    { FIELD_EFFECT_RENDERER_1F, ov5_021F428C, ov5_021F42A8 },
+    { FIELD_EFFECT_RENDERER_20, ov5_021F47B0, ov5_021F47CC },
+    { FIELD_EFFECT_RENDERER_21, ov5_021F8560, ov5_021F857C },
+    { FIELD_EFFECT_RENDERER_INVALID, NULL, NULL }
 };
 
-const u32 Unk_ov5_021FF744[35] = {
-    0x1D,
-    0x0,
-    0xB,
-    0xC,
-    0xE,
-    0xF,
-    0x10,
-    0x1A,
-    0xD,
-    0x11,
-    0x12,
-    0x13,
-    0x14,
-    0x15,
-    0x16,
-    0x17,
-    0x18,
-    0x19,
-    0x1B,
-    0x1,
-    0x1C,
-    0x22
+const u32 sDefaultFieldEffectRenderers[FIELD_EFFECT_RENDERER_COUNT + 1] = {
+    FIELD_EFFECT_RENDERER_1D,
+    FIELD_EFFECT_RENDERER_00,
+    FIELD_EFFECT_RENDERER_0B,
+    FIELD_EFFECT_RENDERER_BERRY_PATCH,
+    FIELD_EFFECT_RENDERER_0E,
+    FIELD_EFFECT_RENDERER_SURF_MOUNT,
+    FIELD_EFFECT_RENDERER_10,
+    FIELD_EFFECT_RENDERER_1A,
+    FIELD_EFFECT_RENDERER_0D,
+    FIELD_EFFECT_RENDERER_11,
+    FIELD_EFFECT_RENDERER_12,
+    FIELD_EFFECT_RENDERER_13,
+    FIELD_EFFECT_RENDERER_14,
+    FIELD_EFFECT_RENDERER_15,
+    FIELD_EFFECT_RENDERER_16,
+    FIELD_EFFECT_RENDERER_17,
+    FIELD_EFFECT_RENDERER_18,
+    FIELD_EFFECT_RENDERER_19,
+    FIELD_EFFECT_RENDERER_1B,
+    FIELD_EFFECT_RENDERER_01,
+    FIELD_EFFECT_RENDERER_BERRY_PATCH_EFFECT_COUNTER,
+    FIELD_EFFECT_RENDERER_INVALID
 };
 
-const u32 Unk_ov5_021FF7D0[35] = {
-    0x1D,
-    0x2,
-    0x3,
-    0x4,
-    0x5,
-    0x6,
-    0x7,
-    0xE,
-    0x8,
-    0x9,
-    0xA,
-    0x14,
-    0x22
+const u32 sUndergroundFieldEffectRenderers[FIELD_EFFECT_RENDERER_COUNT + 1] = {
+    FIELD_EFFECT_RENDERER_1D,
+    FIELD_EFFECT_RENDERER_02,
+    FIELD_EFFECT_RENDERER_03,
+    FIELD_EFFECT_RENDERER_04,
+    FIELD_EFFECT_RENDERER_05,
+    FIELD_EFFECT_RENDERER_06,
+    FIELD_EFFECT_RENDERER_07,
+    FIELD_EFFECT_RENDERER_0E,
+    FIELD_EFFECT_RENDERER_08,
+    FIELD_EFFECT_RENDERER_09,
+    FIELD_EFFECT_RENDERER_0A,
+    FIELD_EFFECT_RENDERER_14,
+    FIELD_EFFECT_RENDERER_INVALID
 };
 
-const u32 Unk_ov5_021FF6B8[35] = {
-    0x1D,
-    0x14,
-    0x21,
-    0x17,
-    0xE,
-    0x22
+const u32 sDistWorldFieldEffectRenderers[FIELD_EFFECT_RENDERER_COUNT + 1] = {
+    FIELD_EFFECT_RENDERER_1D,
+    FIELD_EFFECT_RENDERER_14,
+    FIELD_EFFECT_RENDERER_21,
+    FIELD_EFFECT_RENDERER_17,
+    FIELD_EFFECT_RENDERER_0E,
+    FIELD_EFFECT_RENDERER_INVALID
 };

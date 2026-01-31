@@ -465,7 +465,7 @@ void sub_0206A158(MapObject *mapObj)
     OverworldAnimManager *v0 = sub_0206A224(mapObj);
 
     if (v0 != NULL) {
-        ov5_021DF74C(v0);
+        FieldEffectManager_FinishAnimManager(v0);
     }
 }
 
