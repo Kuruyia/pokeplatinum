@@ -85,6 +85,8 @@
 #define DISTORTION_WORLD_CAMERA_BASE_NEAR_CLIP          (FX32_ONE * 150)
 #define DISTORTION_WORLD_CAMERA_BASE_FAR_CLIP           (FX32_ONE * 1700)
 #define DISTORTION_WORLD_CAMERA_PERSISTED_ANGLES_FACTOR 0x100
+#define DISTORTION_WORLD_MIN_Y                          65
+#define DISTORTION_WORLD_MAX_Y                          289
 
 #define DISTORTION_WORLD_MAP_COUNT 10
 
@@ -151,15 +153,24 @@
 #define GIRATINA_ROOM_HIDE_PLATFORMS_DELAY         48
 #define GIRATINA_ROOM_HIDE_PLATFORMS_WAIT_DELAY    8
 
-#define SKYBOX_MIN_DARKNESS 0
-#define SKYBOX_MAX_DARKNESS 12
+#define SKYBOX_BACKGROUND_MIN_DARKNESS 0
+#define SKYBOX_BACKGROUND_MAX_DARKNESS 12
+
+#define SKYBOX_CLOUD_SPRITE_LIST_CAPACITY 16
+#define SKYBOX_CLOUD_RESOURCE_COUNT       7
+#define SKYBOX_CLOUD_RESOURCE_BASE_ID     0xFF
+#define SKYBOX_CLOUD_PALETTE_COUNT        5
+#define SKYBOX_CLOUD_COUNT                9
+#define SKYBOX_CLOUD_GROUP_COUNT          4
+#define SKYBOX_CLOUD_VIEW_RECT_X          (FX32_ONE * 0)
+#define SKYBOX_CLOUD_VIEW_RECT_Y          (FX32_ONE * -512)
 
 #define SPRITE_PALETTE_MAX_TINT_LEVEL 16
 
 #define GIRATINA_ROOM_PLAY_APPEARANCE_INITIAL_Y_OFFSET          ((10 << 4) * FX32_ONE)
 #define GIRATINA_ROOM_PLAY_APPEARANCE_INITIAL_SPRITE_DARKNESS   (FX32_ONE * SPRITE_PALETTE_MAX_TINT_LEVEL)
 #define GIRATINA_ROOM_PLAY_APPEARANCE_SKYBOX_DARKNESS_DELTA     ((FX32_ONE * 8) / (3 * 30))
-#define GIRATINA_ROOM_PLAY_APPEARANCE_SKYBOX_DARKNESS_TARGET    (FX32_ONE * SKYBOX_MAX_DARKNESS)
+#define GIRATINA_ROOM_PLAY_APPEARANCE_SKYBOX_DARKNESS_TARGET    (FX32_ONE * SKYBOX_BACKGROUND_MAX_DARKNESS)
 #define GIRATINA_ROOM_PLAY_APPEARANCE_DESCEND_Y_SLOW_THRESHOLD  ((1 << 4) * FX32_ONE)
 #define GIRATINA_ROOM_PLAY_APPEARANCE_DESCEND_Y_SLOW_DECREMENT  0x800
 #define GIRATINA_ROOM_PLAY_APPEARANCE_DESCEND_Y_FAST_DECREMENT  0x1000
@@ -503,6 +514,13 @@ enum CascadeUpdateResult {
     CASCADE_UPDATE_RES_FINAL_POS_REACHED,
 };
 
+enum SkyboxKind {
+    SKYBOX_KIND_NORMAL = 0,
+    SKYBOX_KIND_GIRATINA_ROOM,
+    SKYBOX_KIND_GIRATINA_ROOM_DARK,
+    SKYBOX_KIND_COUNT,
+};
+
 typedef struct DistWorldSystem DistWorldSystem;
 
 typedef struct DistWorldBounds {
@@ -514,26 +532,26 @@ typedef struct DistWorldBounds {
     s16 sizeZ;
 } DistWorldBounds;
 
-typedef struct {
-    u8 unk_00;
-    u8 unk_01;
-    u8 unk_02;
-    u8 unk_03;
-} UnkStruct_ov9_02251EC8;
+typedef struct DistWorldSkyboxCloudResourceIDs {
+    u8 charResID;
+    u8 plttResID;
+    u8 cellResID;
+    u8 animResID;
+} DistWorldSkyboxCloudResourceIDs;
 
-typedef struct {
-    SpriteList *unk_00;
-    G2dRenderer unk_04;
-    SpriteResourceCollection *unk_190;
-    SpriteResourceCollection *unk_194;
-    SpriteResourceCollection *unk_198;
-    SpriteResourceCollection *unk_19C;
-    SpriteResource *unk_1A0[7];
-    SpriteResource *unk_1BC[1];
-    SpriteResource *unk_1C0[7];
-    SpriteResource *unk_1DC[7];
-    SysTask *unk_1F8;
-} UnkStruct_ov9_0224B064;
+typedef struct DistWorldSkyboxClouds {
+    SpriteList *spriteList;
+    G2dRenderer renderer;
+    SpriteResourceCollection *charResColl;
+    SpriteResourceCollection *plttResColl;
+    SpriteResourceCollection *cellResColl;
+    SpriteResourceCollection *animResColl;
+    SpriteResource *charRes[SKYBOX_CLOUD_RESOURCE_COUNT];
+    SpriteResource *plttRes;
+    SpriteResource *cellRes[SKYBOX_CLOUD_RESOURCE_COUNT];
+    SpriteResource *animRes[SKYBOX_CLOUD_RESOURCE_COUNT];
+    SysTask *updateTask;
+} DistWorldSkyboxClouds;
 
 typedef struct DistWorldRGB555 {
     u16 r : 5;
@@ -541,40 +559,40 @@ typedef struct DistWorldRGB555 {
     u16 b : 5;
 } DistWorldRGB555;
 
-typedef struct {
+typedef struct DistWorldSkyboxBackground {
     s16 darknessLevel;
-    s16 unk_02;
-    u16 unk_04;
+    s16 renderedDarknessLevel;
+    u16 dirty;
     u16 darknessCalculationDisabled;
-    u16 unk_08[16];
-    u16 unk_28[16];
-    u16 unk_48[80];
-    u16 unk_E8[80];
-} UnkStruct_ov9_0224ADC0;
+    u16 basePalette[PALETTE_SIZE];
+    u16 currPalette[PALETTE_SIZE];
+    u16 baseCloudPalettes[PALETTE_SIZE * SKYBOX_CLOUD_PALETTE_COUNT];
+    u16 currCloudPalettes[PALETTE_SIZE * SKYBOX_CLOUD_PALETTE_COUNT];
+} DistWorldSkyboxBackground;
 
-typedef struct {
-    int unk_00;
-    int unk_04;
-    fx32 unk_08;
-    fx32 unk_0C;
-    int unk_10;
-    fx32 unk_14;
-    VecFx32 unk_18;
-    VecFx32 unk_24;
-} UnkStruct_ov9_02253680;
+typedef struct DistWorldSkyboxCloudTemplate {
+    int resIDsIndex;
+    int group;
+    fx32 initialRotAngle;
+    fx32 rotAngleOffset;
+    int distToCenter;
+    fx32 baseRotAngleDelta;
+    VecFx32 basePos;
+    VecFx32 scale;
+} DistWorldSkyboxCloudTemplate;
 
-typedef struct {
-    DistWorldSystem *unk_00;
-    UnkStruct_ov9_02253680 unk_04;
-    UnkStruct_ov9_0224B064 *unk_34;
-} UnkStruct_ov9_0224B1B4;
+typedef struct DistWorldSkyboxCloudAnimatorUserData {
+    DistWorldSystem *system;
+    DistWorldSkyboxCloudTemplate template;
+    DistWorldSkyboxClouds *clouds;
+} DistWorldSkyboxCloudAnimatorUserData;
 
-typedef struct {
-    fx32 unk_00;
-    fx32 unk_04;
-    UnkStruct_ov9_0224B1B4 unk_08;
-    Sprite *unk_40;
-} UnkStruct_ov9_0224B2C0;
+typedef struct DistWorldSkyboxCloudAnimator {
+    fx32 rotAngle;
+    fx32 rotAngleDelta;
+    DistWorldSkyboxCloudAnimatorUserData userData;
+    Sprite *sprite;
+} DistWorldSkyboxCloudAnimator;
 
 typedef struct {
     u32 mapHeaderID;
@@ -1024,15 +1042,15 @@ typedef struct {
 struct DistWorldSystem {
     FieldSystem *fieldSystem;
     DistWorldPersistedData *persistedData;
-    NARC *distortionWorldNARC;
-    NARC *distortionWorldAttrNARC;
-    NARC *unk_10;
+    NARC *mainNARC;
+    NARC *attrNARC;
+    NARC *etcNARC;
     DistWorldCameraManager cameraMan;
     DistWorldFieldTaskContext fieldTaskCtx;
     DistWorldRunningEvent runningEvent;
     UnkStruct_ov9_02249E94 unk_184;
     UnkStruct_ov9_0224A228 unk_188;
-    UnkStruct_ov9_0224B064 unk_1A8;
+    DistWorldSkyboxClouds skyboxClouds;
     DistWorldPropRenderBuffers propRenderBuffs;
     UnkStruct_ov9_02249B04_sub1 unk_169C;
     DistWorldGhostPropManager ghostPropMan;
@@ -1042,13 +1060,13 @@ struct DistWorldSystem {
     DistWorldMapObjectManager mapObjMan;
     UnkStruct_ov9_0224CA5C unk_1CB0;
     UnkStruct_ov9_0224CBD8 unk_1CD0;
-    UnkStruct_ov9_0224ADC0 unk_1D00;
+    DistWorldSkyboxBackground skyboxBg;
     UnkStruct_ov9_0224C8E8 unk_1E88;
     DistWorldGiratinaShadowPropRenderer giratinaShadowPropRenderer;
     GXRgb unk_1EB0[8];
     u16 playingGiratinaRoomAppearance;
-    u16 unk_1EC2;
-    SysTask *unk_1EC4;
+    u16 skyboxKind;
+    SysTask *skyboxPalettesTask;
 };
 
 typedef struct DistWorldPlatformProp {
@@ -1325,9 +1343,9 @@ static u32 GetPersistedCurrentFloatingPlatformIndex(DistWorldSystem *system);
 static void ov9_02249E94(DistWorldSystem *param0);
 static void ov9_02249EC8(DistWorldSystem *param0);
 static void ov9_02249EDC(SysTask *param0, void *param1);
-static void ov9_02249EF0(DistWorldSystem *param0);
-static void ov9_02249F18(DistWorldSystem *param0);
-static void ov9_02249F3C(SysTask *param0, void *param1);
+static void StartSkyboxPalettesUpdateTask(DistWorldSystem *param0);
+static void FinishSkyboxPalettesUpdateTask(DistWorldSystem *param0);
+static void SkyboxPalettesUpdateTask(SysTask *param0, void *param1);
 static void ov9_02249F50(DistWorldSystem *param0);
 static void ov9_02249F84(DistWorldSystem *param0);
 static void ov9_02249F88(DistWorldSystem *param0);
@@ -1358,13 +1376,13 @@ static BOOL HandleFloatingPlatformJumpPointAt(DistWorldSystem *system, int playe
 static void CreateJumpOnFloatingPlatformTask(DistWorldSystem *system, const DistWorldFloatingPlatformJumpPointTemplate *template);
 static BOOL JumpOnFloatingPlatform(FieldTask *task);
 static BOOL TickJumpOnFloatingPlatformMovementAnimation(DistWorldFloatingPlatformJumpTaskContext *ctx, MapObject *playerMapObj);
-static void ov9_0224ADC0(DistWorldSystem *param0);
-static void ov9_0224AED8(DistWorldSystem *param0);
-static void ov9_0224AEE4(DistWorldSystem *param0, UnkStruct_ov9_0224B064 *param1, NARC *param2);
-static void ov9_0224B064(UnkStruct_ov9_0224B064 *param0);
-static void ov9_0224B124(SysTask *param0, void *param1);
-static Sprite *ov9_0224B130(UnkStruct_ov9_0224B064 *param0, const VecFx32 *param1, u32 param2, u32 param3, u32 param4, u32 param5, int param6, int param7);
-static void ov9_0224B1B4(DistWorldSystem *param0, FieldEffectManager *param1, UnkStruct_ov9_0224B064 *param2);
+static void InitSkyboxBackground(DistWorldSystem *param0);
+static void FinishSkyboxBackground(DistWorldSystem *param0);
+static void InitSkyboxClouds(DistWorldSystem *param0, DistWorldSkyboxClouds *param1, NARC *param2);
+static void FreeSkyboxClouds(DistWorldSkyboxClouds *param0);
+static void SkyboxCloudSpritesUpdateTask(SysTask *param0, void *param1);
+static Sprite *CreateSkyboxCloudSprite(DistWorldSkyboxClouds *param0, const VecFx32 *param1, u32 param2, u32 param3, u32 param4, u32 param5, int param6, int param7);
+static void InitSkyboxCloudAnimators(DistWorldSystem *param0, FieldEffectManager *param1, DistWorldSkyboxClouds *param2);
 static void ov9_0224B3A8(DistWorldSystem *param0);
 static void ov9_0224B3F4(DistWorldSystem *param0);
 static void InitGhostPropManager(DistWorldSystem *system, DistWorldGhostPropManager *ghostPropMan, const DistWorldGhostPropHeader *header, const DistWorldGhostPropTemplate *ghostPropTemplateList, int mapHeaderID, u32 hiddenGhostPropGroups);
@@ -1466,7 +1484,7 @@ static void ov9_0224CB30(DistWorldSystem *param0);
 static void ov9_0224CBD8(DistWorldSystem *param0);
 static void ov9_0224CBF8(DistWorldSystem *param0);
 static void ov9_0224CC08(SysTask *param0, void *param1);
-static void ov9_0224CC4C(DistWorldSystem *param0);
+static void Dummy0224CC4C(DistWorldSystem *param0);
 static void ov9_0224CC50(DistWorldSystem *param0, DistWorldMovingPlatformPropAnimator *param1, u32 param2);
 static BOOL ov9_0224CC7C(DistWorldSystem *param0);
 static BOOL HandleElevatorPlatformPropAnimatorAt(DistWorldSystem *system, int playerX, int playerY, int playerZ);
@@ -1558,12 +1576,12 @@ static void AddMapObjectsForMap(DistWorldSystem *param0, u32 param1);
 static void DeleteMapObjectsForMap(DistWorldSystem *param0, u32 param1);
 static MapObject *AddMapObjectWithLocalID(DistWorldSystem *param0, u32 param1, u16 param2);
 static BOOL IsMapObjectManaged(DistWorldSystem *param0, MapObject *param1);
-static void ov9_0224F724(DistWorldSystem *param0);
-static void ov9_0224F760(DistWorldSystem *param0);
-static void ov9_0224F764(DistWorldSystem *param0);
-static void ov9_0224F804(DistWorldSystem *param0);
-static void SetSkyboxDarknessCalculationDisabled(DistWorldSystem *param0, BOOL param1);
-static void SetSkyboxDarknessLevel(DistWorldSystem *param0, s16 param1);
+static void InitSkyboxBackgroundDarkness(DistWorldSystem *param0);
+static void Dummy0224F760(DistWorldSystem *param0);
+static void RecalculateSkyboxBackgroundDarkness(DistWorldSystem *param0);
+static void UpdateSkyboxPalettes(DistWorldSystem *param0);
+static void SetSkyboxBackgroundDarknessCalculationDisabled(DistWorldSystem *param0, BOOL param1);
+static void SetSkyboxBackgroundDarknessLevel(DistWorldSystem *param0, s16 param1);
 static void CalculateTintedColor(GXRgb param0, GXRgb param1, u16 param2, GXRgb *param3);
 static BOOL DistWorldBounds_AreCoordinatesInBounds(int tileX, int tileY, int tileZ, const DistWorldBounds *bounds);
 static int CalculateCameraAngleDelta(u16 currentAngleComponent, u16 targetAngleComponent);
@@ -1576,19 +1594,19 @@ static BOOL CheckFlagCondition(DistWorldSystem *system, enum FlagCondition flagC
 static void PlaySoundIfNotActive(u16 seqID);
 static void ov9_022511F4(MapObject *param0, const VecFx32 *param1);
 
-static const OverworldAnimManagerFuncs Unk_ov9_02251508;
+static const OverworldAnimManagerFuncs sSkyboxCloudsAnimFuncs;
 static const OverworldAnimManagerFuncs sMovingPlatformPropAnimFuncs;
 static const OverworldAnimManagerFuncs sGiratinaShadowPropAnimFuncs;
 static const OverworldAnimManagerFuncs sSimplePropAnimFuncs;
 static const fx32 Unk_ov9_02252CF8[16];
 static const FloatingPlatformJumpPointHandler sFloatingPlatformJumpPointHandlers[1];
-static const int Unk_ov9_02251E58[7];
-static const int Unk_ov9_02251E90[7];
-static const int Unk_ov9_02251EAC[7];
-static const int Unk_ov9_02251210[1];
-static const UnkStruct_ov9_02251EC8 Unk_ov9_02251EC8[7];
-static const UnkStruct_ov9_02253680 Unk_ov9_02253680[9];
-static const fx32 Unk_ov9_02252C08[3][4];
+static const int sSkyboxCloudsCharNARCIndexes[SKYBOX_CLOUD_RESOURCE_COUNT];
+static const int sSkyboxCloudsCellNARCIndexes[SKYBOX_CLOUD_RESOURCE_COUNT];
+static const int sSkyboxCloudsAnimNARCIndexes[SKYBOX_CLOUD_RESOURCE_COUNT];
+static const int sSkyboxCloudsPlttNARCIndexes[1];
+static const DistWorldSkyboxCloudResourceIDs sSkyboxCloudsResIDs[SKYBOX_CLOUD_RESOURCE_COUNT];
+static const DistWorldSkyboxCloudTemplate sSkyboxCloudsTemplates[SKYBOX_CLOUD_COUNT];
+static const fx32 sSkyboxCloudsRotAngleDeltas[SKYBOX_KIND_COUNT][SKYBOX_CLOUD_GROUP_COUNT];
 static const u32 sProp3DModelNARCIndexByKind[PROP_KIND_COUNT];
 static const u32 sPropAnimSetNARCIndexByKind[PROP_ANIM_KIND_COUNT];
 static const DistWorldPropAnimInfo sPropAnimInfoByKind[PROP_KIND_COUNT];
@@ -1629,10 +1647,10 @@ void DistWorld_DynamicMapFeaturesInit(FieldSystem *fieldSystem)
     ov9_02249F88(dwSystem);
     ov9_0224A1E4(dwSystem, (4 + 2));
     InitPropRenderBuffers(dwSystem);
-    ov9_0224ADC0(dwSystem);
+    InitSkyboxBackground(dwSystem);
     ov9_0224B3A8(dwSystem);
-    ov9_0224AEE4(dwSystem, &dwSystem->unk_1A8, dwSystem->unk_10);
-    ov9_0224F724(dwSystem);
+    InitSkyboxClouds(dwSystem, &dwSystem->skyboxClouds, dwSystem->etcNARC);
+    InitSkyboxBackgroundDarkness(dwSystem);
     CameraInit(dwSystem);
     FieldTaskContextNoOp1(dwSystem);
     ov9_0224A8C0(dwSystem);
@@ -1645,10 +1663,10 @@ void DistWorld_DynamicMapFeaturesInit(FieldSystem *fieldSystem)
     ov9_0224C8E8(dwSystem);
     ov9_0224CBD8(dwSystem);
     InitMovingPlatformPropsForCurrentAndNextMaps(dwSystem);
-    ov9_0224B1B4(dwSystem, dwSystem->fieldSystem->fieldEffMan, &dwSystem->unk_1A8);
+    InitSkyboxCloudAnimators(dwSystem, dwSystem->fieldSystem->fieldEffMan, &dwSystem->skyboxClouds);
     Dummy0224E984(dwSystem);
     ov5_021F34B8(dwSystem->fieldSystem->fieldEffMan);
-    ov9_02249EF0(dwSystem);
+    StartSkyboxPalettesUpdateTask(dwSystem);
 
     data->valid = TRUE;
 }
@@ -1657,7 +1675,7 @@ void DistWorld_DynamicMapFeaturesFree(FieldSystem *fieldSystem)
 {
     DistWorldSystem *v0 = fieldSystem->unk_04->dynamicMapFeaturesData;
 
-    ov9_02249F18(v0);
+    FinishSkyboxPalettesUpdateTask(v0);
     FinishGiratinaShadowPropRenderer(v0);
     ov9_0224CBF8(v0);
     ov9_0224C9E8(v0);
@@ -1670,10 +1688,10 @@ void DistWorld_DynamicMapFeaturesFree(FieldSystem *fieldSystem)
     ov9_0224A9E8(v0);
     FieldTaskContextNoOp2(v0);
     CameraFree(v0);
-    ov9_0224F760(v0);
-    ov9_0224B064(&v0->unk_1A8);
+    Dummy0224F760(v0);
+    FreeSkyboxClouds(&v0->skyboxClouds);
     ov9_0224B3F4(v0);
-    ov9_0224AED8(v0);
+    FinishSkyboxBackground(v0);
     FreePropRenderBuffers(v0);
     ov9_0224A334(v0);
     ov9_02249F98(v0);
@@ -1762,16 +1780,16 @@ static void ov9_02249C60(DistWorldSystem *param0, u32 param1)
 
 static void OpenArchives(DistWorldSystem *system)
 {
-    system->distortionWorldNARC = NARC_ctor(NARC_INDEX_FIELDDATA__TORNWORLD__TW_ARC, HEAP_ID_FIELD1);
-    system->distortionWorldAttrNARC = NARC_ctor(NARC_INDEX_FIELDDATA__TORNWORLD__TW_ARC_ATTR, HEAP_ID_FIELD1);
-    system->unk_10 = NARC_ctor(NARC_INDEX_DATA__TW_ARC_ETC, HEAP_ID_FIELD1);
+    system->mainNARC = NARC_ctor(NARC_INDEX_FIELDDATA__TORNWORLD__TW_ARC, HEAP_ID_FIELD1);
+    system->attrNARC = NARC_ctor(NARC_INDEX_FIELDDATA__TORNWORLD__TW_ARC_ATTR, HEAP_ID_FIELD1);
+    system->etcNARC = NARC_ctor(NARC_INDEX_DATA__TW_ARC_ETC, HEAP_ID_FIELD1);
 }
 
 static void CloseArchives(DistWorldSystem *system)
 {
-    NARC_dtor(system->distortionWorldNARC);
-    NARC_dtor(system->distortionWorldAttrNARC);
-    NARC_dtor(system->unk_10);
+    NARC_dtor(system->mainNARC);
+    NARC_dtor(system->attrNARC);
+    NARC_dtor(system->etcNARC);
 }
 
 static void ov9_02249CC4(DistWorldSystem *param0)
@@ -1974,29 +1992,29 @@ static void ov9_02249EDC(SysTask *param0, void *param1)
     }
 
     {
-        ov9_0224F764(v0);
+        RecalculateSkyboxBackgroundDarkness(v0);
     }
 }
 
-static void ov9_02249EF0(DistWorldSystem *param0)
+static void StartSkyboxPalettesUpdateTask(DistWorldSystem *system)
 {
-    GF_ASSERT(param0->unk_1EC4 == NULL);
-    param0->unk_1EC4 = SysTask_ExecuteOnVBlank(ov9_02249F3C, param0, 0x80);
+    GF_ASSERT(system->skyboxPalettesTask == NULL);
+    system->skyboxPalettesTask = SysTask_ExecuteOnVBlank(SkyboxPalettesUpdateTask, system, 128);
 }
 
-static void ov9_02249F18(DistWorldSystem *param0)
+static void FinishSkyboxPalettesUpdateTask(DistWorldSystem *system)
 {
-    GF_ASSERT(param0->unk_1EC4 != NULL);
-    SysTask_Done(param0->unk_1EC4);
-    param0->unk_1EC4 = NULL;
+    GF_ASSERT(system->skyboxPalettesTask != NULL);
+    SysTask_Done(system->skyboxPalettesTask);
+    system->skyboxPalettesTask = NULL;
 }
 
-static void ov9_02249F3C(SysTask *param0, void *param1)
+static void SkyboxPalettesUpdateTask(SysTask *sysTask, void *sysTaskParam)
 {
-    DistWorldSystem *v0 = param1;
+    DistWorldSystem *system = sysTaskParam;
 
-    ov9_0224CC4C(v0);
-    ov9_0224F804(v0);
+    Dummy0224CC4C(system);
+    UpdateSkyboxPalettes(system);
 }
 
 static void ov9_02249F50(DistWorldSystem *param0)
@@ -3005,306 +3023,270 @@ static BOOL TickJumpOnFloatingPlatformMovementAnimation(DistWorldFloatingPlatfor
     return FALSE;
 }
 
-static void ov9_0224ADC0(DistWorldSystem *param0)
+static void InitSkyboxBackground(DistWorldSystem *system)
 {
-    char *v0;
+    GXLayers_EngineAToggleLayers(GX_PLANEMASK_BG1, FALSE);
 
-    GXLayers_EngineAToggleLayers(2, 0);
+    NNSG2dPaletteData *plttData;
+    char *nclrFile = NARC_AllocAndReadWholeMember(system->etcNARC, 1, HEAP_ID_FIELD1);
+    NNS_G2dGetUnpackedPaletteData(nclrFile, &plttData);
+    Bg_LoadPalette(BG_LAYER_MAIN_2, plttData->pRawData, PALETTE_SIZE_BYTES, 0);
 
-    {
-        char *v1;
-        NNSG2dPaletteData *v2;
+    DistWorldSkyboxBackground *skyboxBg = &system->skyboxBg;
+    u16 *plttRawData = plttData->pRawData;
 
-        v1 = NARC_AllocAndReadWholeMember(param0->unk_10, 1, 4);
-        NNS_G2dGetUnpackedPaletteData(v1, &v2);
-        Bg_LoadPalette(2, v2->pRawData, 32, 32 * 0);
-
-        {
-            int v3;
-            UnkStruct_ov9_0224ADC0 *v4 = &param0->unk_1D00;
-            u16 *v5 = v2->pRawData;
-
-            v5 = &v5[0 * 16];
-
-            for (v3 = 0; v3 < 16; v3++) {
-                v4->unk_08[v3] = v5[v3];
-                v4->unk_28[v3] = v5[v3];
-            }
-        }
-
-        Heap_Free(v1);
+    for (int i = 0; i < PALETTE_SIZE; i++) {
+        skyboxBg->basePalette[i] = plttRawData[i];
+        skyboxBg->currPalette[i] = plttRawData[i];
     }
 
-    {
-        char *v6;
-        NNSG2dCharacterData *v7;
+    Heap_Free(nclrFile);
 
-        v6 = NARC_AllocAndReadWholeMember(param0->unk_10, 0, 4);
-        NNS_G2dGetUnpackedCharacterData(v6, &v7);
+    NNSG2dCharacterData *charData;
+    char *ncgrFile = NARC_AllocAndReadWholeMember(system->etcNARC, 0, HEAP_ID_FIELD1);
+    NNS_G2dGetUnpackedCharacterData(ncgrFile, &charData);
 
-        Bg_LoadTiles(param0->fieldSystem->bgConfig, 2, v7->pRawData, v7->szByte, 0);
-        Heap_Free(v6);
-    }
+    Bg_LoadTiles(system->fieldSystem->bgConfig, BG_LAYER_MAIN_2, charData->pRawData, charData->szByte, 0);
+    Heap_Free(ncgrFile);
 
-    {
-        char *v8;
-        NNSG2dScreenData *v9;
+    NNSG2dScreenData *scrData;
+    char *nscrFile = NARC_AllocAndReadWholeMember(system->etcNARC, 2, HEAP_ID_FIELD1);
+    NNS_G2dGetUnpackedScreenData(nscrFile, &scrData);
 
-        v8 = NARC_AllocAndReadWholeMember(param0->unk_10, 2, 4);
-        NNS_G2dGetUnpackedScreenData(v8, &v9);
+    Bg_CopyTilemapBufferRangeToVRAM(system->fieldSystem->bgConfig, BG_LAYER_MAIN_2, scrData->rawData, scrData->szByte, 0);
+    Bg_LoadTilemapBuffer(system->fieldSystem->bgConfig, BG_LAYER_MAIN_2, scrData->rawData, scrData->szByte);
+    Bg_CopyTilemapBufferToVRAM(system->fieldSystem->bgConfig, BG_LAYER_MAIN_2);
+    Heap_Free(nscrFile);
 
-        Bg_CopyTilemapBufferRangeToVRAM(param0->fieldSystem->bgConfig, 2, (void *)v9->rawData, v9->szByte, 0);
-        Bg_LoadTilemapBuffer(param0->fieldSystem->bgConfig, 2, (void *)v9->rawData, v9->szByte);
-        Bg_CopyTilemapBufferToVRAM(param0->fieldSystem->bgConfig, 2);
-        Heap_Free(v8);
-    }
+    G2_SetBG0Priority(2);
+    G2_SetBG1Priority(1);
+    G2_SetBG2Priority(3);
+    G2_SetBG3Priority(0);
 
-    {
-        G2_SetBG0Priority(2);
-        G2_SetBG1Priority(1);
-        G2_SetBG2Priority(3);
-        G2_SetBG3Priority(0);
-    }
+    G2_SetBlendAlpha(GX_BLEND_PLANEMASK_BG0, GX_BLEND_PLANEMASK_BG1 | GX_BLEND_PLANEMASK_BG2 | GX_BLEND_PLANEMASK_OBJ | GX_BLEND_PLANEMASK_BD, 0, 16);
 
-    {
-        G2_SetBlendAlpha(GX_BLEND_PLANEMASK_BG0, GX_BLEND_PLANEMASK_BG1 | GX_BLEND_PLANEMASK_BG2 | GX_BLEND_PLANEMASK_OBJ | GX_BLEND_PLANEMASK_BD, 0, 16);
-    }
-
-    GXLayers_EngineAToggleLayers(2, 1);
-    GXLayers_EngineAToggleLayers(GX_PLANEMASK_OBJ, 1);
+    GXLayers_EngineAToggleLayers(GX_PLANEMASK_BG1, TRUE);
+    GXLayers_EngineAToggleLayers(GX_PLANEMASK_OBJ, TRUE);
 }
 
-static void ov9_0224AED8(DistWorldSystem *param0)
+static void FinishSkyboxBackground(DistWorldSystem *system)
 {
     G2_BlendNone();
 }
 
-static void ov9_0224AEE4(DistWorldSystem *param0, UnkStruct_ov9_0224B064 *param1, NARC *param2)
+static void InitSkyboxClouds(DistWorldSystem *system, DistWorldSkyboxClouds *clouds, NARC *etcNARC)
 {
-    param1->unk_00 = SpriteList_InitRendering(16, &param1->unk_04, HEAP_ID_FIELD1);
-    SetMainScreenViewRect(&param1->unk_04, (FX32_ONE * 0), (FX32_ONE * -512));
-    param1->unk_190 = SpriteResourceCollection_New(7, 0, HEAP_ID_FIELD1);
-    param1->unk_194 = SpriteResourceCollection_New(1, 1, HEAP_ID_FIELD1);
-    param1->unk_198 = SpriteResourceCollection_New(7, 2, HEAP_ID_FIELD1);
-    param1->unk_19C = SpriteResourceCollection_New(7, 3, HEAP_ID_FIELD1);
+    clouds->spriteList = SpriteList_InitRendering(SKYBOX_CLOUD_SPRITE_LIST_CAPACITY, &clouds->renderer, HEAP_ID_FIELD1);
+    SetMainScreenViewRect(&clouds->renderer, SKYBOX_CLOUD_VIEW_RECT_X, SKYBOX_CLOUD_VIEW_RECT_Y);
+    clouds->charResColl = SpriteResourceCollection_New(SKYBOX_CLOUD_RESOURCE_COUNT, SPRITE_RESOURCE_CHAR, HEAP_ID_FIELD1);
+    clouds->plttResColl = SpriteResourceCollection_New(1, SPRITE_RESOURCE_PLTT, HEAP_ID_FIELD1);
+    clouds->cellResColl = SpriteResourceCollection_New(SKYBOX_CLOUD_RESOURCE_COUNT, SPRITE_RESOURCE_CELL, HEAP_ID_FIELD1);
+    clouds->animResColl = SpriteResourceCollection_New(SKYBOX_CLOUD_RESOURCE_COUNT, SPRITE_RESOURCE_ANIM, HEAP_ID_FIELD1);
 
-    {
-        int v0;
-
-        for (v0 = 0; v0 < 7; v0++) {
-            param1->unk_1A0[v0] = SpriteResourceCollection_AddTilesFrom(param1->unk_190, param2, Unk_ov9_02251E58[v0], 0, ((v0) + 0xff), NNS_G2D_VRAM_TYPE_2DMAIN, HEAP_ID_FIELD1);
-            SpriteTransfer_RequestCharAtEnd(param1->unk_1A0[v0]);
-        }
-
-        param1->unk_1BC[0] = SpriteResourceCollection_AddPaletteFrom(param1->unk_194, param2, Unk_ov9_02251210[0], 0, (0 + 0xff), NNS_G2D_VRAM_TYPE_2DMAIN, 5, HEAP_ID_FIELD1);
-
-        {
-            NNSG2dPaletteData *v1;
-
-            v1 = SpriteResource_GetPaletteFade(param1->unk_1BC[0]);
-            {
-                int v2 = 0;
-                UnkStruct_ov9_0224ADC0 *v3 = &param0->unk_1D00;
-                u16 *v4 = v3->unk_48;
-                u16 *v5 = v1->pRawData;
-
-                do {
-                    *v4 = *v5;
-                    v4++;
-                    v5++;
-                } while (++v2 < (16 * 5));
-            }
-        }
-
-        SpriteTransfer_RequestPlttFreeSpace(param1->unk_1BC[0]);
-
-        for (v0 = 0; v0 < 7; v0++) {
-            param1->unk_1C0[v0] = SpriteResourceCollection_AddFrom(param1->unk_198, param2, Unk_ov9_02251E90[v0], 0, ((v0) + 0xff), 2, HEAP_ID_FIELD1);
-        }
-
-        for (v0 = 0; v0 < 7; v0++) {
-            param1->unk_1DC[v0] = SpriteResourceCollection_AddFrom(param1->unk_19C, param2, Unk_ov9_02251EAC[v0], 0, ((v0) + 0xff), 3, HEAP_ID_FIELD1);
-        }
+    int i;
+    for (i = 0; i < SKYBOX_CLOUD_RESOURCE_COUNT; i++) {
+        clouds->charRes[i] = SpriteResourceCollection_AddTilesFrom(clouds->charResColl, etcNARC, sSkyboxCloudsCharNARCIndexes[i], FALSE, SKYBOX_CLOUD_RESOURCE_BASE_ID + i, NNS_G2D_VRAM_TYPE_2DMAIN, HEAP_ID_FIELD1);
+        SpriteTransfer_RequestCharAtEnd(clouds->charRes[i]);
     }
 
-    {
-        param1->unk_1F8 = SysTask_Start(ov9_0224B124, param1, 65535);
+    clouds->plttRes = SpriteResourceCollection_AddPaletteFrom(clouds->plttResColl, etcNARC, sSkyboxCloudsPlttNARCIndexes[0], FALSE, SKYBOX_CLOUD_RESOURCE_BASE_ID, NNS_G2D_VRAM_TYPE_2DMAIN, 5, HEAP_ID_FIELD1);
+
+    NNSG2dPaletteData *plttData = SpriteResource_GetPaletteFade(clouds->plttRes);
+    int j = 0;
+    DistWorldSkyboxBackground *skyboxBg = &system->skyboxBg;
+    u16 *basePlttIter = skyboxBg->baseCloudPalettes;
+    u16 *plttIter = plttData->pRawData;
+
+    do {
+        *basePlttIter = *plttIter;
+        basePlttIter++;
+        plttIter++;
+    } while (++j < PALETTE_SIZE * SKYBOX_CLOUD_PALETTE_COUNT);
+
+    SpriteTransfer_RequestPlttFreeSpace(clouds->plttRes);
+
+    for (i = 0; i < SKYBOX_CLOUD_RESOURCE_COUNT; i++) {
+        clouds->cellRes[i] = SpriteResourceCollection_AddFrom(clouds->cellResColl, etcNARC, sSkyboxCloudsCellNARCIndexes[i], FALSE, SKYBOX_CLOUD_RESOURCE_BASE_ID + i, SPRITE_RESOURCE_CELL, HEAP_ID_FIELD1);
     }
+
+    for (i = 0; i < SKYBOX_CLOUD_RESOURCE_COUNT; i++) {
+        clouds->animRes[i] = SpriteResourceCollection_AddFrom(clouds->animResColl, etcNARC, sSkyboxCloudsAnimNARCIndexes[i], FALSE, SKYBOX_CLOUD_RESOURCE_BASE_ID + i, SPRITE_RESOURCE_ANIM, HEAP_ID_FIELD1);
+    }
+
+    clouds->updateTask = SysTask_Start(SkyboxCloudSpritesUpdateTask, clouds, 65535);
 }
 
-static void ov9_0224B064(UnkStruct_ov9_0224B064 *param0)
+static void FreeSkyboxClouds(DistWorldSkyboxClouds *clouds)
 {
-    int v0;
+    SysTask_Done(clouds->updateTask);
 
-    SysTask_Done(param0->unk_1F8);
-
-    for (v0 = 0; v0 < 7; v0++) {
-        if (param0->unk_1A0[v0] != NULL) {
-            SpriteTransfer_ResetCharTransfer(param0->unk_1A0[v0]);
+    for (int i = 0; i < SKYBOX_CLOUD_RESOURCE_COUNT; i++) {
+        if (clouds->charRes[i] != NULL) {
+            SpriteTransfer_ResetCharTransfer(clouds->charRes[i]);
         }
     }
 
-    for (v0 = 0; v0 < 1; v0++) {
-        if (param0->unk_1BC[v0] != NULL) {
-            SpriteTransfer_ResetPlttTransfer(param0->unk_1BC[v0]);
+    if (clouds->plttRes != NULL) {
+        SpriteTransfer_ResetPlttTransfer(clouds->plttRes);
+    }
+
+    for (int i = 0; i < SKYBOX_CLOUD_RESOURCE_COUNT; i++) {
+        if (clouds->cellRes[i] != NULL) {
+            SpriteResource_ReleaseData(clouds->cellRes[i]);
+            SpriteResourceCollection_Remove(clouds->cellResColl, clouds->cellRes[i]);
         }
     }
 
-    for (v0 = 0; v0 < 7; v0++) {
-        if (param0->unk_1C0[v0] != NULL) {
-            SpriteResource_ReleaseData(param0->unk_1C0[v0]);
-            SpriteResourceCollection_Remove(
-                param0->unk_198, param0->unk_1C0[v0]);
+    for (int i = 0; i < SKYBOX_CLOUD_RESOURCE_COUNT; i++) {
+        if (clouds->animRes[i] != NULL) {
+            SpriteResource_ReleaseData(clouds->animRes[i]);
+            SpriteResourceCollection_Remove(clouds->animResColl, clouds->animRes[i]);
         }
     }
 
-    for (v0 = 0; v0 < 7; v0++) {
-        if (param0->unk_1DC[v0] != NULL) {
-            SpriteResource_ReleaseData(param0->unk_1DC[v0]);
-            SpriteResourceCollection_Remove(
-                param0->unk_19C, param0->unk_1DC[v0]);
-        }
-    }
+    SpriteResourceCollection_Delete(clouds->charResColl);
+    SpriteResourceCollection_Delete(clouds->plttResColl);
+    SpriteResourceCollection_Delete(clouds->cellResColl);
+    SpriteResourceCollection_Delete(clouds->animResColl);
 
-    SpriteResourceCollection_Delete(param0->unk_190);
-    SpriteResourceCollection_Delete(param0->unk_194);
-    SpriteResourceCollection_Delete(param0->unk_198);
-    SpriteResourceCollection_Delete(param0->unk_19C);
-
-    SpriteList_DeleteAll(param0->unk_00);
-    SpriteList_Delete(param0->unk_00);
+    SpriteList_DeleteAll(clouds->spriteList);
+    SpriteList_Delete(clouds->spriteList);
 }
 
-static void ov9_0224B124(SysTask *param0, void *param1)
+static void SkyboxCloudSpritesUpdateTask(SysTask *sysTask, void *sysTaskParam)
 {
-    UnkStruct_ov9_0224B064 *v0 = param1;
-    SpriteList_Update(v0->unk_00);
+    DistWorldSkyboxClouds *clouds = sysTaskParam;
+    SpriteList_Update(clouds->spriteList);
 }
 
-static Sprite *ov9_0224B130(UnkStruct_ov9_0224B064 *param0, const VecFx32 *param1, u32 param2, u32 param3, u32 param4, u32 param5, int param6, int param7)
+static Sprite *CreateSkyboxCloudSprite(DistWorldSkyboxClouds *clouds, const VecFx32 *pos, u32 charResID, u32 plttResID, u32 cellResID, u32 animResID, int headerPriority, int listPriority)
 {
-    SpriteResourcesHeader v0;
-    SpriteListTemplate v1;
-    Sprite *v2;
+    SpriteResourcesHeader resHeader;
+    SpriteResourcesHeader_Init(
+        &resHeader,
+        SKYBOX_CLOUD_RESOURCE_BASE_ID + charResID,
+        SKYBOX_CLOUD_RESOURCE_BASE_ID + plttResID,
+        SKYBOX_CLOUD_RESOURCE_BASE_ID + cellResID,
+        SKYBOX_CLOUD_RESOURCE_BASE_ID + animResID,
+        RESOURCE_NONE,
+        RESOURCE_NONE,
+        FALSE,
+        headerPriority,
+        clouds->charResColl,
+        clouds->plttResColl,
+        clouds->cellResColl,
+        clouds->animResColl,
+        NULL,
+        NULL);
 
-    SpriteResourcesHeader_Init(&v0, ((param2) + 0xff), ((param3) + 0xff), ((param4) + 0xff), ((param5) + 0xff), 0xffffffff, 0xffffffff, 0, param6, param0->unk_190, param0->unk_194, param0->unk_198, param0->unk_19C, NULL, NULL);
+    SpriteListTemplate spriteListTemplate;
+    spriteListTemplate.list = clouds->spriteList;
+    spriteListTemplate.resourceData = &resHeader;
+    spriteListTemplate.position = *pos;
+    spriteListTemplate.priority = listPriority;
+    spriteListTemplate.vramType = NNS_G2D_VRAM_TYPE_2DMAIN;
+    spriteListTemplate.heapID = HEAP_ID_FIELD1;
 
-    v1.list = param0->unk_00;
-    v1.resourceData = &v0;
-    v1.position = *param1;
-    v1.priority = param7;
-    v1.vramType = NNS_G2D_VRAM_TYPE_2DMAIN;
-    v1.heapID = HEAP_ID_FIELD1;
+    Sprite *sprite = SpriteList_Add(&spriteListTemplate);
+    GF_ASSERT(sprite != NULL);
 
-    v2 = SpriteList_Add(&v1);
-    GF_ASSERT(v2 != NULL);
-
-    return v2;
+    return sprite;
 }
 
-static void ov9_0224B1B4(DistWorldSystem *param0, FieldEffectManager *param1, UnkStruct_ov9_0224B064 *param2)
+static void InitSkyboxCloudAnimators(DistWorldSystem *system, FieldEffectManager *fieldEffMan, DistWorldSkyboxClouds *clouds)
 {
-    int v0;
-    UnkStruct_ov9_0224B1B4 v1;
-    OverworldAnimManager *v2;
+    system->skyboxKind = SKYBOX_KIND_NORMAL;
 
-    param0->unk_1EC2 = 0;
+    if (DistWorldSystem_GetMapHeaderID(system) == MAP_HEADER_DISTORTION_WORLD_GIRATINA_ROOM) {
+        VarsFlags *varsFlags = SaveData_GetVarsFlags(system->fieldSystem->saveData);
+        u32 distWorldProgress = SystemVars_GetDistortionWorldProgress(varsFlags);
 
-    if (DistWorldSystem_GetMapHeaderID(param0) == 582) {
-        VarsFlags *v3 = SaveData_GetVarsFlags(param0->fieldSystem->saveData);
-        u32 v4 = SystemVars_GetDistortionWorldProgress(v3);
-
-        if (v4 >= 10) {
-            if (v4 <= 12) {
-                param0->unk_1EC2 = 1;
-            } else if (v4 <= 13) {
-                param0->unk_1EC2 = 2;
+        if (distWorldProgress >= 10) {
+            if (distWorldProgress <= 12) {
+                system->skyboxKind = SKYBOX_KIND_GIRATINA_ROOM;
+            } else if (distWorldProgress <= 13) {
+                system->skyboxKind = SKYBOX_KIND_GIRATINA_ROOM_DARK;
             }
         }
     }
 
-    v1.unk_00 = param0;
-    v1.unk_34 = param2;
+    DistWorldSkyboxCloudAnimatorUserData userData;
+    userData.system = system;
+    userData.clouds = clouds;
 
-    for (v0 = 0; v0 < 9; v0++) {
-        v1.unk_04 = Unk_ov9_02253680[v0];
-        v2 = FieldEffectManager_InitAnimManager(param1, &Unk_ov9_02251508, NULL, 0, &v1, 0);
+    for (int i = 0; i < SKYBOX_CLOUD_COUNT; i++) {
+        userData.template = sSkyboxCloudsTemplates[i];
+        FieldEffectManager_InitAnimManager(fieldEffMan, &sSkyboxCloudsAnimFuncs, NULL, 0, &userData, 0);
     }
 }
 
-static int ov9_0224B23C(OverworldAnimManager *param0, void *param1)
+static BOOL DistWorldSkyboxCloudAnimator_AnimInit(OverworldAnimManager *animMan, void *context)
 {
-    VecFx32 v0 = { 0, 0, 0 };
-    const UnkStruct_ov9_02251EC8 *v1;
-    const UnkStruct_ov9_0224B1B4 *v2 = OverworldAnimManager_GetUserData(param0);
-    UnkStruct_ov9_0224B2C0 *v3 = param1;
+    VecFx32 pos = { 0, 0, 0 };
+    const DistWorldSkyboxCloudAnimatorUserData *userData = OverworldAnimManager_GetUserData(animMan);
+    DistWorldSkyboxCloudAnimator *animator = context;
 
-    v3->unk_08 = *v2;
-    v3->unk_00 = v3->unk_08.unk_04.unk_08;
-    v3->unk_04 = Unk_ov9_02252C08[v2->unk_00->unk_1EC2][v2->unk_04.unk_04];
+    animator->userData = *userData;
+    animator->rotAngle = animator->userData.template.initialRotAngle;
+    animator->rotAngleDelta = sSkyboxCloudsRotAngleDeltas[userData->system->skyboxKind][userData->template.group];
 
-    v1 = &Unk_ov9_02251EC8[v3->unk_08.unk_04.unk_00];
-    v3->unk_40 = ov9_0224B130(v3->unk_08.unk_34, &v0, v1->unk_00, v1->unk_01, v1->unk_02, v1->unk_03, 3, 0xffff);
+    const DistWorldSkyboxCloudResourceIDs *resIDs = &sSkyboxCloudsResIDs[animator->userData.template.resIDsIndex];
+    animator->sprite = CreateSkyboxCloudSprite(animator->userData.clouds, &pos, resIDs->charResID, resIDs->plttResID, resIDs->cellResID, resIDs->animResID, 3, 0xFFFF);
 
-    Sprite_SetAffineScaleEx(v3->unk_40, &v3->unk_08.unk_04.unk_24, 2);
-    return 1;
+    Sprite_SetAffineScaleEx(animator->sprite, &animator->userData.template.scale, AFFINE_OVERWRITE_MODE_DOUBLE);
+    return TRUE;
 }
 
-static void ov9_0224B2C0(OverworldAnimManager *param0, void *param1)
+static void DistWorldSkyboxCloudAnimator_AnimExit(OverworldAnimManager *animMan, void *context)
 {
-    UnkStruct_ov9_0224B2C0 *v0 = param1;
-    Sprite_Delete(v0->unk_40);
+    DistWorldSkyboxCloudAnimator *animator = context;
+    Sprite_Delete(animator->sprite);
 }
 
-static void ov9_0224B2CC(OverworldAnimManager *param0, void *param1)
+static void DistWorldSkyboxCloudAnimator_AnimTick(OverworldAnimManager *animMan, void *context)
 {
-    fx32 v0, v1, v2;
-    VecFx32 v3;
-    UnkStruct_ov9_0224B2C0 *v4 = param1;
+    DistWorldSkyboxCloudAnimator *animator = context;
+    fx32 expectedRotAngleDelta = sSkyboxCloudsRotAngleDeltas[animator->userData.system->skyboxKind][animator->userData.template.group];
 
-    v2 = Unk_ov9_02252C08[v4->unk_08.unk_00->unk_1EC2][v4->unk_08.unk_04.unk_04];
+    if (expectedRotAngleDelta < animator->rotAngleDelta) {
+        animator->rotAngleDelta -= 0x200;
 
-    if (v2 < v4->unk_04) {
-        v4->unk_04 -= 0x200;
-
-        if (v2 > v4->unk_04) {
-            v4->unk_04 = v2;
+        if (expectedRotAngleDelta > animator->rotAngleDelta) {
+            animator->rotAngleDelta = expectedRotAngleDelta;
         }
-    } else if (v2 > v4->unk_04) {
-        v4->unk_04 += 0x200;
+    } else if (expectedRotAngleDelta > animator->rotAngleDelta) {
+        animator->rotAngleDelta += 0x200;
 
-        if (v2 < v4->unk_04) {
-            v4->unk_04 = v2;
+        if (expectedRotAngleDelta < animator->rotAngleDelta) {
+            animator->rotAngleDelta = expectedRotAngleDelta;
         }
     }
 
-    v1 = v4->unk_08.unk_04.unk_14 + v4->unk_04;
-    ApplyRotationToTargetFx32(&v4->unk_00, v1);
+    fx32 rotAngleDelta = animator->userData.template.baseRotAngleDelta + animator->rotAngleDelta;
+    ApplyRotationToTargetFx32(&animator->rotAngle, rotAngleDelta);
 
-    v0 = v4->unk_00;
-    ApplyRotationToTargetFx32(&v0, v4->unk_08.unk_04.unk_0C);
+    fx32 rotAngle = animator->rotAngle;
+    ApplyRotationToTargetFx32(&rotAngle, animator->userData.template.rotAngleOffset);
 
-    v3 = v4->unk_08.unk_04.unk_18;
+    VecFx32 pos = animator->userData.template.basePos;
+    pos.x += SKYBOX_CLOUD_VIEW_RECT_X + CalcCosineDegrees(animator->rotAngle / FX32_ONE) * animator->userData.template.distToCenter;
+    pos.y += SKYBOX_CLOUD_VIEW_RECT_Y + CalcSineDegrees(animator->rotAngle / FX32_ONE) * animator->userData.template.distToCenter;
 
-    v3.x += (FX32_ONE * 0) + (CalcCosineDegrees((v4->unk_00) / FX32_ONE) * v4->unk_08.unk_04.unk_10);
-    v3.y += (FX32_ONE * -512) + (CalcSineDegrees((v4->unk_00) / FX32_ONE) * v4->unk_08.unk_04.unk_10);
-
-    OverworldAnimManager_SetPosition(param0, &v3);
-    Sprite_SetPosition(v4->unk_40, &v3);
-    Sprite_SetAffineZRotation(v4->unk_40, CalcAngleRotationIdx_Wraparound((v0) / FX32_ONE));
+    OverworldAnimManager_SetPosition(animMan, &pos);
+    Sprite_SetPosition(animator->sprite, &pos);
+    Sprite_SetAffineZRotation(animator->sprite, CalcAngleRotationIdx_Wraparound(rotAngle / FX32_ONE));
 }
 
-static void ov9_0224B3A4(OverworldAnimManager *param0, void *param1)
+static void DistWorldSkyboxCloudAnimator_AnimRender(OverworldAnimManager *animMan, void *context)
 {
-    return;
 }
 
-static const OverworldAnimManagerFuncs Unk_ov9_02251508 = {
-    sizeof(UnkStruct_ov9_0224B2C0),
-    ov9_0224B23C,
-    ov9_0224B2C0,
-    ov9_0224B2CC,
-    ov9_0224B3A4
+static const OverworldAnimManagerFuncs sSkyboxCloudsAnimFuncs = {
+    sizeof(DistWorldSkyboxCloudAnimator),
+    DistWorldSkyboxCloudAnimator_AnimInit,
+    DistWorldSkyboxCloudAnimator_AnimExit,
+    DistWorldSkyboxCloudAnimator_AnimTick,
+    DistWorldSkyboxCloudAnimator_AnimRender
 };
 
 static void ov9_0224B3A8(DistWorldSystem *param0)
@@ -4027,7 +4009,7 @@ static void ov9_0224BF8C(NARC *distortionWorldNARC, UnkStruct_ov9_0224BFE0 *para
 static void ov9_0224BFBC(DistWorldSystem *param0)
 {
     GF_ASSERT(param0->unk_169C.unk_00.unk_08 == NULL);
-    ov9_0224BF8C(param0->distortionWorldNARC, &param0->unk_169C.unk_00);
+    ov9_0224BF8C(param0->mainNARC, &param0->unk_169C.unk_00);
 }
 
 static void ov9_0224BFE0(UnkStruct_ov9_0224BFE0 *param0)
@@ -4100,10 +4082,10 @@ static void DistWorldFile_Load(DistWorldSystem *system, DistWorldFile *file, enu
         DistWorldFileHeader *header;
 
         narcIndex = FindNARCIndex(system, mapHeaderID);
-        narcMemberSize = NARC_GetMemberSize(system->distortionWorldNARC, narcIndex);
+        narcMemberSize = NARC_GetMemberSize(system->mainNARC, narcIndex);
 
         file->buffer = Heap_AllocAtEnd(HEAP_ID_FIELD1, narcMemberSize);
-        NARC_ReadWholeMember(system->distortionWorldNARC, narcIndex, file->buffer);
+        NARC_ReadWholeMember(system->mainNARC, narcIndex, file->buffer);
 
         header = file->buffer;
         file->header = header;
@@ -4451,10 +4433,10 @@ static void LoadFloatingPlatformTerrainAttributes(DistWorldSystem *system, u32 d
         Heap_Free(floatingPlatformMan->terrainAttributes);
     }
 
-    floatingPlatformMan->terrainAttributesSize = NARC_GetMemberSize(system->distortionWorldAttrNARC, distortionWorldAttrID);
+    floatingPlatformMan->terrainAttributesSize = NARC_GetMemberSize(system->attrNARC, distortionWorldAttrID);
     floatingPlatformMan->terrainAttributes = Heap_AllocAtEnd(HEAP_ID_FIELD1, floatingPlatformMan->terrainAttributesSize);
 
-    NARC_ReadWholeMember(system->distortionWorldAttrNARC, distortionWorldAttrID, floatingPlatformMan->terrainAttributes);
+    NARC_ReadWholeMember(system->attrNARC, distortionWorldAttrID, floatingPlatformMan->terrainAttributes);
 }
 
 static u16 GetCurrentFloatingPlatformTileAttributesRelative(DistWorldSystem *system, int tileRelativeVerticalPos, int tileRelativeHorizontalPos)
@@ -4951,9 +4933,8 @@ static void ov9_0224CC08(SysTask *param0, void *param1)
     }
 }
 
-static void ov9_0224CC4C(DistWorldSystem *param0)
+static void Dummy0224CC4C(DistWorldSystem *system)
 {
-    UnkStruct_ov9_0224CBD8 *v0 = &param0->unk_1CD0;
 }
 
 static void ov9_0224CC50(DistWorldSystem *param0, DistWorldMovingPlatformPropAnimator *param1, u32 param2)
@@ -7877,105 +7858,92 @@ BOOL ov9_0224F6EC(UnkStruct_ov9_0224F6EC *param0)
     return v0;
 }
 
-static void ov9_0224F724(DistWorldSystem *param0)
+static void InitSkyboxBackgroundDarkness(DistWorldSystem *system)
 {
-    UnkStruct_ov9_0224ADC0 *v0 = &param0->unk_1D00;
-    u32 v1 = DistWorldSystem_GetMapHeaderID(param0);
+    DistWorldSkyboxBackground *skyboxBg = &system->skyboxBg;
+    u32 mapHeaderID = DistWorldSystem_GetMapHeaderID(system);
 
-    if (v1 == 582) {
-        VarsFlags *v2 = SaveData_GetVarsFlags(param0->fieldSystem->saveData);
+    if (mapHeaderID == MAP_HEADER_DISTORTION_WORLD_GIRATINA_ROOM) {
+        VarsFlags *varsFlags = SaveData_GetVarsFlags(system->fieldSystem->saveData);
 
-        if (SystemVars_GetDistortionWorldProgress(v2) == 13) {
-            v0->darknessCalculationDisabled = TRUE;
-            v0->darknessLevel = 12;
+        if (SystemVars_GetDistortionWorldProgress(varsFlags) == 13) {
+            skyboxBg->darknessCalculationDisabled = TRUE;
+            skyboxBg->darknessLevel = SKYBOX_BACKGROUND_MAX_DARKNESS;
         }
     }
 
-    v0->unk_02 = -1;
+    skyboxBg->renderedDarknessLevel = -1;
 }
 
-static void ov9_0224F760(DistWorldSystem *param0)
+static void Dummy0224F760(DistWorldSystem *system)
 {
-    return;
 }
 
-static void ov9_0224F764(DistWorldSystem *param0)
+static void RecalculateSkyboxBackgroundDarkness(DistWorldSystem *system)
 {
-    UnkStruct_ov9_0224ADC0 *v0 = &param0->unk_1D00;
-    PlayerAvatar *playerAvatar = param0->fieldSystem->playerAvatar;
-    const VecFx32 *v2 = PlayerAvatar_PosVector(playerAvatar);
+    DistWorldSkyboxBackground *skyboxBg = &system->skyboxBg;
+    PlayerAvatar *playerAvatar = system->fieldSystem->playerAvatar;
+    const VecFx32 *playerPos = PlayerAvatar_PosVector(playerAvatar);
 
-    if (v0->darknessCalculationDisabled == FALSE) {
-        v0->darknessLevel = (v2->y - ((65 << 4) * FX32_ONE)) / ((((289 - 65) << 4) * FX32_ONE) / 12);
+    if (skyboxBg->darknessCalculationDisabled == FALSE) {
+        skyboxBg->darknessLevel = (playerPos->y - (DISTORTION_WORLD_MIN_Y << 4) * FX32_ONE) / ((((DISTORTION_WORLD_MAX_Y - DISTORTION_WORLD_MIN_Y) << 4) * FX32_ONE) / 12);
     }
 
-    if (v0->darknessLevel < 0) {
-        v0->darknessLevel = 0;
-    } else if (v0->darknessLevel > 12) {
-        v0->darknessLevel = 12;
+    if (skyboxBg->darknessLevel < SKYBOX_BACKGROUND_MIN_DARKNESS) {
+        skyboxBg->darknessLevel = SKYBOX_BACKGROUND_MIN_DARKNESS;
+    } else if (skyboxBg->darknessLevel > SKYBOX_BACKGROUND_MAX_DARKNESS) {
+        skyboxBg->darknessLevel = SKYBOX_BACKGROUND_MAX_DARKNESS;
     }
 
-    if (v0->darknessLevel != v0->unk_02) {
-        int v3 = 0;
+    if (skyboxBg->darknessLevel != skyboxBg->renderedDarknessLevel) {
+        int i = 0;
 
         do {
-            CalculateTintedColor(
-                v0->unk_08[v3], (4 | (4 << 5) | (8 << 10)), v0->darknessLevel, &v0->unk_28[v3]);
-            v3++;
-        } while (v3 < 16);
+            CalculateTintedColor(skyboxBg->basePalette[i], GX_RGB(4, 4, 8), skyboxBg->darknessLevel, &skyboxBg->currPalette[i]);
+            i++;
+        } while (i < PALETTE_SIZE);
 
-        v3 = 0;
+        i = 0;
 
         do {
-            CalculateTintedColor(
-                v0->unk_48[v3], (6 | (6 << 5) | (8 << 10)), v0->darknessLevel, &v0->unk_E8[v3]);
-            v3++;
-        } while (v3 < (16 * 5));
+            CalculateTintedColor(skyboxBg->baseCloudPalettes[i], GX_RGB(6, 6, 8), skyboxBg->darknessLevel, &skyboxBg->currCloudPalettes[i]);
+            i++;
+        } while (i < PALETTE_SIZE * SKYBOX_CLOUD_PALETTE_COUNT);
 
-        v0->unk_04 = 1;
-        v0->unk_02 = v0->darknessLevel;
+        skyboxBg->dirty = TRUE;
+        skyboxBg->renderedDarknessLevel = skyboxBg->darknessLevel;
     }
 }
 
-static void ov9_0224F804(DistWorldSystem *param0)
+static void UpdateSkyboxPalettes(DistWorldSystem *system)
 {
-    UnkStruct_ov9_0224ADC0 *v0 = &param0->unk_1D00;
+    DistWorldSkyboxBackground *skyboxBg = &system->skyboxBg;
 
-    if (v0->unk_04 == 1) {
-        {
-            Bg_LoadPalette(
-                2, v0->unk_28, 32, 32 * 0);
-        }
+    if (skyboxBg->dirty == TRUE) {
+        Bg_LoadPalette(BG_LAYER_MAIN_2, skyboxBg->currPalette, PALETTE_SIZE_BYTES, 0);
 
-        {
-            u32 v1;
-            UnkStruct_ov9_0224B064 *v2;
-            SpriteResource *v3;
-            const NNSG2dImagePaletteProxy *v4;
+        DistWorldSkyboxClouds *clouds = &system->skyboxClouds;
+        SpriteResource *plttRes = clouds->plttRes;
+        const NNSG2dImagePaletteProxy *plttProxy = SpriteTransfer_GetPaletteProxy(plttRes, NULL);
+        u32 plttLocation = NNS_G2dGetImagePaletteLocation(plttProxy, NNS_G2D_VRAM_TYPE_2DMAIN);
 
-            v2 = &param0->unk_1A8;
-            v3 = v2->unk_1BC[0];
-            v4 = SpriteTransfer_GetPaletteProxy(v3, NULL);
-            v1 = NNS_G2dGetImagePaletteLocation(v4, NNS_G2D_VRAM_TYPE_2DMAIN);
+        DC_FlushRange(skyboxBg->currCloudPalettes, PALETTE_SIZE_BYTES * SKYBOX_CLOUD_PALETTE_COUNT);
+        GX_LoadOBJPltt(skyboxBg->currCloudPalettes, plttLocation, PALETTE_SIZE_BYTES * SKYBOX_CLOUD_PALETTE_COUNT);
 
-            DC_FlushRange((void *)v0->unk_E8, 32 * 5);
-            GX_LoadOBJPltt(v0->unk_E8, v1, 32 * 5);
-        }
-
-        v0->unk_04 = 0;
+        skyboxBg->dirty = FALSE;
     }
 }
 
-static void SetSkyboxDarknessCalculationDisabled(DistWorldSystem *system, BOOL darknessCalculationDisabled)
+static void SetSkyboxBackgroundDarknessCalculationDisabled(DistWorldSystem *system, BOOL darknessCalculationDisabled)
 {
-    UnkStruct_ov9_0224ADC0 *v0 = &system->unk_1D00;
-    v0->darknessCalculationDisabled = darknessCalculationDisabled;
+    DistWorldSkyboxBackground *skyboxBg = &system->skyboxBg;
+    skyboxBg->darknessCalculationDisabled = darknessCalculationDisabled;
 }
 
-static void SetSkyboxDarknessLevel(DistWorldSystem *system, s16 darknessLevel)
+static void SetSkyboxBackgroundDarknessLevel(DistWorldSystem *system, s16 darknessLevel)
 {
-    UnkStruct_ov9_0224ADC0 *v0 = &system->unk_1D00;
-    v0->darknessLevel = darknessLevel;
+    DistWorldSkyboxBackground *skyboxBg = &system->skyboxBg;
+    skyboxBg->darknessLevel = darknessLevel;
 }
 
 static void CalculateTintedColor(GXRgb baseRawColor, GXRgb tintRawColor, u16 tintLevel, GXRgb *outColor)
@@ -8918,10 +8886,10 @@ static int EventCmdPlayGiratinaRoomAppearance_InitSpriteAndSkybox(DistWorldSyste
         EventCmdPlayGiratinaRoomAppearanceRunData_UpdateSpritePalette(runData);
         system->playingGiratinaRoomAppearance = TRUE;
 
-        runData->skyboxDarkness = SKYBOX_MIN_DARKNESS;
-        SetSkyboxDarknessCalculationDisabled(system, TRUE);
+        runData->skyboxDarkness = SKYBOX_BACKGROUND_MIN_DARKNESS;
+        SetSkyboxBackgroundDarknessCalculationDisabled(system, TRUE);
 
-        system->unk_1EC2 = 2;
+        system->skyboxKind = SKYBOX_KIND_GIRATINA_ROOM_DARK;
         Sound_PlayEffect(SEQ_SE_PL_GIRA);
 
         *cmdState = EVENT_CMD_PLAY_GIRATINA_ROOM_APPEARANCE_STATE_DESCEND;
@@ -8940,7 +8908,7 @@ static int EventCmdPlayGiratinaRoomAppearance_Descend(DistWorldSystem *system, F
         runData->skyboxDarkness = GIRATINA_ROOM_PLAY_APPEARANCE_SKYBOX_DARKNESS_TARGET;
     }
 
-    SetSkyboxDarknessLevel(system, runData->skyboxDarkness / FX32_ONE);
+    SetSkyboxBackgroundDarknessLevel(system, runData->skyboxDarkness / FX32_ONE);
 
     if (runData->giratinaSpritePosOffset.y >= GIRATINA_ROOM_PLAY_APPEARANCE_DESCEND_Y_SLOW_THRESHOLD) {
         runData->giratinaSpritePosOffset.y -= GIRATINA_ROOM_PLAY_APPEARANCE_DESCEND_Y_FAST_DECREMENT;
@@ -9792,7 +9760,7 @@ static const FloatingPlatformJumpPointHandler sFloatingPlatformJumpPointHandlers
     CreateJumpOnFloatingPlatformTask
 };
 
-static const int Unk_ov9_02251E58[7] = {
+static const int sSkyboxCloudsCharNARCIndexes[SKYBOX_CLOUD_RESOURCE_COUNT] = {
     0x4,
     0x7,
     0xA,
@@ -9802,7 +9770,7 @@ static const int Unk_ov9_02251E58[7] = {
     0x16
 };
 
-static const int Unk_ov9_02251E90[7] = {
+static const int sSkyboxCloudsCellNARCIndexes[SKYBOX_CLOUD_RESOURCE_COUNT] = {
     0x3,
     0x6,
     0x9,
@@ -9812,7 +9780,7 @@ static const int Unk_ov9_02251E90[7] = {
     0x15
 };
 
-static const int Unk_ov9_02251EAC[7] = {
+static const int sSkyboxCloudsAnimNARCIndexes[SKYBOX_CLOUD_RESOURCE_COUNT] = {
     0x5,
     0x8,
     0xB,
@@ -9822,117 +9790,117 @@ static const int Unk_ov9_02251EAC[7] = {
     0x17
 };
 
-static const int Unk_ov9_02251210[1] = {
+static const int sSkyboxCloudsPlttNARCIndexes[1] = {
     0x18
 };
 
-static const UnkStruct_ov9_02251EC8 Unk_ov9_02251EC8[7] = {
-    { 0x0, 0x0, 0x0, 0x0 },
-    { 0x1, 0x0, 0x1, 0x1 },
-    { 0x2, 0x0, 0x2, 0x2 },
-    { 0x3, 0x0, 0x3, 0x3 },
-    { 0x4, 0x0, 0x4, 0x4 },
-    { 0x5, 0x0, 0x5, 0x5 },
-    { 0x6, 0x0, 0x6, 0x6 }
+static const DistWorldSkyboxCloudResourceIDs sSkyboxCloudsResIDs[SKYBOX_CLOUD_RESOURCE_COUNT] = {
+    { .charResID = 0x0, .plttResID = 0x0, .cellResID = 0x0, .animResID = 0x0 },
+    { .charResID = 0x1, .plttResID = 0x0, .cellResID = 0x1, .animResID = 0x1 },
+    { .charResID = 0x2, .plttResID = 0x0, .cellResID = 0x2, .animResID = 0x2 },
+    { .charResID = 0x3, .plttResID = 0x0, .cellResID = 0x3, .animResID = 0x3 },
+    { .charResID = 0x4, .plttResID = 0x0, .cellResID = 0x4, .animResID = 0x4 },
+    { .charResID = 0x5, .plttResID = 0x0, .cellResID = 0x5, .animResID = 0x5 },
+    { .charResID = 0x6, .plttResID = 0x0, .cellResID = 0x6, .animResID = 0x6 }
 };
 
-static const UnkStruct_ov9_02253680 Unk_ov9_02253680[9] = {
+static const DistWorldSkyboxCloudTemplate sSkyboxCloudsTemplates[SKYBOX_CLOUD_COUNT] = {
     {
-        0x6,
-        0x3,
-        (FX32_ONE * 0),
-        (FX32_ONE * 135),
-        0x68,
-        0x1400,
-        { (FX32_ONE * 128), (FX32_ONE * (96 + 12)), 0x0 },
-        { FX32_ONE * 2, FX32_ONE * 2, FX32_ONE * 2 },
+        .resIDsIndex = 0x6,
+        .group = 0x3,
+        .initialRotAngle = FX32_ONE * 0,
+        .rotAngleOffset = FX32_ONE * 135,
+        .distToCenter = 0x68,
+        .baseRotAngleDelta = FX32_CONST(1.25),
+        .basePos = { FX32_ONE * 128, FX32_ONE * 108, 0x0 },
+        .scale = { FX32_ONE * 2, FX32_ONE * 2, FX32_ONE * 2 },
     },
     {
-        0x6,
-        0x3,
-        (FX32_ONE * 180),
-        (FX32_ONE * 135),
-        0x68,
-        0x1400,
-        { (FX32_ONE * 128), (FX32_ONE * (96 + 12)), 0x0 },
-        { FX32_ONE * 2, FX32_ONE * 2, FX32_ONE * 2 },
+        .resIDsIndex = 0x6,
+        .group = 0x3,
+        .initialRotAngle = FX32_ONE * 180,
+        .rotAngleOffset = FX32_ONE * 135,
+        .distToCenter = 0x68,
+        .baseRotAngleDelta = FX32_CONST(1.25),
+        .basePos = { FX32_ONE * 128, FX32_ONE * 108, 0x0 },
+        .scale = { FX32_ONE * 2, FX32_ONE * 2, FX32_ONE * 2 },
     },
     {
-        0x6,
-        0x3,
-        (FX32_ONE * 90),
-        (FX32_ONE * 135),
-        0x68,
-        0x1400,
-        { (FX32_ONE * 128), (FX32_ONE * (96 + 12)), 0x0 },
-        { FX32_ONE * 2, FX32_ONE * 2, FX32_ONE * 2 },
+        .resIDsIndex = 0x6,
+        .group = 0x3,
+        .initialRotAngle = FX32_ONE * 90,
+        .rotAngleOffset = FX32_ONE * 135,
+        .distToCenter = 0x68,
+        .baseRotAngleDelta = FX32_CONST(1.25),
+        .basePos = { FX32_ONE * 128, FX32_ONE * 108, 0x0 },
+        .scale = { FX32_ONE * 2, FX32_ONE * 2, FX32_ONE * 2 },
     },
     {
-        0x6,
-        0x3,
-        (FX32_ONE * 270),
-        (FX32_ONE * 135),
-        0x68,
-        0x1400,
-        { (FX32_ONE * 128), (FX32_ONE * (96 + 12)), 0x0 },
-        { FX32_ONE * 2, FX32_ONE * 2, FX32_ONE * 2 },
+        .resIDsIndex = 0x6,
+        .group = 0x3,
+        .initialRotAngle = FX32_ONE * 270,
+        .rotAngleOffset = FX32_ONE * 135,
+        .distToCenter = 0x68,
+        .baseRotAngleDelta = FX32_CONST(1.25),
+        .basePos = { FX32_ONE * 128, FX32_ONE * 108, 0x0 },
+        .scale = { FX32_ONE * 2, FX32_ONE * 2, FX32_ONE * 2 },
     },
     {
-        0x1,
-        0x2,
-        (FX32_ONE * 0),
-        (FX32_ONE * 90),
-        0x3C,
-        0x1000,
-        { (FX32_ONE * 128), (FX32_ONE * (96 + 32)), 0x0 },
-        { FX32_ONE, FX32_ONE, FX32_ONE },
+        .resIDsIndex = 0x1,
+        .group = 0x2,
+        .initialRotAngle = FX32_ONE * 0,
+        .rotAngleOffset = FX32_ONE * 90,
+        .distToCenter = 0x3C,
+        .baseRotAngleDelta = FX32_CONST(1),
+        .basePos = { FX32_ONE * 128, FX32_ONE * 128, 0x0 },
+        .scale = { FX32_ONE, FX32_ONE, FX32_ONE },
     },
     {
-        0x2,
-        0x2,
-        (FX32_ONE * 180),
-        (FX32_ONE * 90),
-        0x3C,
-        0x1000,
-        { (FX32_ONE * 128), (FX32_ONE * (96 + 32)), 0x0 },
-        { FX32_ONE, FX32_ONE, FX32_ONE },
+        .resIDsIndex = 0x2,
+        .group = 0x2,
+        .initialRotAngle = FX32_ONE * 180,
+        .rotAngleOffset = FX32_ONE * 90,
+        .distToCenter = 0x3C,
+        .baseRotAngleDelta = FX32_CONST(1),
+        .basePos = { FX32_ONE * 128, FX32_ONE * 128, 0x0 },
+        .scale = { FX32_ONE, FX32_ONE, FX32_ONE },
     },
     {
-        0x3,
-        0x1,
-        (FX32_ONE * 315),
-        (FX32_ONE * 90),
-        0x2A,
-        0xC00,
-        { (FX32_ONE * 128), (FX32_ONE * (96 + 32)), 0x0 },
-        { FX32_ONE, FX32_ONE, FX32_ONE },
+        .resIDsIndex = 0x3,
+        .group = 0x1,
+        .initialRotAngle = FX32_ONE * 315,
+        .rotAngleOffset = FX32_ONE * 90,
+        .distToCenter = 0x2A,
+        .baseRotAngleDelta = FX32_CONST(0.75),
+        .basePos = { FX32_ONE * 128, FX32_ONE * 128, 0x0 },
+        .scale = { FX32_ONE, FX32_ONE, FX32_ONE },
     },
     {
-        0x4,
-        0x1,
-        (FX32_ONE * 135),
-        (FX32_ONE * 90),
-        0x2A,
-        0xC00,
-        { (FX32_ONE * 128), (FX32_ONE * (96 + 32)), 0x0 },
-        { FX32_ONE, FX32_ONE, FX32_ONE },
+        .resIDsIndex = 0x4,
+        .group = 0x1,
+        .initialRotAngle = FX32_ONE * 135,
+        .rotAngleOffset = FX32_ONE * 90,
+        .distToCenter = 0x2A,
+        .baseRotAngleDelta = FX32_CONST(0.75),
+        .basePos = { FX32_ONE * 128, FX32_ONE * 128, 0x0 },
+        .scale = { FX32_ONE, FX32_ONE, FX32_ONE },
     },
     {
-        0x5,
-        0x0,
-        (FX32_ONE * 0),
-        (FX32_ONE * 90),
-        0x0,
-        0x800,
-        { (FX32_ONE * 128), (FX32_ONE * (96 + 32)), 0x0 },
-        { FX32_ONE, FX32_ONE, FX32_ONE },
+        .resIDsIndex = 0x5,
+        .group = 0x0,
+        .initialRotAngle = FX32_ONE * 0,
+        .rotAngleOffset = FX32_ONE * 90,
+        .distToCenter = 0x0,
+        .baseRotAngleDelta = FX32_CONST(0.5),
+        .basePos = { FX32_ONE * 128, FX32_ONE * 128, 0x0 },
+        .scale = { FX32_ONE, FX32_ONE, FX32_ONE },
     }
 };
 
-static const fx32 Unk_ov9_02252C08[3][4] = {
-    { 0x0, 0x0, 0x0, 0x0 },
-    { 0x800, 0x1800, 0x3000, 0x5000 },
-    { -0x800 * 4, -0xc00 * 6, -0x1000 * 7, -0x1400 * 10 },
+static const fx32 sSkyboxCloudsRotAngleDeltas[SKYBOX_KIND_COUNT][SKYBOX_CLOUD_GROUP_COUNT] = {
+    { FX32_CONST(0), FX32_CONST(0), FX32_CONST(0), FX32_CONST(0) },
+    { FX32_CONST(0.5), FX32_CONST(1.5), FX32_CONST(3), FX32_CONST(5) },
+    { FX32_CONST(-2), FX32_CONST(-4.5), FX32_CONST(-7), FX32_CONST(-12.5) },
 };
 
 static const u32 sProp3DModelNARCIndexByKind[PROP_KIND_COUNT] = {
