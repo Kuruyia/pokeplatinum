@@ -17061,7 +17061,7 @@
                                                                       69](Sprite_GetAnimateFlag,func) found in global src_sprite.c.o
                                                                   65](ov5_021D5CAC,func) found in local src_overlay005_ov5_021D5BC0.c.o
                                                                   65](ov5_021D5C80,func) found in local src_overlay005_ov5_021D5BC0.c.o
-                                                                   66](sub_0205A0A0,func) found in global src_field_comm_manager.c.o
+                                                                   66](FieldCommManager_PauseUndergroundResources,func) found in global src_field_comm_manager.c.o
                                                                     67](UndergroundMan_PauseResources,func) found in global src_underground_manager.c.o
                                                                      68](UndergroundRecords_ForceExitTrainerCase,func) found in global src_underground_records.c.o
                                                                       69](UndergroundRecords_ExitTrainerCase,func) found in local src_underground_records.c.o
@@ -17092,7 +17092,7 @@
                                                                       69](.bss,section) found in local src_underground_manager.c.o
                                                                     67](.bss,section) found in local src_field_comm_manager.c.o
                                                                   65](ov5_021D5C54,func) found in local src_overlay005_ov5_021D5BC0.c.o
-                                                                   66](sub_0205A0BC,func) found in global src_field_comm_manager.c.o
+                                                                   66](FieldCommManager_UnpauseUndergroundResources,func) found in global src_field_comm_manager.c.o
                                                                     67](UndergroundMan_UnpauseResources,func) found in global src_underground_manager.c.o
                                                                      68](CommPlayerMan_Restart,func) found in global src_comm_player_manager.c.o
                                                                       69](CommPlayer_InitPersonal,func) found in global src_comm_player_manager.c.o
@@ -17784,7 +17784,7 @@
                                                                  64](sIndoorsEdgeMarkings,object) found in local src_overlay005_area_data.c.o
                                                                  64](@12811,object) found in local src_overlay005_area_data.c.o
                                                                 63](SecretBase_LoadProps,func) found in global src_overlay005_secret_base_props.c.o
-                                                                 64](FieldCommMan_GetCurrentOccupiedSecretBase,func) found in global src_field_comm_manager.c.o
+                                                                 64](FieldCommManager_GetCurrentOccupiedSecretBase,func) found in global src_field_comm_manager.c.o
                                                                   65](UndergroundMan_GetCurrentOccupiedSecretBase,func) found in global src_underground_manager.c.o
                                                                    66](SecretBases_GetCurrentOccupiedBase,func) found in global src_underground_secret_bases.c.o
                                                                  64](UndergroundMan_GetSecretBaseXCoordinate,func) found in global src_underground_manager.c.o
@@ -19956,7 +19956,7 @@
                                                              60](UndergroundMapTransition_ExitStartTask,func) found in local src_underground_map_transition.c.o
                                                              60](UndergroundMapTransition_ExitArriveTask,func) found in local src_underground_map_transition.c.o
                                                            58](CommManUnderground_InitUnderground,func) found in global src_underground_comm_manager.c.o
-                                                            59](FieldCommMan_Get,func) found in global src_field_comm_manager.c.o
+                                                            59](FieldCommManager_Get,func) found in global src_field_comm_manager.c.o
                                                             59](CommManager_StartUnderground,func) found in global src_comm_manager.c.o
                                                              60](CommTask_StartUnderground,func) found in local src_comm_manager.c.o
                                                               61](CommTask_WaitUndergroundServer,func) found in local src_comm_manager.c.o
@@ -19973,7 +19973,7 @@
                                                                    66](CommTask_ConnectingUndergroundClient,func) found in local src_comm_manager.c.o
                                                                     67](CommTask_ResetUndergroundServer,func) found in local src_comm_manager.c.o
                                                                      68](CommTask_InitUndergroundServer,func) found in local src_comm_manager.c.o
-                                                            59](FieldCommMan_Init,func) found in global src_field_comm_manager.c.o
+                                                            59](FieldCommManager_Init,func) found in global src_field_comm_manager.c.o
                                                              60](CommFieldCmd_Init,func) found in global src_unk_02099500.c.o
                                                               61](Unk_020F68A4,object) found in local src_unk_02099500.c.o
                                                                62](CommPacketSizeOf_Variable,func) found in global src_unk_02032798.c.o
@@ -20049,7 +20049,7 @@
                                                                  64](UndergroundMan_ClearCurrentSysTaskInfo,func) found in global src_underground_manager.c.o
                                                                 63](SecretBases_EndFlagRankUpTask,func) found in local src_underground_secret_bases.c.o
                                                                62](SecretBases_ProcessFlagRankUp,func) found in global src_underground_secret_bases.c.o
-                                                               62](sub_02059D0C,func) found in global src_field_comm_manager.c.o
+                                                               62](FieldCommManager_UpdateBattleRoomMovement,func) found in global src_field_comm_manager.c.o
                                                                62](sub_02059180,func) found in global src_comm_player_manager.c.o
                                                                62](UndergroundPlayer_ProcessHeldFlagOwnerInfoAck,func) found in global src_underground_player.c.o
                                                                62](UndergroundPlayer_GetHeldFlagInfoBuffer,func) found in global src_underground_player.c.o
@@ -20068,8 +20068,8 @@
                                                                 63](UndergroundPC_ResumeFieldSystem,func) found in local src_underground_pc.c.o
                                                                  64](CommPlayerMan_ResumeFieldSystemWithContextBit,func) found in global src_comm_player_manager.c.o
                                                                62](UndergroundPC_ProcessTakeFlagAttempt,func) found in global src_underground_pc.c.o
-                                                               62](sub_02059EBC,func) found in global src_field_comm_manager.c.o
-                                                               62](sub_02059EAC,func) found in global src_field_comm_manager.c.o
+                                                               62](FieldCommManager_GetTrainerCase,func) found in global src_field_comm_manager.c.o
+                                                               62](FieldCommManager_SetTrainerCaseCopiedFlag,func) found in global src_field_comm_manager.c.o
                                                                62](CommPacketSizeOf_SecretBaseCreateEvent,func) found in global src_underground_secret_bases.c.o
                                                                62](SecretBases_ProcessBaseCreateEvent,func) found in global src_underground_secret_bases.c.o
                                                                 63](UndergroundMan_GetCommonTextPrinter,func) found in global src_underground_manager.c.o
@@ -21123,7 +21123,7 @@
                                                                            74](UndergroundTextPrinter_Free,func) found in global src_underground_text_printer.c.o
                                                                          72](CommManager_EndUnderground,func) found in global src_comm_manager.c.o
                                                                           73](CommManager_EndConnectionUnderground,func) found in local src_comm_manager.c.o
-                                                                         72](FieldCommMan_Delete,func) found in global src_field_comm_manager.c.o
+                                                                         72](FieldCommManager_Delete,func) found in global src_field_comm_manager.c.o
                                                                        70](FieldTask_ChangeMapToLocation,func) found in global src_field_map_change.c.o
                                                                     67](UndergroundMenu_HandleTrapSelectedMenu,func) found in local src_underground_menus.c.o
                                                                      68](Underground_SendPlacedTrap,func) found in global src_underground_traps.c.o
@@ -21256,8 +21256,8 @@
                                                                  64](UndergroundMan_SetLeftUndergroundMessage,func) found in global src_underground_manager.c.o
                                                                62](CommPacketSizeOf_RecvLocation,func) found in global src_comm_player_manager.c.o
                                                                62](CommPlayer_RecvLocation,func) found in global src_comm_player_manager.c.o
-                                                             60](sub_02059658,func) found in local src_field_comm_manager.c.o
-                                                             60](FieldCommMan_RunTask,func) found in local src_field_comm_manager.c.o
+                                                             60](FieldCommManager_Dummy,func) found in local src_field_comm_manager.c.o
+                                                             60](FieldCommManager_RunTask,func) found in local src_field_comm_manager.c.o
                                                             59](CommManager_SetDoNotConnectUndergroundFlag,func) found in global src_comm_manager.c.o
                                                            58](CommManUnderground_EnterUnderground,func) found in global src_underground_comm_manager.c.o
                                                             59](UndergroundMan_InitAllResources,func) found in global src_underground_manager.c.o
@@ -30419,10 +30419,10 @@
                                             43](FrontierScrCmd_HealParty,func) found in local src_overlay104_frscrcmd.c.o
                                             43](FrontierScrCmd_GetRandom,func) found in local src_overlay104_frscrcmd.c.o
                                             43](FrontierScrCmd_EndCommunication,func) found in local src_overlay104_frscrcmd.c.o
-                                             44](FieldCommMan_EndBattle,func) found in global src_field_comm_manager.c.o
-                                              45](FieldCommMan_SetTask,func) found in local src_field_comm_manager.c.o
-                                              45](Task_EndBattle,func) found in local src_field_comm_manager.c.o
-                                               46](sub_0205A058,func) found in local src_field_comm_manager.c.o
+                                             44](FieldCommManager_EndBattleNoSync,func) found in global src_field_comm_manager.c.o
+                                              45](FieldCommManager_SetTask,func) found in local src_field_comm_manager.c.o
+                                              45](FieldCommTask_EndBattleNoSync,func) found in local src_field_comm_manager.c.o
+                                               46](FieldCommTask_EndConnection,func) found in local src_field_comm_manager.c.o
                                                 47](CommManager_EndBattle,func) found in global src_comm_manager.c.o
                                              44](WaitForCommManIsDeleted,func) found in local src_overlay104_frscrcmd.c.o
                                             43](FrontierScrCmd_ClearReceivedTempDataAllPlayers,func) found in local src_overlay104_frscrcmd.c.o
@@ -30566,8 +30566,8 @@
                                        38](ScrCmd_CheckDidNotCapture,func) found in global src_scrcmd_trainer.c.o
                                         39](CheckPlayerDidNotCaptureWildMon,func) found in global src_field_battle_data_transfer.c.o
                                        38](ScrCmd_2BB,func) found in local src_scrcmd.c.o
-                                        39](sub_020598A0,func) found in global src_field_comm_manager.c.o
-                                         40](sub_0205A018,func) found in local src_field_comm_manager.c.o
+                                        39](FieldCommManager_EndBattleSync,func) found in global src_field_comm_manager.c.o
+                                         40](FieldCommTask_EndBattleSync,func) found in local src_field_comm_manager.c.o
                                         39](ScriptContext_WaitForCommManIsDeleted,func) found in local src_scrcmd.c.o
                                        38](ScrCmd_2BA,func) found in local src_scrcmd.c.o
                                         39](sub_0205BA7C,func) found in global src_unk_0205B33C.c.o
@@ -32501,7 +32501,7 @@
                                            42](ov5_021E1470,func) found in local src_overlay005_ov5_021E135C.c.o
                                        38](ScrCmd_SetCommPlayerDir,func) found in local src_scrcmd.c.o
                                        38](ScrCmd_FieldCommEnterBattleRoom,func) found in local src_scrcmd.c.o
-                                        39](FieldCommMan_EnterBattleRoom,func) found in global src_field_comm_manager.c.o
+                                        39](FieldCommManager_EnterBattleRoom,func) found in global src_field_comm_manager.c.o
                                          40](SetupScreenFadeRegisters,func) found in global src_screen_fade.c.o
                                          40](TrainerCase_Init,func) found in global src_trainer_case.c.o
                                           41](TrainerCase_SetFields,func) found in local src_trainer_case.c.o
@@ -32513,24 +32513,24 @@
                                           41](TrainerCase_SetBadgeData,func) found in local src_trainer_case.c.o
                                          40](FieldCommTask_StartCopyTrainerCase,func) found in local src_field_comm_manager.c.o
                                           41](FieldCommTask_CopyTrainerCase,func) found in local src_field_comm_manager.c.o
-                                           42](sub_02059FB8,func) found in local src_field_comm_manager.c.o
-                                            43](sub_02059F90,func) found in local src_field_comm_manager.c.o
-                                             44](sub_02059F4C,func) found in local src_field_comm_manager.c.o
+                                           42](FieldCommTask_SwitchTransitionType,func) found in local src_field_comm_manager.c.o
+                                            43](FieldCommTask_SwitchTransitionTypeToServerClient,func) found in local src_field_comm_manager.c.o
+                                             44](CommFieldTask_WaitSwitchTransitionTypeAndChangeToBattleRoom,func) found in local src_field_comm_manager.c.o
                                               45](CommSys_TransitionTypeIsParallel,func) found in global src_communication_system.c.o
-                                              45](sub_02059FD4,func) found in local src_field_comm_manager.c.o
-                                               46](sub_02059984,func) found in local src_field_comm_manager.c.o
-                                                47](sub_020599E4,func) found in local src_field_comm_manager.c.o
-                                                 48](sub_02059A70,func) found in local src_field_comm_manager.c.o
+                                              45](FieldCommTask_ChangeToBattleRoom,func) found in local src_field_comm_manager.c.o
+                                               46](FieldCommTask_ReturnToBattleRoom,func) found in local src_field_comm_manager.c.o
+                                                47](FieldCommTask_ReturnToBattleRoom_SendPos,func) found in local src_field_comm_manager.c.o
+                                                 48](FieldCommTask_ReturnToBattleRoom_WaitForScreenFade,func) found in local src_field_comm_manager.c.o
                                                   49](sub_0205928C,func) found in global src_comm_player_manager.c.o
                                                    50](CommType_MaxPlayers,func) found in global src_communication_system.c.o
-                                                  49](sub_02059A3C,func) found in local src_field_comm_manager.c.o
-                                                   50](sub_02059BF4,func) found in local src_field_comm_manager.c.o
+                                                  49](FieldCommTask_ReturnToBattleRoom_EnableSendMovementData,func) found in local src_field_comm_manager.c.o
+                                                   50](FieldCommTask_WaitBattleRoomMovement,func) found in local src_field_comm_manager.c.o
                                                     51](sub_020590C4,func) found in global src_comm_player_manager.c.o
                                                      52](sub_020362DC,func) found in global src_communication_system.c.o
-                                                    51](sub_02059B74,func) found in local src_field_comm_manager.c.o
+                                                    51](FieldCommManager_CheckExitRoom,func) found in local src_field_comm_manager.c.o
                                                      52](CommTool_GetSyncNo,func) found in global src_unk_020363E8.c.o
-                                                    51](sub_02059CD8,func) found in local src_field_comm_manager.c.o
-                                                     52](sub_02059C8C,func) found in local src_field_comm_manager.c.o
+                                                    51](FieldCommTask_BattleRoomMovement,func) found in local src_field_comm_manager.c.o
+                                                     52](FieldCommTask_02059C8C,func) found in local src_field_comm_manager.c.o
                                                       53](sub_020363A0,func) found in global src_communication_system.c.o
                                                       53](sub_0205AB10,func) found in global src_unk_0205A0D8.c.o
                                                        54](sub_0205A324,func) found in local src_unk_0205A0D8.c.o
@@ -32558,12 +32558,12 @@
                                                         55](sub_0205AD34,func) found in local src_unk_0205A0D8.c.o
                                                         55](sub_0205AD70,func) found in local src_unk_0205A0D8.c.o
                                                         55](sub_0205ADAC,func) found in local src_unk_0205A0D8.c.o
-                                                      53](sub_02059C2C,func) found in local src_field_comm_manager.c.o
-                                                       54](sub_02059E50,func) found in local src_field_comm_manager.c.o
-                                                        55](sub_02059E34,func) found in local src_field_comm_manager.c.o
-                                                         56](sub_02059E0C,func) found in local src_field_comm_manager.c.o
-                                                          57](sub_02059DC8,func) found in local src_field_comm_manager.c.o
-                                                           58](sub_02059D58,func) found in local src_field_comm_manager.c.o
+                                                      53](FieldCommManager_UnknownCallback,func) found in local src_field_comm_manager.c.o
+                                                       54](FieldCommTask_InitializeVsBattle,func) found in local src_field_comm_manager.c.o
+                                                        55](FieldCommTask_StartSwitchTransitionToParallelAndStartVsLinkBattle,func) found in local src_field_comm_manager.c.o
+                                                         56](FieldCommTask_SwitchTransitionToParallelAndStartVsLinkBattle,func) found in local src_field_comm_manager.c.o
+                                                          57](FieldCommTask_WaitStartVsLinkBattle,func) found in local src_field_comm_manager.c.o
+                                                           58](FieldCommTask_StartVsLinkBattle,func) found in local src_field_comm_manager.c.o
                                                             59](CommManager_GetParty,func) found in global src_comm_manager.c.o
                                                             59](Encounter_NewVsLinkWithRecording,func) found in global src_encounter.c.o
                                                              60](FieldBattleDTO_InitWithPartyOrderFromSave,func) found in global src_field_battle_data_transfer.c.o
@@ -32576,9 +32576,9 @@
                                                                 63](sub_020331B4,func) found in global src_communication_information.c.o
                                                                62](FieldBattleDTO_UpdatePokedex,func) found in global src_field_battle_data_transfer.c.o
                                                             59](Encounter_NewVsLinkWithRecordingAndParty,func) found in global src_encounter.c.o
-                                                      53](sub_02059C7C,func) found in local src_field_comm_manager.c.o
-                                               46](sub_02059AB4,func) found in local src_field_comm_manager.c.o
-                                                47](sub_02059B10,func) found in local src_field_comm_manager.c.o
+                                                      53](FieldCommTask_StartWaitBattleRoom,func) found in local src_field_comm_manager.c.o
+                                               46](FieldCommTask_EnterBattleRoom,func) found in local src_field_comm_manager.c.o
+                                                47](FieldCommTask_EnterBattleRoom_SendPos,func) found in local src_field_comm_manager.c.o
                                        38](ScrCmd_EndCommunication,func) found in local src_scrcmd.c.o
                                        38](ScrCmd_Dummy14F,func) found in local src_scrcmd.c.o
                                        38](ScrCmd_HealParty,func) found in local src_scrcmd.c.o
@@ -33762,11 +33762,11 @@
                                           41](.bss,section) found in local src_overlay007_communication_club.c.o
                                          40](CommClubMan_StartBattleServer,func) found in local src_overlay007_communication_club.c.o
                                           41](CommClubMan_Regulation,func) found in local src_overlay007_communication_club.c.o
-                                          41](FieldCommMan_StartBattleServer,func) found in global src_field_comm_manager.c.o
+                                          41](FieldCommManager_StartBattleServer,func) found in global src_field_comm_manager.c.o
                                            42](CommManager_StartBattleServer,func) found in global src_comm_manager.c.o
                                             43](CommTask_StartBattleServer,func) found in local src_comm_manager.c.o
                                              44](CommTask_ConnectingBattleServer,func) found in local src_comm_manager.c.o
-                                           42](Task_StartBattleServer,func) found in local src_field_comm_manager.c.o
+                                           42](FieldCommTask_StartBattleServer,func) found in local src_field_comm_manager.c.o
                                             43](ov7_0224B4B8,func) found in global src_overlay007_communication_club.c.o
                                              44](ov7_0224A53C,func) found in local src_overlay007_communication_club.c.o
                                               45](ov7_0224A5D0,func) found in local src_overlay007_communication_club.c.o
@@ -33820,18 +33820,18 @@
                                                 47](ov7_0224AE10,func) found in local src_overlay007_communication_club.c.o
                                                  48](ov7_0224AE78,func) found in local src_overlay007_communication_club.c.o
                                                   49](ov7_0224AECC,func) found in local src_overlay007_communication_club.c.o
-                                            43](Task_ServerWait,func) found in local src_field_comm_manager.c.o
+                                            43](FieldCommTask_WaitBattleServer,func) found in local src_field_comm_manager.c.o
                                         39](sub_0204300C,func) found in local src_scrcmd.c.o
                                          40](CommClub_CheckWindowOpenServer,func) found in global src_overlay007_communication_club.c.o
                                           41](CommClubMan_Delete,func) found in local src_overlay007_communication_club.c.o
                                        38](ScrCmd_StartBattleClient,func) found in local src_scrcmd.c.o
                                         39](CommClub_StartBattleClient,func) found in global src_overlay007_communication_club.c.o
                                          40](CommClubMan_StartBattleClient,func) found in local src_overlay007_communication_club.c.o
-                                          41](FieldCommMan_StartBattleClient,func) found in global src_field_comm_manager.c.o
+                                          41](FieldCommManager_StartBattleClient,func) found in global src_field_comm_manager.c.o
                                            42](CommManager_StartBattleClient,func) found in global src_comm_manager.c.o
                                             43](CommTask_StartBattleClient,func) found in local src_comm_manager.c.o
                                              44](CommTask_ScanBattleClient,func) found in local src_comm_manager.c.o
-                                           42](Task_StartBattleClient,func) found in local src_field_comm_manager.c.o
+                                           42](FieldCommTask_StartBattleClient,func) found in local src_field_comm_manager.c.o
                                             43](CommClub_PrintChooseJoinMsg,func) found in global src_overlay007_communication_club.c.o
                                              44](CommClubMan_PrintChooseJoinMsg,func) found in local src_overlay007_communication_club.c.o
                                               45](CommClubMan_DisplayPersonalTrainerInfo,func) found in local src_overlay007_communication_club.c.o
@@ -33841,26 +33841,26 @@
                                                 47](ov7_0224A0C8,func) found in local src_overlay007_communication_club.c.o
                                                  48](sub_02033884,func) found in global src_unk_02033200.c.o
                                                 47](sub_0203383C,func) found in global src_unk_02033200.c.o
-                                                47](FieldCommMan_ConnectBattleClient,func) found in global src_field_comm_manager.c.o
-                                                 48](Task_ConnectBattleClient,func) found in local src_field_comm_manager.c.o
+                                                47](FieldCommManager_ConnectBattleClient,func) found in global src_field_comm_manager.c.o
+                                                 48](FieldCommTask_ConnectBattleClient,func) found in local src_field_comm_manager.c.o
                                                   49](CommManager_ConnectBattleClient,func) found in global src_comm_manager.c.o
                                                    50](CommTask_ConnectBattleClient,func) found in local src_comm_manager.c.o
                                                     51](CommTask_ConnectingBattleClient,func) found in local src_comm_manager.c.o
                                                      52](CommTask_ResetBattleClient,func) found in local src_comm_manager.c.o
                                                       53](CommTask_ReconnectBattleClient,func) found in local src_comm_manager.c.o
-                                                  49](sub_02059964,func) found in local src_field_comm_manager.c.o
+                                                  49](FieldCommTask_SendPlayerInfoClient,func) found in local src_field_comm_manager.c.o
                                                    50](CommManager_IsWaitingBattle,func) found in global src_comm_manager.c.o
-                                                   50](sub_02059980,func) found in local src_field_comm_manager.c.o
+                                                   50](FieldCommTask_WaitBattleClient,func) found in local src_field_comm_manager.c.o
                                                 47](CommList_Refresh,func) found in global src_unk_020363E8.c.o
                                                 47](CommClubTask_SelectServerList,func) found in local src_overlay007_communication_club.c.o
                                                  48](ov7_0224B348,func) found in local src_overlay007_communication_club.c.o
-                                                  49](FieldCommMan_ReconnectBattleClient,func) found in global src_field_comm_manager.c.o
-                                                   50](sub_02059E80,func) found in local src_field_comm_manager.c.o
+                                                  49](FieldCommManager_ReconnectBattleClient,func) found in global src_field_comm_manager.c.o
+                                                   50](FieldCommTask_ResetBattleClient,func) found in local src_field_comm_manager.c.o
                                                     51](CommManager_ResetBattleClient,func) found in global src_comm_manager.c.o
                                                      52](CommSys_ResetBattleClient,func) found in global src_communication_system.c.o
                                                      52](CommTask_RetryBattleClient,func) found in local src_comm_manager.c.o
                                                       53](CommTask_ReinitBattleClient,func) found in local src_comm_manager.c.o
-                                                    51](sub_02059E94,func) found in local src_field_comm_manager.c.o
+                                                    51](FieldCommTask_ReinitBattleClient,func) found in local src_field_comm_manager.c.o
                                                   49](ov7_0224B370,func) found in local src_overlay007_communication_club.c.o
                                                  48](ov7_0224A34C,func) found in local src_overlay007_communication_club.c.o
                                                   49](ov7_0224A244,func) found in local src_overlay007_communication_club.c.o
@@ -33869,7 +33869,7 @@
                                                    50](ov7_0224B08C,func) found in local src_overlay007_communication_club.c.o
                                                   49](CommClubTask_WaitConfirmLeaveGroup,func) found in local src_overlay007_communication_club.c.o
                                                    50](CommClubTask_LeaveGroup,func) found in local src_overlay007_communication_club.c.o
-                                            43](Task_ClientWait,func) found in local src_field_comm_manager.c.o
+                                            43](FieldCommTask_ScanBattleClient,func) found in local src_field_comm_manager.c.o
                                         39](sub_02042F74,func) found in local src_scrcmd.c.o
                                          40](CommClub_CheckWindowOpenClient,func) found in global src_overlay007_communication_club.c.o
                                        38](ScrCmd_GoToIfTargetTrainerDefeated,func) found in global src_scrcmd_trainer.c.o
@@ -37027,7 +37027,7 @@
                    18](FieldInput_Process_Colosseum,func) found in global src_overlay005_field_control.c.o
                     19](Field_CurrentTileBehavior,func) found in local src_overlay005_field_control.c.o
                      20](Field_GetPlayerPos,func) found in local src_overlay005_field_control.c.o
-                    19](sub_02059D2C,func) found in global src_field_comm_manager.c.o
+                    19](FieldCommManager_IsInMovementState,func) found in global src_field_comm_manager.c.o
                     19](sub_0203CA40,func) found in global src_unk_0203C954.c.o
                      20](sub_02062D9C,func) found in global src_map_object.c.o
                      20](sub_0203C9B0,func) found in local src_unk_0203C954.c.o
@@ -37310,17 +37310,17 @@
                        22](HandleFloatingPlatformJumpPointAt,func) found in local src_overlay009_ov9_02249960.c.o
                         23](FindFloatingPlatformJumpPointAt,func) found in local src_overlay009_ov9_02249960.c.o
                       21](ov5_021DFF1C,func) found in local src_overlay005_ov5_021DFB54.c.o
-                       22](ov9_0224F240,func) found in global src_overlay009_ov9_02249960.c.o
-                        23](ov9_0224F1F8,func) found in local src_overlay009_ov9_02249960.c.o
+                       22](DistWorld_WillBoulderBeAtFallLocation,func) found in global src_overlay009_ov9_02249960.c.o
+                        23](FindBoulderFallLocationFlag,func) found in local src_overlay009_ov9_02249960.c.o
                        22](ov5_021DFF88,func) found in local src_overlay005_ov5_021DFB54.c.o
                         23](ov5_021DFFBC,func) found in local src_overlay005_ov5_021DFB54.c.o
-                         24](ov9_0224F2B0,func) found in global src_overlay009_ov9_02249960.c.o
-                          25](ov9_0224F284,func) found in local src_overlay009_ov9_02249960.c.o
-                         24](ov9_0224F2BC,func) found in global src_overlay009_ov9_02249960.c.o
-                         24](ov9_0224F6EC,func) found in global src_overlay009_ov9_02249960.c.o
-                          25](ov9_0224F324,func) found in local src_overlay009_ov9_02249960.c.o
-                          25](ov9_0224F3BC,func) found in local src_overlay009_ov9_02249960.c.o
-                          25](ov9_0224F5D8,func) found in local src_overlay009_ov9_02249960.c.o
+                         24](DistWorld_IsBoulderAtFallLocation,func) found in global src_overlay009_ov9_02249960.c.o
+                          25](FindMapObjectBoulderFallLocationFlag,func) found in local src_overlay009_ov9_02249960.c.o
+                         24](DistWorldFallingBoulder_New,func) found in global src_overlay009_ov9_02249960.c.o
+                         24](DistWorldFallingBoulder_Tick,func) found in global src_overlay009_ov9_02249960.c.o
+                          25](DistWorldFallingBoulder_TickToB6F,func) found in local src_overlay009_ov9_02249960.c.o
+                          25](DistWorldFallingBoulder_TickToCorrectPit,func) found in local src_overlay009_ov9_02249960.c.o
+                          25](DistWorldFallingBoulder_TickToWrongPit,func) found in local src_overlay009_ov9_02249960.c.o
                       21](ov5_021E04A8,func) found in local src_overlay005_ov5_021DFB54.c.o
                        22](ov5_021E097C,func) found in global src_overlay005_ov5_021DFB54.c.o
                       21](ov5_021E032C,func) found in local src_overlay005_ov5_021DFB54.c.o
@@ -52330,129 +52330,129 @@
   02059638 00000014 .text   sub_02059638	(src_comm_player_manager.c.o)
   02059644 00000000 .text   $d	(src_comm_player_manager.c.o)
   0205964C 00000000 .text   $t	(src_field_comm_manager.c.o)
-  0205964C 0000000C .text   FieldCommMan_Get	(src_field_comm_manager.c.o)
+  0205964C 0000000C .text   FieldCommManager_Get	(src_field_comm_manager.c.o)
   02059654 00000000 .text   $d	(src_field_comm_manager.c.o)
-  02059658 00000002 .text   sub_02059658	(src_field_comm_manager.c.o)
+  02059658 00000002 .text   FieldCommManager_Dummy	(src_field_comm_manager.c.o)
   02059658 00000000 .text   $t	(src_field_comm_manager.c.o)
   0205965C 00000000 .text   $t	(src_field_comm_manager.c.o)
-  0205965C 00000060 .text   FieldCommMan_Init	(src_field_comm_manager.c.o)
+  0205965C 00000060 .text   FieldCommManager_Init	(src_field_comm_manager.c.o)
   020596B4 00000000 .text   $d	(src_field_comm_manager.c.o)
   020596BC 00000000 .text   $t	(src_field_comm_manager.c.o)
-  020596BC 0000004C .text   FieldCommMan_Delete	(src_field_comm_manager.c.o)
+  020596BC 0000004C .text   FieldCommManager_Delete	(src_field_comm_manager.c.o)
   02059704 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059708 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059708 00000040 .text   FieldCommMan_StartBattleServer	(src_field_comm_manager.c.o)
+  02059708 00000040 .text   FieldCommManager_StartBattleServer	(src_field_comm_manager.c.o)
   02059744 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059748 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059748 00000040 .text   FieldCommMan_StartBattleClient	(src_field_comm_manager.c.o)
+  02059748 00000040 .text   FieldCommManager_StartBattleClient	(src_field_comm_manager.c.o)
   02059784 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059788 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059788 0000001C .text   FieldCommMan_ConnectBattleClient	(src_field_comm_manager.c.o)
+  02059788 0000001C .text   FieldCommManager_ConnectBattleClient	(src_field_comm_manager.c.o)
   02059798 00000000 .text   $d	(src_field_comm_manager.c.o)
   020597A4 00000000 .text   $t	(src_field_comm_manager.c.o)
-  020597A4 00000010 .text   FieldCommMan_ReconnectBattleClient	(src_field_comm_manager.c.o)
+  020597A4 00000010 .text   FieldCommManager_ReconnectBattleClient	(src_field_comm_manager.c.o)
   020597AC 00000000 .text   $d	(src_field_comm_manager.c.o)
   020597B4 00000000 .text   $t	(src_field_comm_manager.c.o)
-  020597B4 000000C8 .text   FieldCommMan_EnterBattleRoom	(src_field_comm_manager.c.o)
+  020597B4 000000C8 .text   FieldCommManager_EnterBattleRoom	(src_field_comm_manager.c.o)
   02059870 00000000 .text   $d	(src_field_comm_manager.c.o)
   0205987C 00000000 .text   $t	(src_field_comm_manager.c.o)
-  0205987C 00000024 .text   FieldCommMan_EndBattle	(src_field_comm_manager.c.o)
+  0205987C 00000024 .text   FieldCommManager_EndBattleNoSync	(src_field_comm_manager.c.o)
   02059898 00000000 .text   $d	(src_field_comm_manager.c.o)
   020598A0 00000000 .text   $t	(src_field_comm_manager.c.o)
-  020598A0 00000024 .text   sub_020598A0	(src_field_comm_manager.c.o)
+  020598A0 00000024 .text   FieldCommManager_EndBattleSync	(src_field_comm_manager.c.o)
   020598BC 00000000 .text   $d	(src_field_comm_manager.c.o)
   020598C4 00000000 .text   $t	(src_field_comm_manager.c.o)
-  020598C4 00000028 .text   FieldCommMan_RunTask	(src_field_comm_manager.c.o)
+  020598C4 00000028 .text   FieldCommManager_RunTask	(src_field_comm_manager.c.o)
   020598E8 00000000 .text   $d	(src_field_comm_manager.c.o)
   020598EC 00000000 .text   $t	(src_field_comm_manager.c.o)
-  020598EC 00000010 .text   FieldCommMan_SetTask	(src_field_comm_manager.c.o)
+  020598EC 00000010 .text   FieldCommManager_SetTask	(src_field_comm_manager.c.o)
   020598F8 00000000 .text   $d	(src_field_comm_manager.c.o)
   020598FC 00000000 .text   $t	(src_field_comm_manager.c.o)
-  020598FC 00000024 .text   Task_StartBattleServer	(src_field_comm_manager.c.o)
+  020598FC 00000024 .text   FieldCommTask_StartBattleServer	(src_field_comm_manager.c.o)
   0205991C 00000000 .text   $d	(src_field_comm_manager.c.o)
-  02059920 00000002 .text   Task_ServerWait	(src_field_comm_manager.c.o)
+  02059920 00000002 .text   FieldCommTask_WaitBattleServer	(src_field_comm_manager.c.o)
   02059920 00000000 .text   $t	(src_field_comm_manager.c.o)
   02059924 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059924 0000001C .text   Task_StartBattleClient	(src_field_comm_manager.c.o)
+  02059924 0000001C .text   FieldCommTask_StartBattleClient	(src_field_comm_manager.c.o)
   0205993C 00000000 .text   $d	(src_field_comm_manager.c.o)
-  02059940 00000002 .text   Task_ClientWait	(src_field_comm_manager.c.o)
+  02059940 00000002 .text   FieldCommTask_ScanBattleClient	(src_field_comm_manager.c.o)
   02059940 00000000 .text   $t	(src_field_comm_manager.c.o)
   02059944 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059944 00000020 .text   Task_ConnectBattleClient	(src_field_comm_manager.c.o)
+  02059944 00000020 .text   FieldCommTask_ConnectBattleClient	(src_field_comm_manager.c.o)
   0205995C 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059964 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059964 0000001C .text   sub_02059964	(src_field_comm_manager.c.o)
+  02059964 0000001C .text   FieldCommTask_SendPlayerInfoClient	(src_field_comm_manager.c.o)
   0205997C 00000000 .text   $d	(src_field_comm_manager.c.o)
-  02059980 00000002 .text   sub_02059980	(src_field_comm_manager.c.o)
+  02059980 00000002 .text   FieldCommTask_WaitBattleClient	(src_field_comm_manager.c.o)
   02059980 00000000 .text   $t	(src_field_comm_manager.c.o)
   02059984 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059984 00000060 .text   sub_02059984	(src_field_comm_manager.c.o)
+  02059984 00000060 .text   FieldCommTask_ReturnToBattleRoom	(src_field_comm_manager.c.o)
   020599DC 00000000 .text   $d	(src_field_comm_manager.c.o)
   020599E4 00000000 .text   $t	(src_field_comm_manager.c.o)
-  020599E4 00000058 .text   sub_020599E4	(src_field_comm_manager.c.o)
+  020599E4 00000058 .text   FieldCommTask_ReturnToBattleRoom_SendPos	(src_field_comm_manager.c.o)
   02059A38 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059A3C 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059A3C 00000034 .text   sub_02059A3C	(src_field_comm_manager.c.o)
+  02059A3C 00000034 .text   FieldCommTask_ReturnToBattleRoom_EnableSendMovementData	(src_field_comm_manager.c.o)
   02059A68 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059A70 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059A70 00000044 .text   sub_02059A70	(src_field_comm_manager.c.o)
+  02059A70 00000044 .text   FieldCommTask_ReturnToBattleRoom_WaitForScreenFade	(src_field_comm_manager.c.o)
   02059AAC 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059AB4 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059AB4 0000005C .text   sub_02059AB4	(src_field_comm_manager.c.o)
+  02059AB4 0000005C .text   FieldCommTask_EnterBattleRoom	(src_field_comm_manager.c.o)
   02059B08 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059B10 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059B10 00000064 .text   sub_02059B10	(src_field_comm_manager.c.o)
+  02059B10 00000064 .text   FieldCommTask_EnterBattleRoom_SendPos	(src_field_comm_manager.c.o)
   02059B70 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059B74 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059B74 00000080 .text   sub_02059B74	(src_field_comm_manager.c.o)
+  02059B74 00000080 .text   FieldCommManager_CheckExitRoom	(src_field_comm_manager.c.o)
   02059BEC 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059BF4 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059BF4 00000038 .text   sub_02059BF4	(src_field_comm_manager.c.o)
+  02059BF4 00000038 .text   FieldCommTask_WaitBattleRoomMovement	(src_field_comm_manager.c.o)
   02059C24 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059C2C 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059C2C 00000050 .text   sub_02059C2C	(src_field_comm_manager.c.o)
+  02059C2C 00000050 .text   FieldCommManager_UnknownCallback	(src_field_comm_manager.c.o)
   02059C70 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059C7C 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059C7C 00000010 .text   sub_02059C7C	(src_field_comm_manager.c.o)
+  02059C7C 00000010 .text   FieldCommTask_StartWaitBattleRoom	(src_field_comm_manager.c.o)
   02059C84 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059C8C 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059C8C 0000004C .text   sub_02059C8C	(src_field_comm_manager.c.o)
+  02059C8C 0000004C .text   FieldCommTask_02059C8C	(src_field_comm_manager.c.o)
   02059CCC 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059CD8 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059CD8 00000034 .text   sub_02059CD8	(src_field_comm_manager.c.o)
+  02059CD8 00000034 .text   FieldCommTask_BattleRoomMovement	(src_field_comm_manager.c.o)
   02059D04 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059D0C 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059D0C 00000020 .text   sub_02059D0C	(src_field_comm_manager.c.o)
+  02059D0C 00000020 .text   FieldCommManager_UpdateBattleRoomMovement	(src_field_comm_manager.c.o)
   02059D28 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059D2C 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059D2C 0000002C .text   sub_02059D2C	(src_field_comm_manager.c.o)
+  02059D2C 0000002C .text   FieldCommManager_IsInMovementState	(src_field_comm_manager.c.o)
   02059D4C 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059D58 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059D58 00000070 .text   sub_02059D58	(src_field_comm_manager.c.o)
+  02059D58 00000070 .text   FieldCommTask_StartVsLinkBattle	(src_field_comm_manager.c.o)
   02059DC4 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059DC8 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059DC8 00000044 .text   sub_02059DC8	(src_field_comm_manager.c.o)
+  02059DC8 00000044 .text   FieldCommTask_WaitStartVsLinkBattle	(src_field_comm_manager.c.o)
   02059E04 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059E0C 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059E0C 00000028 .text   sub_02059E0C	(src_field_comm_manager.c.o)
+  02059E0C 00000028 .text   FieldCommTask_SwitchTransitionToParallelAndStartVsLinkBattle	(src_field_comm_manager.c.o)
   02059E2C 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059E34 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059E34 0000001C .text   sub_02059E34	(src_field_comm_manager.c.o)
+  02059E34 0000001C .text   FieldCommTask_StartSwitchTransitionToParallelAndStartVsLinkBattle	(src_field_comm_manager.c.o)
   02059E4C 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059E50 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059E50 00000030 .text   sub_02059E50	(src_field_comm_manager.c.o)
+  02059E50 00000030 .text   FieldCommTask_InitializeVsBattle	(src_field_comm_manager.c.o)
   02059E78 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059E80 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059E80 00000014 .text   sub_02059E80	(src_field_comm_manager.c.o)
+  02059E80 00000014 .text   FieldCommTask_ResetBattleClient	(src_field_comm_manager.c.o)
   02059E90 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059E94 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059E94 00000018 .text   sub_02059E94	(src_field_comm_manager.c.o)
+  02059E94 00000018 .text   FieldCommTask_ReinitBattleClient	(src_field_comm_manager.c.o)
   02059EA8 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059EAC 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059EAC 00000010 .text   sub_02059EAC	(src_field_comm_manager.c.o)
+  02059EAC 00000010 .text   FieldCommManager_SetTrainerCaseCopiedFlag	(src_field_comm_manager.c.o)
   02059EB8 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059EBC 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059EBC 0000001C .text   sub_02059EBC	(src_field_comm_manager.c.o)
+  02059EBC 0000001C .text   FieldCommManager_GetTrainerCase	(src_field_comm_manager.c.o)
   02059ED4 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059ED8 00000000 .text   $t	(src_field_comm_manager.c.o)
   02059ED8 00000038 .text   FieldCommTask_StartCopyTrainerCase	(src_field_comm_manager.c.o)
@@ -52461,34 +52461,34 @@
   02059F10 0000003C .text   FieldCommTask_CopyTrainerCase	(src_field_comm_manager.c.o)
   02059F44 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059F4C 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059F4C 00000044 .text   sub_02059F4C	(src_field_comm_manager.c.o)
+  02059F4C 00000044 .text   CommFieldTask_WaitSwitchTransitionTypeAndChangeToBattleRoom	(src_field_comm_manager.c.o)
   02059F88 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059F90 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059F90 00000028 .text   sub_02059F90	(src_field_comm_manager.c.o)
+  02059F90 00000028 .text   FieldCommTask_SwitchTransitionTypeToServerClient	(src_field_comm_manager.c.o)
   02059FB0 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059FB8 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059FB8 0000001C .text   sub_02059FB8	(src_field_comm_manager.c.o)
+  02059FB8 0000001C .text   FieldCommTask_SwitchTransitionType	(src_field_comm_manager.c.o)
   02059FD0 00000000 .text   $d	(src_field_comm_manager.c.o)
   02059FD4 00000000 .text   $t	(src_field_comm_manager.c.o)
-  02059FD4 00000044 .text   sub_02059FD4	(src_field_comm_manager.c.o)
+  02059FD4 00000044 .text   FieldCommTask_ChangeToBattleRoom	(src_field_comm_manager.c.o)
   0205A00C 00000000 .text   $d	(src_field_comm_manager.c.o)
   0205A018 00000000 .text   $t	(src_field_comm_manager.c.o)
-  0205A018 00000028 .text   sub_0205A018	(src_field_comm_manager.c.o)
+  0205A018 00000028 .text   FieldCommTask_EndBattleSync	(src_field_comm_manager.c.o)
   0205A03C 00000000 .text   $d	(src_field_comm_manager.c.o)
   0205A040 00000000 .text   $t	(src_field_comm_manager.c.o)
-  0205A040 00000018 .text   Task_EndBattle	(src_field_comm_manager.c.o)
+  0205A040 00000018 .text   FieldCommTask_EndBattleNoSync	(src_field_comm_manager.c.o)
   0205A054 00000000 .text   $d	(src_field_comm_manager.c.o)
   0205A058 00000000 .text   $t	(src_field_comm_manager.c.o)
-  0205A058 00000028 .text   sub_0205A058	(src_field_comm_manager.c.o)
+  0205A058 00000028 .text   FieldCommTask_EndConnection	(src_field_comm_manager.c.o)
   0205A078 00000000 .text   $d	(src_field_comm_manager.c.o)
   0205A080 00000000 .text   $t	(src_field_comm_manager.c.o)
-  0205A080 00000020 .text   FieldCommMan_GetCurrentOccupiedSecretBase	(src_field_comm_manager.c.o)
+  0205A080 00000020 .text   FieldCommManager_GetCurrentOccupiedSecretBase	(src_field_comm_manager.c.o)
   0205A09C 00000000 .text   $d	(src_field_comm_manager.c.o)
   0205A0A0 00000000 .text   $t	(src_field_comm_manager.c.o)
-  0205A0A0 0000001C .text   sub_0205A0A0	(src_field_comm_manager.c.o)
+  0205A0A0 0000001C .text   FieldCommManager_PauseUndergroundResources	(src_field_comm_manager.c.o)
   0205A0B8 00000000 .text   $d	(src_field_comm_manager.c.o)
   0205A0BC 00000000 .text   $t	(src_field_comm_manager.c.o)
-  0205A0BC 0000001C .text   sub_0205A0BC	(src_field_comm_manager.c.o)
+  0205A0BC 0000001C .text   FieldCommManager_UnpauseUndergroundResources	(src_field_comm_manager.c.o)
   0205A0D4 00000000 .text   $d	(src_field_comm_manager.c.o)
   0205A0D8 00000000 .text   $t	(src_unk_0205A0D8.c.o)
   0205A0D8 0000008C .text   sub_0205A0D8	(src_unk_0205A0D8.c.o)
@@ -81748,25 +81748,25 @@
   0224F1CC 0000002C .text   IsMapObjectManaged	(src_overlay009_ov9_02249960.c.o)
   0224F1F4 00000000 .text   $d	(src_overlay009_ov9_02249960.c.o)
   0224F1F8 00000000 .text   $t	(src_overlay009_ov9_02249960.c.o)
-  0224F1F8 00000048 .text   ov9_0224F1F8	(src_overlay009_ov9_02249960.c.o)
+  0224F1F8 00000048 .text   FindBoulderFallLocationFlag	(src_overlay009_ov9_02249960.c.o)
   0224F238 00000000 .text   $d	(src_overlay009_ov9_02249960.c.o)
-  0224F240 00000042 .text   ov9_0224F240	(src_overlay009_ov9_02249960.c.o)
+  0224F240 00000042 .text   DistWorld_WillBoulderBeAtFallLocation	(src_overlay009_ov9_02249960.c.o)
   0224F240 00000000 .text   $t	(src_overlay009_ov9_02249960.c.o)
-  0224F284 0000002A .text   ov9_0224F284	(src_overlay009_ov9_02249960.c.o)
+  0224F284 0000002A .text   FindMapObjectBoulderFallLocationFlag	(src_overlay009_ov9_02249960.c.o)
   0224F284 00000000 .text   $t	(src_overlay009_ov9_02249960.c.o)
-  0224F2B0 0000000A .text   ov9_0224F2B0	(src_overlay009_ov9_02249960.c.o)
+  0224F2B0 0000000A .text   DistWorld_IsBoulderAtFallLocation	(src_overlay009_ov9_02249960.c.o)
   0224F2B0 00000000 .text   $t	(src_overlay009_ov9_02249960.c.o)
-  0224F2BC 00000068 .text   ov9_0224F2BC	(src_overlay009_ov9_02249960.c.o)
+  0224F2BC 00000068 .text   DistWorldFallingBoulder_New	(src_overlay009_ov9_02249960.c.o)
   0224F2BC 00000000 .text   $t	(src_overlay009_ov9_02249960.c.o)
   0224F324 00000000 .text   $t	(src_overlay009_ov9_02249960.c.o)
-  0224F324 00000098 .text   ov9_0224F324	(src_overlay009_ov9_02249960.c.o)
+  0224F324 00000098 .text   DistWorldFallingBoulder_TickToB6F	(src_overlay009_ov9_02249960.c.o)
   0224F3B8 00000000 .text   $d	(src_overlay009_ov9_02249960.c.o)
   0224F3BC 00000000 .text   $t	(src_overlay009_ov9_02249960.c.o)
-  0224F3BC 0000021C .text   ov9_0224F3BC	(src_overlay009_ov9_02249960.c.o)
+  0224F3BC 0000021C .text   DistWorldFallingBoulder_TickToCorrectPit	(src_overlay009_ov9_02249960.c.o)
   0224F5D4 00000000 .text   $d	(src_overlay009_ov9_02249960.c.o)
-  0224F5D8 00000114 .text   ov9_0224F5D8	(src_overlay009_ov9_02249960.c.o)
+  0224F5D8 00000114 .text   DistWorldFallingBoulder_TickToWrongPit	(src_overlay009_ov9_02249960.c.o)
   0224F5D8 00000000 .text   $t	(src_overlay009_ov9_02249960.c.o)
-  0224F6EC 00000038 .text   ov9_0224F6EC	(src_overlay009_ov9_02249960.c.o)
+  0224F6EC 00000038 .text   DistWorldFallingBoulder_Tick	(src_overlay009_ov9_02249960.c.o)
   0224F6EC 00000000 .text   $t	(src_overlay009_ov9_02249960.c.o)
   0224F724 00000000 .text   $t	(src_overlay009_ov9_02249960.c.o)
   0224F724 0000003C .text   InitSkyBackgroundDarkness	(src_overlay009_ov9_02249960.c.o)
@@ -81979,7 +81979,7 @@
   02251288 00000008 .rodata sMapEventCmdParamsB2F_P13W_2	(src_overlay009_ov9_02249960.c.o)
   02251290 00000008 .rodata sMapEventCmdParamsB2F_P16E_2	(src_overlay009_ov9_02249960.c.o)
   02251298 00000008 .rodata sMapEventCmdParamsB2F_P15E_2	(src_overlay009_ov9_02249960.c.o)
-  022512A0 00000008 .rodata @22662	(src_overlay009_ov9_02249960.c.o)
+  022512A0 00000008 .rodata @22656	(src_overlay009_ov9_02249960.c.o)
   022512A8 00000008 .rodata sMapEventCmdParamsB2F_P17E_2	(src_overlay009_ov9_02249960.c.o)
   022512B0 00000008 .rodata sMapEventCmdParamsB2F_P3S_2	(src_overlay009_ov9_02249960.c.o)
   022512B8 00000008 .rodata sMapEventCmdParamsB2F_P11W_2	(src_overlay009_ov9_02249960.c.o)
@@ -82007,7 +82007,7 @@
   0225136C 0000000C .rodata sCyrusB4FMiddleAnimCmds	(src_overlay009_ov9_02249960.c.o)
   02251378 0000000C .rodata sCyrusB4FLeftmostAnimCmds	(src_overlay009_ov9_02249960.c.o)
   02251384 0000000C .rodata sCyrusB4FAnimCmds	(src_overlay009_ov9_02249960.c.o)
-  02251390 0000000C .rodata @22766	(src_overlay009_ov9_02249960.c.o)
+  02251390 0000000C .rodata @22760	(src_overlay009_ov9_02249960.c.o)
   0225139C 0000000C .rodata sHideGiratinaRoomPlatformsHandlers	(src_overlay009_ov9_02249960.c.o)
   022513A8 00000010 .rodata @19300	(src_overlay009_ov9_02249960.c.o)
   022513B8 00000010 .rodata sMapEventB5F_AzelfTuto	(src_overlay009_ov9_02249960.c.o)
@@ -82164,7 +82164,7 @@
   02252244 00000020 .rodata sMapEventB2F_P11E	(src_overlay009_ov9_02249960.c.o)
   02252264 00000020 .rodata sMapEventB2F_P12W	(src_overlay009_ov9_02249960.c.o)
   02252284 00000020 .rodata sGiratinaSpriteBasePalette	(src_overlay009_ov9_02249960.c.o)
-  022522A4 00000020 .rodata @22960	(src_overlay009_ov9_02249960.c.o)
+  022522A4 00000020 .rodata @22954	(src_overlay009_ov9_02249960.c.o)
   022522C4 00000020 .rodata sMapEventGiratinaRoom_FirstShadow	(src_overlay009_ov9_02249960.c.o)
   022522E4 00000020 .rodata sMapEventB2F_P12S	(src_overlay009_ov9_02249960.c.o)
   02252304 00000020 .rodata sMapEventB2F_P13N	(src_overlay009_ov9_02249960.c.o)
@@ -82242,7 +82242,7 @@
   02252FD0 00000064 .rodata sProp3DModelNARCIndexByKind	(src_overlay009_ov9_02249960.c.o)
   02253034 00000070 .rodata sMapEventsB5F	(src_overlay009_ov9_02249960.c.o)
   022530A4 00000078 .rodata sDistWorldMapConnectionList	(src_overlay009_ov9_02249960.c.o)
-  0225311C 000000B4 .rodata Unk_ov9_0225311C	(src_overlay009_ov9_02249960.c.o)
+  0225311C 000000B4 .rodata sBoulderFallLocations	(src_overlay009_ov9_02249960.c.o)
   022531D0 000000C8 .rodata sPropAnimInfoByKind	(src_overlay009_ov9_02249960.c.o)
   02253298 0000012C .rodata sPropInitialPosOffsetByKind	(src_overlay009_ov9_02249960.c.o)
   022533C4 0000012C .rodata sPropScaleByKind	(src_overlay009_ov9_02249960.c.o)
